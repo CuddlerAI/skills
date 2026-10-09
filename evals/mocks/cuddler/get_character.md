@@ -1,0 +1,1 @@
+{"character":{"id":"chr_mara01","name":"Mara","appearance":"A woman in her late twenties with shoulder-length copper hair and green eyes, wearing a charcoal wool coat over a cream knit sweater; soft painterly anime style.","imageUrl":"https://files.example.test/mara.jpg","referenceImageUrls":[]}}

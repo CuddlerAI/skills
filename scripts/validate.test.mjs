@@ -1,0 +1,225 @@
+// Tests for validate.mjs and claims.mjs (and a smoke test for skills/cuddler-review/scripts/contact-sheet.sh).
+//   node --test scripts/validate.test.mjs
+// Every red fixture copies the repository to a temp directory, breaks one thing, and expects the matching error.
+
+import assert from "node:assert/strict";
+import { execFileSync, spawnSync } from "node:child_process";
+import { appendFileSync, cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, sep } from "node:path";
+import { test } from "node:test";
+import { fileURLToPath } from "node:url";
+import { render, syncReadme } from "./claims.mjs";
+import { githubSlug, parseFrontmatter, validate } from "./validate.mjs";
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+const SKILLS = ["cuddler-setup", "cuddler-generate", "cuddler-character-clip", "cuddler-review"];
+
+function withCopy(mutate) {
+  const dir = mkdtempSync(join(tmpdir(), "cuddler-skills-test-"));
+  try {
+    cpSync(ROOT, dir, {
+      recursive: true,
+      filter: (src) => !src.split(sep).some((part) => part === ".git" || part === "node_modules" || part === "results" || part.endsWith(".review")),
+    });
+    mutate(dir);
+    return validate(dir).errors.map((e) => `${e.file}: ${e.message}`);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+const edit = (dir, rel, fn) => writeFileSync(join(dir, rel), fn(readFileSync(join(dir, rel), "utf8")));
+const editJson = (dir, rel, fn) => edit(dir, rel, (t) => `${JSON.stringify(fn(JSON.parse(t)), null, 2)}\n`);
+
+function expectError(errors, pattern) {
+  assert.ok(errors.some((e) => pattern.test(e)), `expected an error matching ${pattern}; got:\n${errors.join("\n") || "(no errors)"}`);
+}
+
+test("the repository itself passes", () => {
+  const { errors } = validate(ROOT);
+  assert.deepEqual(errors.map((e) => `${e.file}: ${e.message}`), []);
+});
+
+test("frontmatter: quoted one-line values parse; block scalars are refused", () => {
+  const ok = parseFrontmatter("---\nname: demo\ndescription: 'Use when: it''s needed. NOT for: other things.'\nargument-hint: \"[a] [b]\"\n---\nbody\n");
+  assert.equal(ok.data.name, "demo");
+  assert.equal(ok.data.description, "Use when: it's needed. NOT for: other things.");
+  assert.equal(ok.data["argument-hint"], "[a] [b]");
+  assert.throws(() => parseFrontmatter("---\nname: demo\ndescription: >-\n  folded\n---\n"), /block scalars|empty value/);
+  assert.throws(() => parseFrontmatter("---\ndescription: Use when: x\n---\n"), /quote it/);
+  assert.throws(() => parseFrontmatter("---\nname: a\nname: b\n---\n"), /duplicate/);
+});
+
+test("github anchors are computed like GitHub does", () => {
+  assert.equal(githubSlug("5. Refusals"), "5-refusals");
+  assert.equal(githubSlug("Step 1 — Pull the character"), "step-1--pull-the-character");
+});
+
+test("claims render: strings, command lists and links", () => {
+  assert.equal(render("Hello."), "Hello.");
+  assert.equal(render(["a", "b"]), "```bash\na\nb\n```");
+  assert.equal(render({ x: { label: "X", url: "https://cuddler.ai/?u" } }), "[X](https://cuddler.ai/?u)");
+  assert.throws(() => render({ x: 1 }), /not renderable/);
+  assert.equal(syncReadme("<!-- claims:tagline -->\nold\n<!-- /claims:tagline -->", { tagline: "new" }), "<!-- claims:tagline -->\nnew\n<!-- /claims:tagline -->");
+});
+
+test("a name that differs from its directory fails", () => {
+  expectError(withCopy((d) => edit(d, "skills/cuddler-review/SKILL.md", (t) => t.replace("name: cuddler-review", "name: cuddler-clip-review"))), /must equal the directory name/);
+});
+
+test("a skill name without the cuddler- prefix fails", () => {
+  const errors = withCopy((d) => {
+    cpSync(join(d, "skills/cuddler-review"), join(d, "skills/review"), { recursive: true });
+    rmSync(join(d, "skills/cuddler-review"), { recursive: true });
+    edit(d, "skills/review/SKILL.md", (t) => t.replace("name: cuddler-review", "name: review"));
+  });
+  expectError(errors, /directory name "review" must start with "cuddler-"/);
+});
+
+test("descriptions need Use when and NOT for, and at most 1024 characters", () => {
+  expectError(withCopy((d) => edit(d, "skills/cuddler-generate/SKILL.md", (t) => t.replace("NOT for:", "Not for:"))), /must contain "NOT for"/);
+  expectError(withCopy((d) => edit(d, "skills/cuddler-generate/SKILL.md", (t) => t.replace("Use when", "When"))), /must contain "Use when"/);
+  expectError(withCopy((d) => edit(d, "skills/cuddler-generate/SKILL.md", (t) => t.replace("description: '", `description: '${"x".repeat(1100)} `))), /limit is 1024/);
+});
+
+test("a SKILL.md over 300 lines fails", () => {
+  expectError(withCopy((d) => appendFileSync(join(d, "skills/cuddler-setup/SKILL.md"), "\nfiller\n".repeat(200))), /lines; the limit is 300/);
+});
+
+test("Hard rules that drift in one skill fail", () => {
+  expectError(withCopy((d) => edit(d, "skills/cuddler-review/SKILL.md", (t) => t.replace("ends in `reply proceed`", "ends in `reply yes`"))), /Hard rules differ/);
+  expectError(
+    withCopy((d) => {
+      for (const s of SKILLS) edit(d, `skills/${s}/SKILL.md`, (t) => t.replace("**Content red lines.** Adults only, in adult contexts.", "**Content red lines.** Use judgement."));
+    }),
+    /must keep the phrase "Adults only"/,
+  );
+});
+
+test("a skill missing from the marketplace, README or INSTALL fails", () => {
+  expectError(withCopy((d) => edit(d, ".claude-plugin/marketplace.json", (t) => t.replace(',\n        "./skills/cuddler-review"', ""))), /does not list the skill "cuddler-review"/);
+  expectError(withCopy((d) => edit(d, "README.md", (t) => t.replace("[`cuddler-review`](skills/cuddler-review/SKILL.md)", "`cuddler-review`"))), /README\.md: .*does not list the skill "cuddler-review"/);
+  expectError(withCopy((d) => edit(d, "INSTALL.md", (t) => t.replaceAll("/cuddler:cuddler-review", "the cuddler-review skill"))), /INSTALL\.md: .*does not list the skill "cuddler-review"/);
+});
+
+test("a renamed skill directory is caught everywhere it is listed", () => {
+  const errors = withCopy((d) => {
+    cpSync(join(d, "skills/cuddler-review"), join(d, "skills/cuddler-clip-review"), { recursive: true });
+    rmSync(join(d, "skills/cuddler-review"), { recursive: true });
+    edit(d, "skills/cuddler-clip-review/SKILL.md", (t) => t.replace("name: cuddler-review", "name: cuddler-clip-review"));
+  });
+  expectError(errors, /marketplace\.json: .*lists "cuddler-review", which is not a skill directory/);
+  expectError(errors, /does not list the skill "cuddler-clip-review"/);
+  expectError(errors, /refers to a skill "cuddler-review" that does not exist/);
+  expectError(errors, /evals\/README\.md: a case names a skill "cuddler-review"/);
+});
+
+test("version drift fails", () => {
+  const errors = withCopy((d) => writeFileSync(join(d, "VERSION"), "99.0.0\n"));
+  expectError(errors, /marketplace\.json: plugins\[0\]\.version/);
+  expectError(errors, /\.codex-plugin\/plugin\.json: version/);
+  expectError(errors, /CHANGELOG\.md: the newest entry/);
+});
+
+test("manifests must stay MIT, on this repository, without strict:false", () => {
+  expectError(withCopy((d) => editJson(d, ".codex-plugin/plugin.json", (j) => ({ ...j, license: "Proprietary" }))), /license must be "MIT"/);
+  expectError(withCopy((d) => editJson(d, ".cursor-plugin/plugin.json", (j) => ({ ...j, repository: "https://github.com/CuddlerAI/cuddler-skills" }))), /repository must be/);
+  expectError(withCopy((d) => edit(d, ".claude-plugin/marketplace.json", (t) => t.replace('"source": "./",', '"source": "./",\n      "strict": false,'))), /strict must not be false/);
+});
+
+test("orphan references, broken links and ../ paths fail", () => {
+  expectError(withCopy((d) => writeFileSync(join(d, "skills/cuddler-generate/references/unused.md"), "# unused\n")), /orphan: .*references\/unused\.md/);
+  expectError(withCopy((d) => edit(d, "skills/cuddler-generate/SKILL.md", (t) => t.replaceAll("(references/prompt-craft.md)", "(references/prompt-kraft.md)"))), /does not resolve|does not exist/);
+  expectError(withCopy((d) => appendFileSync(join(d, "skills/cuddler-generate/SKILL.md"), "\nSee [the other skill](../cuddler-review/SKILL.md).\n")), /no \.\.\/ paths/);
+});
+
+test("a tool name that the Cuddler MCP server doesn't have fails", () => {
+  expectError(withCopy((d) => appendFileSync(join(d, "skills/cuddler-generate/SKILL.md"), "\nCall `get_clip` first.\n")), /`get_clip` is not a Cuddler MCP tool/);
+});
+
+test("command-line instructions, third-party keys and fixed prices fail in public text", () => {
+  expectError(withCopy((d) => appendFileSync(join(d, "skills/cuddler-generate/SKILL.md"), "\nRun `cuddler video generate \"x\"`.\n")), /command-line instruction/);
+  expectError(withCopy((d) => appendFileSync(join(d, "README.md"), "\nBring your Higgsfield key.\n")), /third-party provider key/);
+  expectError(withCopy((d) => appendFileSync(join(d, "skills/cuddler-character-clip/SKILL.md"), "\nA 15-second take costs 240 credits.\n")), /a fixed price/);
+});
+
+test("the README and .mcp.json must follow claims.json", () => {
+  expectError(withCopy((d) => editJson(d, "claims.json", (j) => ({ ...j, tagline: "Something else." }))), /block "tagline" differs from claims\.json/);
+  expectError(withCopy((d) => editJson(d, ".mcp.json", (j) => ({ mcpServers: { cuddler: { ...j.mcpServers.cuddler, url: "https://example.test/mcp" } } }))), /\.mcp\.json: cuddler\.url/);
+  expectError(withCopy((d) => editJson(d, "claims.json", (j) => ({ ...j, links: { ...j.links, signup: { label: "Cuddler", url: "https://cuddler.ai/" } } }))), /must carry utm_source=github/);
+  expectError(withCopy((d) => appendFileSync(join(d, "README.md"), "\nTry https://cuddler.ai/studio today.\n")), /needs the GitHub attribution/);
+  expectError(withCopy((d) => edit(d, "README.md", (t) => t.replace(/<!-- claims:limits -->[\s\S]*?<!-- \/claims:limits -->\n/, ""))), /missing the generated block <!-- claims:limits -->/);
+});
+
+test("eval cases must cover every skill and name only real tools", () => {
+  expectError(withCopy((d) => edit(d, "evals/README.md", (t) => t.replace("### review-existing-video", "### review-existing-clip"))), /the case "review-existing-video" has no/);
+  expectError(
+    withCopy((d) => edit(d, "evals/README.md", (t) => t.replace("**Skills:** cuddler-review", "**Skills:** cuddler-generate"))),
+    /no eval case covers the skill "cuddler-review"/,
+  );
+  expectError(withCopy((d) => edit(d, "evals/quote-gate/graders/quoted.md", (t) => t.replace("__quote_video", "__price_video"))), /must be Skill or mcp__plugin_cuddler_cuddler__/);
+  expectError(withCopy((d) => rmSync(join(d, "evals/mocks/cuddler/whoami.md"))), /no suite mock for whoami/);
+  expectError(withCopy((d) => edit(d, "evals/quote-gate/prompt.md", (t) => t.replace("max_turns:", "turns:"))), /frontmatter key "turns" is not a claude plugin eval field/);
+});
+
+test("unpinned actions and pull_request_target fail", () => {
+  expectError(withCopy((d) => edit(d, ".github/workflows/validate.yml", (t) => t.replace(/actions\/checkout@[0-9a-f]{40}/, "actions/checkout@v4"))), /pin actions\/checkout@v4 to a full commit SHA/);
+  expectError(withCopy((d) => edit(d, ".github/workflows/validate.yml", (t) => t.replace("  pull_request:\n", "  pull_request_target:\n"))), /pull_request_target/);
+});
+
+test("direct API calls, admin routes, internal addresses, secrets and email addresses fail", () => {
+  expectError(withCopy((d) => appendFileSync(join(d, "skills/cuddler-generate/references/model-routing.md"), "\n```bash\ncurl -s https://api.cuddler.ai/api/v1/me\n```\n")), /calls the API directly/);
+  expectError(withCopy((d) => appendFileSync(join(d, "README.md"), "\nOps: POST /api/admin/report\n")), /admin route/);
+  expectError(withCopy((d) => appendFileSync(join(d, "CONTRIBUTING.md"), "\nSee docs/design_open_agent_skills_repo_2026-10.md\n")), /internal document path/);
+  expectError(withCopy((d) => appendFileSync(join(d, "INSTALL.md"), `\ntoken: cud_pat_${"a1B2".repeat(6)}\n`)), /personal access token/);
+  expectError(withCopy((d) => appendFileSync(join(d, "evals/README.md"), "\nContact someone@example.com\n")), /email address/);
+});
+
+// ── skills/cuddler-review/scripts/contact-sheet.sh ───────────────────────────
+
+const hasFfmpeg = ["ffmpeg", "ffprobe"].every((bin) => spawnSync(bin, ["-version"], { stdio: "ignore" }).status === 0);
+
+test(
+  "contact-sheet.sh measures a synthetic clip",
+  { skip: hasFfmpeg || process.env.REQUIRE_FFMPEG ? false : "ffmpeg is not installed" },
+  (t) => {
+    assert.ok(hasFfmpeg, "ffmpeg and ffprobe are required (REQUIRE_FFMPEG is set)");
+    const dir = mkdtempSync(join(tmpdir(), "cuddler-review-test-"));
+    try {
+      const clip = join(dir, "clip.mp4");
+      // 6 s, 9:16: 3 s of test pattern then 3 s of solid red (a hard cut at 3 s);
+      // audio: 1 s silence, 3 s tone, 2 s silence → onset ≈ 1 s, end hold ≈ 2 s.
+      execFileSync("ffmpeg", [
+        "-v", "error", "-y",
+        "-f", "lavfi", "-i", "testsrc2=s=360x640:r=24:d=3",
+        "-f", "lavfi", "-i", "color=c=red:s=360x640:r=24:d=3",
+        "-f", "lavfi", "-i", "anullsrc=r=48000:cl=mono",
+        "-f", "lavfi", "-i", "sine=f=440:r=48000",
+        "-filter_complex",
+        "[0:v][1:v]concat=n=2:v=1:a=0[v];[2:a]atrim=duration=1[a0];[3:a]atrim=duration=3,volume=0.5[a1];[2:a]atrim=duration=2,asetpts=PTS-STARTPTS[a2];[a0][a1][a2]concat=n=3:v=0:a=1[a]",
+        "-map", "[v]", "-map", "[a]", "-pix_fmt", "yuv420p", "-shortest", clip,
+      ]);
+      const script = join(ROOT, "skills/cuddler-review/scripts/contact-sheet.sh");
+      const stdout = execFileSync("bash", [script, clip, "--expect-seconds", "6", "--expect-aspect", "9:16"], { encoding: "utf8" });
+      assert.match(stdout, /next: read/);
+      const summary = JSON.parse(readFileSync(join(dir, "clip.review", "summary.json"), "utf8"));
+      const status = (id) => summary.checks.find((c) => c.id === id)?.status;
+      t.diagnostic(`sheet ${JSON.stringify(summary.sheet)} · onset ${summary.first_sound_onset_s} s · hold ${summary.end_hold_s} s · cuts ${summary.cuts_s}`);
+      assert.equal(typeof summary.sheet?.timestamps_drawn, "boolean");
+      assert.equal(summary.aspect, "9:16");
+      assert.ok(Math.abs(summary.duration_s - 6) < 0.15, `duration ${summary.duration_s}`);
+      assert.equal(summary.has_audio, true);
+      assert.ok(Math.abs(summary.first_sound_onset_s - 1) < 0.25, `onset ${summary.first_sound_onset_s}`);
+      assert.ok(Math.abs(summary.end_hold_s - 2) < 0.3, `end hold ${summary.end_hold_s}`);
+      assert.ok(summary.cuts_s.some((t) => Math.abs(t - 3) < 0.25), `cuts ${summary.cuts_s}`);
+      assert.equal(status("duration"), "PASS");
+      assert.equal(status("aspect"), "PASS");
+      assert.equal(status("cuts"), "WARN");
+      const bad = spawnSync("bash", [script, join(dir, "missing.mp4")], { encoding: "utf8" });
+      assert.equal(bad.status, 2);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  },
+);

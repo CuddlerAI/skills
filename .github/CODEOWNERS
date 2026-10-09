@@ -1,0 +1,6 @@
+# Every change needs a maintainer. Public claims and the release machinery need the GTM owner and a second maintainer.
+*              @rongcheng2017
+/README.md     @rongcheng2017 @oratis
+/claims.json   @rongcheng2017 @oratis
+/scripts/      @rongcheng2017 @oratis
+/.github/      @rongcheng2017 @oratis

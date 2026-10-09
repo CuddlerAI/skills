@@ -1,0 +1,38 @@
+{
+  "$comment": "The one source of every public claim. README blocks between <!-- claims:<key> --> markers are generated from it by `node scripts/claims.mjs`, and CI checks they match. No prices here: quotes come from the Cuddler tools at runtime.",
+  "tagline": "Make AI videos and images from Claude Code, Codex or Cursor, with the Cuddler membership you already have.",
+  "beta": "**Beta.** The skills are new and still changing. Tell us what breaks in the issues.",
+  "mcp": {
+    "url": "https://mcp.cuddler.ai/mcp"
+  },
+  "install": {
+    "claude_code": [
+      "claude plugin install cuddler --marketplace CuddlerAI/skills"
+    ],
+    "codex": [
+      "codex plugin marketplace add CuddlerAI/skills",
+      "codex plugin add cuddler@cuddler",
+      "codex mcp login cuddler"
+    ],
+    "other": [
+      "npx skills add CuddlerAI/skills"
+    ]
+  },
+  "credits": "Renders spend credits from your own Cuddler account, at the same price as in the Cuddler app. Your agent shows the price first and waits for your OK.",
+  "limits": "A render above 200 credits also needs one click on an approval link in your browser, and each connected app can spend up to 3,000 credits a day.",
+  "plans": "Videos need a Cuddler plan that includes video. The setup skill tells you what your account can make.",
+  "links": {
+    "signup": {
+      "label": "Cuddler",
+      "url": "https://cuddler.ai/?utm_source=github&utm_medium=readme&utm_campaign=agent_skills"
+    },
+    "membership": {
+      "label": "Plans",
+      "url": "https://cuddler.ai/membership?utm_source=github&utm_medium=readme&utm_campaign=agent_skills"
+    },
+    "mcp": {
+      "label": "Cuddler in ChatGPT, Claude and other assistants",
+      "url": "https://cuddler.ai/mcp?utm_source=github&utm_medium=readme&utm_campaign=agent_skills"
+    }
+  }
+}

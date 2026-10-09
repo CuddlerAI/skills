@@ -1,0 +1,22 @@
+{
+  "name": "cuddler",
+  "displayName": "Cuddler",
+  "version": "0.3.0",
+  "description": "Make AI videos and images from your coding agent with your Cuddler membership: connect and sign in, quoted renders, character clips and local clip review.",
+  "author": {
+    "name": "Cuddler"
+  },
+  "homepage": "https://cuddler.ai/mcp",
+  "repository": "https://github.com/CuddlerAI/skills",
+  "license": "MIT",
+  "keywords": [
+    "cuddler",
+    "video-generation",
+    "image-generation",
+    "ai-video",
+    "character-video",
+    "mcp",
+    "agent-skills"
+  ],
+  "skills": "./skills/"
+}

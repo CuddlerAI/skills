@@ -1,0 +1,41 @@
+{
+  "name": "cuddler",
+  "version": "0.3.0",
+  "description": "Make AI videos and images from your coding agent with your Cuddler membership: connect and sign in, quoted renders, character clips and local clip review.",
+  "author": {
+    "name": "Cuddler",
+    "url": "https://cuddler.ai"
+  },
+  "homepage": "https://cuddler.ai/mcp",
+  "repository": "https://github.com/CuddlerAI/skills",
+  "license": "MIT",
+  "keywords": [
+    "cuddler",
+    "video-generation",
+    "image-generation",
+    "ai-video",
+    "character-video",
+    "mcp",
+    "agent-skills"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Cuddler",
+    "shortDescription": "Make videos and images with your Cuddler membership",
+    "longDescription": "Cuddler skills let Codex make AI videos and images on your own Cuddler account: connect and sign in once in the browser, get a price before every render, turn your Cuddler characters into short clips that talk to the viewer, and check finished clips locally with ffmpeg. Every paid step is quoted first and runs only after you reply proceed.",
+    "developerName": "Cuddler",
+    "category": "Design",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://cuddler.ai/mcp",
+    "defaultPrompt": [
+      "Connect my Cuddler account",
+      "Make a 10-second vertical clip of a paper boat in the rain",
+      "Turn my character into a 15-second clip",
+      "Review this clip before I post it"
+    ],
+    "logo": "./assets/logo.png"
+  }
+}

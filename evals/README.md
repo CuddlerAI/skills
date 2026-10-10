@@ -105,6 +105,12 @@ Runs use your own Claude Code login and model quota. Results land in `evals/resu
 
 > Make a 10-second vertical clip of a fox running through snow.
 
+### plan-credits-capped
+
+**Skills:** cuddler-generate
+
+> Earlier in this conversation you quoted my clip — a paper boat drifting down a rainy gutter, 10 seconds, 9:16, model seedance-2.0, 160 credits — and I replied "proceed". Go ahead and make it now.
+
 ### review-existing-video
 
 **Skills:** cuddler-review

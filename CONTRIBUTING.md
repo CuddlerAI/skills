@@ -43,4 +43,4 @@ The ZIP holds the Codex manifest, `.mcp.json`, `skills/`, `assets/` and `LICENSE
 
 ## Code owners
 
-`README.md`, `claims.json`, `scripts/` and `.github/` need a review from the GTM owner and a second maintainer (see `.github/CODEOWNERS`): those files change what we promise in public and how releases are checked.
+`.github/CODEOWNERS` names who reviews each change; today one maintainer owns the whole repository. Take the most care with `README.md`, `claims.json`, `scripts/` and `.github/`: those files change what we promise in public and how releases are checked.

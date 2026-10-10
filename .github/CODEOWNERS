@@ -1,6 +1,3 @@
-# Every change needs a maintainer. Public claims and the release machinery need the GTM owner and a second maintainer.
+# One maintainer owns and reviews the whole repository, including the public claims (README.md, claims.json)
+# and the release machinery (scripts/, .github/).
 *              @rongcheng2017
-/README.md     @rongcheng2017 @oratis
-/claims.json   @rongcheng2017 @oratis
-/scripts/      @rongcheng2017 @oratis
-/.github/      @rongcheng2017 @oratis

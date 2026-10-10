@@ -26,3 +26,4 @@ First public version. The numbering continues from the internal 0.2.0 skills, wh
 - Eval cases in the `claude plugin eval` format, with mocked Cuddler tools so a run spends nothing.
 - Validator checks: no command-line instructions, no hard-coded prices, only real Cuddler tool names, README in sync with `claims.json`, `.mcp.json` in sync with `claims.json`, no internal addresses.
 - MIT license (trademarks excluded).
+- Codex notes in `INSTALL.md` from the first real run: sign-in timing, the Spend credits box, and per-tool approvals for `codex exec`.

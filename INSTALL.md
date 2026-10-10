@@ -29,7 +29,18 @@ codex plugin add cuddler@cuddler
 codex mcp login cuddler
 ```
 
-The last command opens the Cuddler sign-in page in your browser. Then start a new Codex session.
+The last command opens the Cuddler sign-in page in your browser. Finish it within a few minutes; `codex mcp login` stops waiting after that and you run it again. Tick **Spend credits** if you want images and videos. The page may say Cuddler hasn't reviewed the app: that's expected for Codex, so continue if you started the connection. Then start a new Codex session.
+
+**Scripts and `codex exec`.** Non-interactive Codex never asks for approval, so it refuses the tools that spend credits. Allow them for that run only:
+
+```bash
+codex exec \
+  -c 'plugins.cuddler@cuddler.mcp_servers.cuddler.tools.create_image.approval_mode="approve"' \
+  -c 'plugins.cuddler@cuddler.mcp_servers.cuddler.tools.create_video.approval_mode="approve"' \
+  "Make a square image of a paper boat on a rain puddle at dusk"
+```
+
+The skills still quote every render first and wait for you: answer with `codex exec resume --last "proceed"` and the same `-c` flags.
 
 Update: `codex plugin marketplace upgrade`. Remove: `codex plugin remove cuddler@cuddler`.
 

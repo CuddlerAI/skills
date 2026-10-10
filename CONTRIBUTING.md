@@ -31,6 +31,16 @@ Node.js 20 or newer; no other dependencies.
 
 Bump `VERSION`, the three plugin manifests, the marketplace entry and `CHANGELOG.md` together (CI checks they match), merge, then tag `v<version>` on `main`.
 
+## The OpenAI plugin directory
+
+ChatGPT and Codex share one plugin directory, and its listing is built from this repository:
+
+```bash
+node scripts/pack-openai.mjs   # dist/cuddler-<version>-openai.zip
+```
+
+The ZIP holds the Codex manifest, `.mcp.json`, `skills/`, `assets/` and `LICENSE`, and the script refuses to build while `validate.mjs` reports an error; the validator holds the Codex manifest to the directory's listing rules. The Cuddler team uploads it on the OpenAI Platform. Changes to skills, the listing text or the icons need a new upload; changes to the Cuddler MCP tools don't.
+
 ## Code owners
 
 `README.md`, `claims.json`, `scripts/` and `.github/` need a review from the GTM owner and a second maintainer (see `.github/CODEOWNERS`): those files change what we promise in public and how releases are checked.

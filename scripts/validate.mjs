@@ -115,6 +115,14 @@ export const CODEX_LISTING = Object.freeze({
   iconBytesMax: 5 * 1024 * 1024,
 });
 const LISTING_URLS = ["websiteURL", "supportURL", "privacyPolicyURL", "termsOfServiceURL"];
+/** The only categories the directory accepts. */
+export const LISTING_CATEGORIES = Object.freeze([
+  "Productivity", "Creativity", "Developer Tools", "Business & Operations", "Data & Analytics", "Communication",
+  "Education & Research", "Security", "Finance", "Healthcare", "Travel", "Entertainment", "Other",
+]);
+/** Package limits the directory checks on upload. */
+const PACKAGE_DESCRIPTION_MAX = 1024;
+const SKILL_IDENTITY_MAX = 64; // "plugin-name:skill-name"
 /** Directory listings may not advertise prices, subscriptions, upgrades or promotions. */
 const PROMOTION = /free trial|discount|promo(?:tion)?s?\b|subscri\w*|membership|upgrade|\$\s?\d|\b\d[\d,.]*\s?(?:credits?|CR)\b/i;
 
@@ -531,7 +539,16 @@ export function validate(root) {
       const iface = codexPlugin.interface ?? {};
       const openai = codexPlugin.extensions?.["com.openai"] ?? {};
       if (!codexPlugin.author?.name) err(rel, "author.name is required in the Codex format");
+      if (typeof codexPlugin.description !== "string" || !codexPlugin.description.trim()) err(rel, "description is required in the Codex format");
+      else if (codexPlugin.description.length > PACKAGE_DESCRIPTION_MAX) err(rel, `description is ${codexPlugin.description.length} characters; the limit is ${PACKAGE_DESCRIPTION_MAX}`);
+      for (const [key, url] of [["homepage", codexPlugin.homepage], ["author.url", codexPlugin.author?.url]]) {
+        if (url !== undefined && !/^https:\/\/[^/@\s]+(?:\/\S*)?$/.test(String(url))) err(rel, `${key} must be an https URL without credentials`);
+      }
       if (codexPlugin.mcpServers !== "./.mcp.json") err(rel, 'mcpServers must be "./.mcp.json"');
+      for (const skill of skills) {
+        const identity = `${codexPlugin.name}:${skill}`;
+        if (identity.length > SKILL_IDENTITY_MAX) err(rel, `"${identity}" is ${identity.length} characters; plugin and skill name together may have ${SKILL_IDENTITY_MAX}`);
+      }
       for (const key of ["apps", "hooks"]) {
         if (key in codexPlugin || key in openai) err(rel, `"${key}" can't be in a package for the OpenAI plugin directory`);
       }
@@ -548,6 +565,10 @@ export function validate(root) {
       text("longDescription", CODEX_LISTING.longDescriptionMax);
       text("developerName", CODEX_LISTING.developerNameMax);
       text("category", CODEX_LISTING.categoryMax);
+      if (typeof iface.category === "string" && iface.category.trim() && !LISTING_CATEGORIES.includes(iface.category)) {
+        err(rel, `interface.category "${iface.category}" is not a directory category (${LISTING_CATEGORIES.join(", ")})`);
+      }
+      if (typeof iface.shortDescription === "string" && /[\r\n]/.test(iface.shortDescription)) err(rel, "interface.shortDescription must fit on one line");
       const capabilities = iface.capabilities;
       if (!Array.isArray(capabilities)) {
         err(rel, "interface.capabilities must be a list ([] when there are none)");
@@ -573,8 +594,8 @@ export function validate(root) {
         if (prompts.length > CODEX_LISTING.promptsMax) err(rel, `interface.defaultPrompt has ${prompts.length} prompts; the limit is ${CODEX_LISTING.promptsMax}`);
         if (new Set(prompts).size !== prompts.length) err(rel, "interface.defaultPrompt repeats a prompt");
         for (const prompt of prompts) {
-          if (typeof prompt !== "string" || !prompt.trim() || prompt.length > CODEX_LISTING.promptMax) {
-            err(rel, `interface.defaultPrompt: "${prompt}" must be 1–${CODEX_LISTING.promptMax} characters`);
+          if (typeof prompt !== "string" || !prompt.trim() || prompt.length > CODEX_LISTING.promptMax || /[\r\n]/.test(prompt)) {
+            err(rel, `interface.defaultPrompt: "${prompt}" must be one line of 1–${CODEX_LISTING.promptMax} characters`);
           } else if (prompt.includes("@")) {
             err(rel, `interface.defaultPrompt: "${prompt}" may not @-mention anything`);
           }

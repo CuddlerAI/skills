@@ -9,24 +9,54 @@ import { tmpdir } from "node:os";
 import { dirname, join, sep } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
+import { inflateRawSync } from "node:zlib";
 import { render, syncReadme } from "./claims.mjs";
+import { crc32, packOpenai, packageFiles } from "./pack-openai.mjs";
 import { githubSlug, parseFrontmatter, validate } from "./validate.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SKILLS = ["cuddler-setup", "cuddler-generate", "cuddler-character-clip", "cuddler-review"];
 
+function copyRepo(dir) {
+  cpSync(ROOT, dir, {
+    recursive: true,
+    filter: (src) => !src.split(sep).some((part) => [".git", "node_modules", "results", "dist"].includes(part) || part.endsWith(".review")),
+  });
+}
+
 function withCopy(mutate) {
   const dir = mkdtempSync(join(tmpdir(), "cuddler-skills-test-"));
   try {
-    cpSync(ROOT, dir, {
-      recursive: true,
-      filter: (src) => !src.split(sep).some((part) => part === ".git" || part === "node_modules" || part === "results" || part.endsWith(".review")),
-    });
+    copyRepo(dir);
     mutate(dir);
     return validate(dir).errors.map((e) => `${e.file}: ${e.message}`);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+}
+
+/** The entries of a ZIP, read back through its central directory. */
+function readZip(bytes) {
+  const end = bytes.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
+  const count = bytes.readUInt16LE(end + 10);
+  let at = bytes.readUInt32LE(end + 16);
+  const entries = [];
+  for (let i = 0; i < count; i++) {
+    const method = bytes.readUInt16LE(at + 10);
+    const size = bytes.readUInt32LE(at + 20);
+    const nameLength = bytes.readUInt16LE(at + 28);
+    const offset = bytes.readUInt32LE(at + 42);
+    const start = offset + 30 + bytes.readUInt16LE(offset + 26) + bytes.readUInt16LE(offset + 28);
+    const raw = bytes.subarray(start, start + size);
+    entries.push({
+      name: bytes.toString("utf8", at + 46, at + 46 + nameLength),
+      crc: bytes.readUInt32LE(at + 16),
+      mode: bytes.readUInt32LE(at + 38) >>> 16,
+      data: method === 8 ? inflateRawSync(raw) : Buffer.from(raw),
+    });
+    at += 46 + nameLength + bytes.readUInt16LE(at + 30) + bytes.readUInt16LE(at + 32);
+  }
+  return entries;
 }
 
 const edit = (dir, rel, fn) => writeFileSync(join(dir, rel), fn(readFileSync(join(dir, rel), "utf8")));
@@ -138,6 +168,8 @@ test("the Codex manifest must fit the OpenAI plugin directory listing rules", ()
   expectError(codex(iface({ privacyPolicyURL: "http://cuddler.ai/privacy" })), /interface\.privacyPolicyURL must be an https URL/);
   expectError(codex(iface({ longDescription: "Upgrade your membership for more videos." })), /may not advertise prices, subscriptions, upgrades or promotions/);
   expectError(codex(iface({ composerIcon: undefined })), /interface\.composerIcon is required/);
+  expectError(codex(iface({ category: "Design" })), /interface\.category "Design" is not a directory category/);
+  expectError(codex((j) => ({ ...j, description: "x".repeat(1100) })), /description is 1100 characters; the limit is 1024/);
   expectError(codex((j) => ({ ...j, mcpServers: undefined })), /mcpServers must be "\.\/\.mcp\.json"/);
   expectError(codex((j) => ({ ...j, apps: "./.app.json" })), /"apps" can't be in a package for the OpenAI plugin directory/);
   expectError(
@@ -152,6 +184,45 @@ test("the Codex marketplace must keep the plugin id and sign in on install", () 
   expectError(market((j) => ({ ...j, plugins: [{ ...j.plugins[0], policy: { installation: "AVAILABLE", authentication: "ON_USE" } }] })), /authentication must be "ON_INSTALL"/);
   expectError(market((j) => ({ ...j, plugins: [{ ...j.plugins[0], source: { source: "local", path: "./plugins/cuddler" } }] })), /must be the repository root/);
   expectError(withCopy((d) => rmSync(join(d, ".agents/plugins/marketplace.json"))), /\.agents\/plugins\/marketplace\.json: required file is missing/);
+});
+
+test("pack-openai builds the directory package: plugin files only, reproducible, intact", () => {
+  const dir = mkdtempSync(join(tmpdir(), "cuddler-pack-test-"));
+  try {
+    const first = packOpenai(ROOT, join(dir, "a.zip"));
+    const second = packOpenai(ROOT, join(dir, "b.zip"));
+    assert.equal(first.sha256, second.sha256, "two builds of the same files must be byte-identical");
+    const entries = readZip(readFileSync(first.out));
+    const names = entries.map((e) => e.name);
+    assert.deepEqual(names, packageFiles(ROOT));
+    for (const required of [".codex-plugin/plugin.json", ".mcp.json", "LICENSE", "assets/logo.png", ...SKILLS.map((s) => `skills/${s}/SKILL.md`)]) {
+      assert.ok(names.includes(required), `${required} is missing from the package`);
+    }
+    for (const name of names) assert.doesNotMatch(name, /^(?:\.claude-plugin|\.cursor-plugin|\.agents|\.github|evals|scripts)\/|^README\.md$/);
+    for (const entry of entries) {
+      const source = readFileSync(join(ROOT, entry.name));
+      assert.ok(entry.data.equals(source), `${entry.name} differs after unzipping`);
+      assert.equal(entry.crc, crc32(source), `${entry.name} has a wrong CRC`);
+    }
+    assert.equal(entries.find((e) => e.name.endsWith("/contact-sheet.sh"))?.mode, 0o100755);
+    if (spawnSync("unzip", ["-v"], { stdio: "ignore" }).status === 0) {
+      const check = spawnSync("unzip", ["-tq", first.out], { encoding: "utf8" });
+      assert.equal(check.status, 0, check.stdout + check.stderr);
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("pack-openai refuses a repository that fails validation", () => {
+  const dir = mkdtempSync(join(tmpdir(), "cuddler-pack-test-"));
+  try {
+    copyRepo(dir);
+    editJson(dir, ".codex-plugin/plugin.json", (j) => ({ ...j, interface: { ...j.interface, category: "Design" } }));
+    assert.throws(() => packOpenai(dir, join(dir, "dist", "x.zip")), /validate\.mjs reports \d+ error\(s\)/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("orphan references, broken links and ../ paths fail", () => {

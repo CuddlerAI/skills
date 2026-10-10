@@ -30,3 +30,4 @@ First public version. The numbering continues from the internal 0.2.0 skills, wh
 - The Codex app adds the marketplace from **Plugins → Add → Add a marketplace**; no terminal or restart needed.
 - `.agents/plugins/marketplace.json`, the Codex marketplace file: the marketplace shows as "Cuddler" and signing in is part of installing.
 - The Codex manifest carries the listing the OpenAI plugin directory asks for (support, privacy and terms links, at most three starter prompts, a composer icon, `cuddler-setup` as the onboarding skill), and the validator holds it to the directory's limits.
+- `scripts/pack-openai.mjs` builds the package for the OpenAI plugin directory from this repository: the plugin files only, the same bytes for the same files, and no build while the validator reports an error.

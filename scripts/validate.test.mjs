@@ -155,6 +155,8 @@ test("version drift fails", () => {
 test("manifests must stay MIT, on this repository, without strict:false", () => {
   expectError(withCopy((d) => editJson(d, ".codex-plugin/plugin.json", (j) => ({ ...j, license: "Proprietary" }))), /license must be "MIT"/);
   expectError(withCopy((d) => editJson(d, ".cursor-plugin/plugin.json", (j) => ({ ...j, repository: "https://github.com/CuddlerAI/cuddler-skills" }))), /repository must be/);
+  expectError(withCopy((d) => editJson(d, ".cursor-plugin/plugin.json", (j) => ({ ...j, mcpServers: undefined }))), /cursor-plugin\/plugin\.json: mcpServers must be "\.\/\.mcp\.json"/);
+  expectError(withCopy((d) => editJson(d, ".cursor-plugin/plugin.json", (j) => ({ ...j, logo: "./assets/missing.png" }))), /logo \.\/assets\/missing\.png does not exist/);
   expectError(withCopy((d) => edit(d, ".claude-plugin/marketplace.json", (t) => t.replace('"source": "./",', '"source": "./",\n      "strict": false,'))), /strict must not be false/);
 });
 

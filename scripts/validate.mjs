@@ -573,7 +573,7 @@ export function validate(root) {
     compareSets(err, rel, "plugins[0].skills", names, skills);
   });
 
-  group("plugin manifests point at skills/, share one name, MIT and this repository", () => {
+  group("plugin manifests point at skills/ and .mcp.json, share one name, MIT and this repository", () => {
     const name = marketplace?.plugins?.[0]?.name;
     for (const [rel, manifest] of [
       [".claude-plugin/plugin.json", claudePlugin],
@@ -585,6 +585,10 @@ export function validate(root) {
       else if (name && manifest.name !== name) err(rel, `name "${manifest.name}" differs from the marketplace plugin "${name}"`);
       if (manifest.license !== "MIT") err(rel, `license must be "MIT", found "${manifest.license ?? "missing"}"`);
       if (manifest.repository !== PUBLIC_REPOSITORY) err(rel, `repository must be ${PUBLIC_REPOSITORY}`);
+      // Claude Code reads .mcp.json from the plugin root on its own; Codex and Cursor are told where it is.
+      if (rel !== ".claude-plugin/plugin.json" && manifest.mcpServers !== "./.mcp.json") {
+        err(rel, 'mcpServers must be "./.mcp.json", so the plugin brings the Cuddler MCP server along');
+      }
       const declared = manifest.skills;
       if (declared === undefined) {
         if (rel !== ".claude-plugin/plugin.json") err(rel, 'must declare "skills": "./skills/"');
@@ -616,7 +620,6 @@ export function validate(root) {
       for (const [key, url] of [["homepage", codexPlugin.homepage], ["author.url", codexPlugin.author?.url]]) {
         if (url !== undefined && !/^https:\/\/[^/@\s]+(?:\/\S*)?$/.test(String(url))) err(rel, `${key} must be an https URL without credentials`);
       }
-      if (codexPlugin.mcpServers !== "./.mcp.json") err(rel, 'mcpServers must be "./.mcp.json"');
       for (const skill of skills) {
         const identity = `${codexPlugin.name}:${skill}`;
         if (identity.length > SKILL_IDENTITY_MAX) err(rel, `"${identity}" is ${identity.length} characters; plugin and skill name together may have ${SKILL_IDENTITY_MAX}`);

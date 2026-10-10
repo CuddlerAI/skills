@@ -33,7 +33,7 @@ Look for the Cuddler tools (`whoami`, `list_models`, `quote_video` …) in your 
 | Agent | Install |
 |---|---|
 | Claude Code | `claude plugin install cuddler --marketplace CuddlerAI/skills` |
-| Codex app | In a terminal, `codex plugin marketplace add CuddlerAI/skills`; quit and reopen the app; Plugins → cuddler → install Cuddler |
+| Codex app | Plugins → Add → Add a marketplace → Source `CuddlerAI/skills` → Add marketplace; then install Cuddler from the Personal tab |
 | Codex CLI | `codex plugin marketplace add CuddlerAI/skills`, then `codex plugin add cuddler@cuddler` (or `/plugins` inside Codex) |
 | Gemini CLI | `gemini mcp add --transport http cuddler https://mcp.cuddler.ai/mcp` |
 | Cursor and others | Add the MCP server `https://mcp.cuddler.ai/mcp` (Streamable HTTP); https://cuddler.ai/mcp has one-click links |

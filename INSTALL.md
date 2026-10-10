@@ -23,17 +23,11 @@ Update: `/plugin marketplace update cuddler`. Remove: `/plugin uninstall cuddler
 
 ## Codex app
 
-The Codex app (inside the ChatGPT desktop app) and the Codex CLI share their plugin settings, so the marketplace is added once from a terminal.
+Cuddler isn't in the public plugin directory yet, so add its marketplace first. The Codex app (inside the ChatGPT desktop app) and the Codex CLI share it, so this is done once.
 
-1. Add the Cuddler marketplace:
-
-   ```bash
-   codex plugin marketplace add CuddlerAI/skills
-   ```
-
-   No `codex` command yet? Install it with `npm install -g @openai/codex`.
-2. Quit the app completely and open it again, so it reads the new marketplace.
-3. Open **Plugins**, choose the **cuddler** marketplace and install **Cuddler**. A Cuddler sign-in page opens in your browser: sign in, tick **Spend credits** if you want images and videos, and allow it within five minutes. The page may say Cuddler hasn't reviewed the app; that's expected for Codex. Missed it? Settings → MCP servers → Cuddler → Authenticate.
+1. Open **Plugins**, then **Add → Add a marketplace**. Enter `CuddlerAI/skills` as the **Source**, leave **Git ref** and **Sparse paths** empty, and select **Add marketplace**. From a terminal, `codex plugin marketplace add CuddlerAI/skills` does the same.
+2. Find **Cuddler** on the **Personal** tab, where added marketplaces show, and install it. The four Cuddler skills come with it; there is nothing to add under **Skills**.
+3. Installing opens a Cuddler sign-in page in your browser: sign in, tick **Spend credits** if you want images and videos, and allow it within five minutes. The page may say Cuddler hasn't reviewed the app; that's expected for Codex. Missed it? Settings → MCP servers → Cuddler → Authenticate.
 4. Start a new chat and mention the plugin: `@Cuddler make a 10-second vertical clip of a paper boat in the rain`.
 5. Keep the permission mode on **Ask for approval**. Before a paid render Codex asks to allow `create_image` or `create_video`: choose **Allow**, or **Always allow** to stop that question for this tool. Either way the skills still show the price first and wait for your OK. With **Full access**, Codex doesn't ask at all.
 
@@ -65,7 +59,7 @@ codex exec \
 
 The skills still quote every render first and wait for you: answer with `codex exec resume --last "proceed"` and the same `-c` flags. Don't use `--dangerously-bypass-approvals-and-sandbox` for this; it removes every other safeguard too.
 
-Update (app and CLI): `codex plugin marketplace upgrade`. Remove: `codex plugin remove cuddler@cuddler`.
+Update (app and CLI): **Upgrade marketplace** next to Cuddler in the app's marketplace list, or `codex plugin marketplace upgrade`. Remove: `codex plugin remove cuddler@cuddler`.
 
 ## Gemini CLI
 

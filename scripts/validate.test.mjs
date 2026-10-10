@@ -128,6 +128,32 @@ test("manifests must stay MIT, on this repository, without strict:false", () => 
   expectError(withCopy((d) => edit(d, ".claude-plugin/marketplace.json", (t) => t.replace('"source": "./",', '"source": "./",\n      "strict": false,'))), /strict must not be false/);
 });
 
+test("the Codex manifest must fit the OpenAI plugin directory listing rules", () => {
+  const codex = (fn) => withCopy((d) => editJson(d, ".codex-plugin/plugin.json", fn));
+  const iface = (patch) => (j) => ({ ...j, interface: { ...j.interface, ...patch } });
+  expectError(codex(iface({ shortDescription: "Make videos and images with your Cuddler account" })), /interface\.shortDescription is \d+ characters; the limit is 30/);
+  expectError(codex(iface({ defaultPrompt: ["a", "b", "c", "d"] })), /interface\.defaultPrompt has 4 prompts; the limit is 3/);
+  expectError(codex(iface({ defaultPrompt: ["@Cuddler make a clip"] })), /may not @-mention/);
+  expectError(codex(iface({ supportURL: undefined })), /interface\.supportURL is required/);
+  expectError(codex(iface({ privacyPolicyURL: "http://cuddler.ai/privacy" })), /interface\.privacyPolicyURL must be an https URL/);
+  expectError(codex(iface({ longDescription: "Upgrade your membership for more videos." })), /may not advertise prices, subscriptions, upgrades or promotions/);
+  expectError(codex(iface({ composerIcon: undefined })), /interface\.composerIcon is required/);
+  expectError(codex((j) => ({ ...j, mcpServers: undefined })), /mcpServers must be "\.\/\.mcp\.json"/);
+  expectError(codex((j) => ({ ...j, apps: "./.app.json" })), /"apps" can't be in a package for the OpenAI plugin directory/);
+  expectError(
+    codex((j) => ({ ...j, extensions: { "com.openai": { onboardingSkill: "./skills/cuddler-onboarding/SKILL.md" } } })),
+    /onboardingSkill .* must be \.\/skills\/<skill>\/SKILL\.md of a skill/,
+  );
+});
+
+test("the Codex marketplace must keep the plugin id and sign in on install", () => {
+  const market = (fn) => withCopy((d) => editJson(d, ".agents/plugins/marketplace.json", fn));
+  expectError(market((j) => ({ ...j, name: "cuddler-skills" })), /differs from \.claude-plugin\/marketplace\.json "cuddler"; Codex would install the plugin under another id/);
+  expectError(market((j) => ({ ...j, plugins: [{ ...j.plugins[0], policy: { installation: "AVAILABLE", authentication: "ON_USE" } }] })), /authentication must be "ON_INSTALL"/);
+  expectError(market((j) => ({ ...j, plugins: [{ ...j.plugins[0], source: { source: "local", path: "./plugins/cuddler" } }] })), /must be the repository root/);
+  expectError(withCopy((d) => rmSync(join(d, ".agents/plugins/marketplace.json"))), /\.agents\/plugins\/marketplace\.json: required file is missing/);
+});
+
 test("orphan references, broken links and ../ paths fail", () => {
   expectError(withCopy((d) => writeFileSync(join(d, "skills/cuddler-generate/references/unused.md"), "# unused\n")), /orphan: .*references\/unused\.md/);
   expectError(withCopy((d) => edit(d, "skills/cuddler-generate/SKILL.md", (t) => t.replaceAll("(references/prompt-craft.md)", "(references/prompt-kraft.md)"))), /does not resolve|does not exist/);

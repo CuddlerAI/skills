@@ -7,8 +7,9 @@
 // SKILL.md ≤ 300 lines, identical "Hard rules" blocks, references and scripts resolve with no orphans and no ../ paths,
 // skills name only real Cuddler MCP tools, no command-line instructions, no third-party keys and no fixed prices in public
 // text, every skill listed in the marketplace, plugin manifests, README and INSTALL (and nothing extra), VERSION in sync with
-// every manifest and CHANGELOG, .mcp.json and the README in sync with claims.json, an eval case for every skill, actions
-// pinned to a commit, and safety lints (no direct API calls, no admin routes or internal addresses, no secrets or emails).
+// every manifest and CHANGELOG, .mcp.json and the README in sync with claims.json, the Codex manifest and marketplace within
+// the OpenAI plugin directory's listing rules, an eval case for every skill, actions pinned to a commit, and safety lints
+// (no direct API calls, no admin routes or internal addresses, no secrets or emails).
 //
 // Exit 0 when every check passes, 1 otherwise. On GitHub Actions each failure is also an ::error annotation.
 
@@ -78,6 +79,7 @@ const REQUIRED_FILES = [
   ".claude-plugin/plugin.json",
   ".codex-plugin/plugin.json",
   ".cursor-plugin/plugin.json",
+  ".agents/plugins/marketplace.json",
   "evals/README.md",
   ".github/workflows/validate.yml",
   ".github/CODEOWNERS",
@@ -96,6 +98,25 @@ const CLI_COMMAND = /\bcuddler (?:video|image|login|logout|whoami|models|charact
 const THIRD_PARTY_KEYS = /\bbyok\b|higgsfield/i;
 const FIXED_PRICE = /\b\d[\d,.]*\s?(?:credits?|CR)\b|\$\s?\d/;
 const TOOLISH = /^(?:whoami|(?:list|get|quote|create|retry|start|finish)_[a-z_]+)$/;
+/** Listing limits of the OpenAI plugin directory (shared by ChatGPT and Codex) for a Codex-format manifest. */
+export const CODEX_LISTING = Object.freeze({
+  displayNameMax: 30,
+  shortDescriptionMax: 30,
+  longDescriptionMax: 4000,
+  developerNameMax: 80,
+  categoryMax: 80,
+  capabilitiesMax: 20,
+  capabilityMax: 120,
+  promptsMax: 3,
+  promptMax: 128,
+  urlMax: 1024,
+  iconMinPx: 48,
+  iconMaxPx: 4096,
+  iconBytesMax: 5 * 1024 * 1024,
+});
+const LISTING_URLS = ["websiteURL", "supportURL", "privacyPolicyURL", "termsOfServiceURL"];
+/** Directory listings may not advertise prices, subscriptions, upgrades or promotions. */
+const PROMOTION = /free trial|discount|promo(?:tion)?s?\b|subscri\w*|membership|upgrade|\$\s?\d|\b\d[\d,.]*\s?(?:credits?|CR)\b/i;
 
 // ── frontmatter ──────────────────────────────────────────────────────────────
 
@@ -242,6 +263,12 @@ function checkLinks(root, rel, text, within, err) {
       if (!slugs.includes(anchor)) err(rel, `link ${target}: no heading with the anchor #${anchor}`);
     }
   }
+}
+
+/** Width and height of a PNG image, or null for any other format. */
+function pngSize(bytes) {
+  if (bytes.length < 24 || bytes.subarray(0, 8).toString("hex") !== "89504e470d0a1a0a") return null;
+  return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
 }
 
 function compareSets(err, file, label, listed, actual) {
@@ -443,6 +470,7 @@ export function validate(root) {
   const claudePlugin = readJson(".claude-plugin/plugin.json");
   const codexPlugin = readJson(".codex-plugin/plugin.json");
   const cursorPlugin = readJson(".cursor-plugin/plugin.json");
+  const agentsMarketplace = readJson(".agents/plugins/marketplace.json");
   const mcpConfig = readJson(".mcp.json");
   const claims = readJson("claims.json");
 
@@ -493,6 +521,119 @@ export function validate(root) {
         for (const value of [manifest[key], iface[key]]) {
           if (typeof value === "string" && value.startsWith("./") && !exists(value.slice(2))) err(rel, `${key} ${value} does not exist`);
         }
+      }
+    }
+  });
+
+  group("the Codex manifest and marketplace meet the OpenAI plugin directory rules", () => {
+    const rel = ".codex-plugin/plugin.json";
+    if (codexPlugin) {
+      const iface = codexPlugin.interface ?? {};
+      const openai = codexPlugin.extensions?.["com.openai"] ?? {};
+      if (!codexPlugin.author?.name) err(rel, "author.name is required in the Codex format");
+      if (codexPlugin.mcpServers !== "./.mcp.json") err(rel, 'mcpServers must be "./.mcp.json"');
+      for (const key of ["apps", "hooks"]) {
+        if (key in codexPlugin || key in openai) err(rel, `"${key}" can't be in a package for the OpenAI plugin directory`);
+      }
+      for (const file of [".app.json", "hooks/hooks.json"]) {
+        if (exists(file)) err(file, "app references and lifecycle hooks can't be in a package for the OpenAI plugin directory");
+      }
+      const text = (key, max) => {
+        const value = iface[key];
+        if (typeof value !== "string" || !value.trim()) err(rel, `interface.${key} is required`);
+        else if (value.length > max) err(rel, `interface.${key} is ${value.length} characters; the limit is ${max}`);
+      };
+      text("displayName", CODEX_LISTING.displayNameMax);
+      text("shortDescription", CODEX_LISTING.shortDescriptionMax);
+      text("longDescription", CODEX_LISTING.longDescriptionMax);
+      text("developerName", CODEX_LISTING.developerNameMax);
+      text("category", CODEX_LISTING.categoryMax);
+      const capabilities = iface.capabilities;
+      if (!Array.isArray(capabilities)) {
+        err(rel, "interface.capabilities must be a list ([] when there are none)");
+      } else {
+        if (capabilities.length > CODEX_LISTING.capabilitiesMax) err(rel, `interface.capabilities has ${capabilities.length} entries; the limit is ${CODEX_LISTING.capabilitiesMax}`);
+        for (const entry of capabilities) {
+          if (typeof entry !== "string" || !entry.trim() || entry.length > CODEX_LISTING.capabilityMax) {
+            err(rel, `interface.capabilities: "${entry}" must be 1–${CODEX_LISTING.capabilityMax} characters`);
+          }
+        }
+      }
+      for (const key of LISTING_URLS) {
+        const url = iface[key];
+        if (typeof url !== "string" || !url) err(rel, `interface.${key} is required for a plugin with an MCP server`);
+        else if (!/^https:\/\/[^/@\s]+(?:\/\S*)?$/.test(url) || url.length > CODEX_LISTING.urlMax) {
+          err(rel, `interface.${key} must be an https URL without credentials, at most ${CODEX_LISTING.urlMax} characters`);
+        }
+      }
+      const prompts = iface.defaultPrompt;
+      if (!Array.isArray(prompts) || !prompts.length) {
+        err(rel, `interface.defaultPrompt must list 1–${CODEX_LISTING.promptsMax} starter prompts`);
+      } else {
+        if (prompts.length > CODEX_LISTING.promptsMax) err(rel, `interface.defaultPrompt has ${prompts.length} prompts; the limit is ${CODEX_LISTING.promptsMax}`);
+        if (new Set(prompts).size !== prompts.length) err(rel, "interface.defaultPrompt repeats a prompt");
+        for (const prompt of prompts) {
+          if (typeof prompt !== "string" || !prompt.trim() || prompt.length > CODEX_LISTING.promptMax) {
+            err(rel, `interface.defaultPrompt: "${prompt}" must be 1–${CODEX_LISTING.promptMax} characters`);
+          } else if (prompt.includes("@")) {
+            err(rel, `interface.defaultPrompt: "${prompt}" may not @-mention anything`);
+          }
+        }
+      }
+      const listing = [
+        ["shortDescription", iface.shortDescription],
+        ["longDescription", iface.longDescription],
+        ...(Array.isArray(prompts) ? prompts.map((prompt) => ["defaultPrompt", prompt]) : []),
+      ];
+      for (const [key, value] of listing) {
+        if (typeof value === "string" && PROMOTION.test(value)) {
+          err(rel, `interface.${key} mentions "${PROMOTION.exec(value)[0]}"; directory listings may not advertise prices, subscriptions, upgrades or promotions`);
+        }
+      }
+      for (const key of ["composerIcon", "logo"]) {
+        const value = iface[key];
+        if (typeof value !== "string" || !value.startsWith("./")) {
+          err(rel, `interface.${key} is required, as a ./ path`);
+          continue;
+        }
+        const file = value.slice(2);
+        if (!exists(file)) continue; // reported with the other manifests
+        if (!/\.(?:png|jpe?g|webp|svg)$/i.test(file)) err(rel, `interface.${key} must be a PNG, JPEG, WebP or SVG file`);
+        const bytes = readFileSync(join(root, file));
+        if (bytes.length > CODEX_LISTING.iconBytesMax) err(rel, `interface.${key} is ${bytes.length} bytes; the limit is 5 MiB`);
+        const size = pngSize(bytes);
+        if (size && (size.width !== size.height || size.width < CODEX_LISTING.iconMinPx || size.width > CODEX_LISTING.iconMaxPx)) {
+          err(rel, `interface.${key} is ${size.width}×${size.height}; icons must be square, ${CODEX_LISTING.iconMinPx}–${CODEX_LISTING.iconMaxPx} px`);
+        }
+      }
+      if ("onboardingSkill" in openai) {
+        const match = /^\.\/skills\/([^/]+)\/SKILL\.md$/.exec(String(openai.onboardingSkill));
+        if (!match || !skills.includes(match[1])) {
+          err(rel, `extensions.com.openai.onboardingSkill "${openai.onboardingSkill}" must be ./skills/<skill>/SKILL.md of a skill in this repository`);
+        }
+      }
+    }
+
+    const marketRel = ".agents/plugins/marketplace.json";
+    if (agentsMarketplace) {
+      // Codex reads this file before .claude-plugin/marketplace.json; a different name would change the plugin id.
+      if (marketplace && agentsMarketplace.name !== marketplace.name) {
+        err(marketRel, `name "${agentsMarketplace.name ?? ""}" differs from .claude-plugin/marketplace.json "${marketplace.name ?? ""}"; Codex would install the plugin under another id`);
+      }
+      if (codexPlugin && agentsMarketplace.interface?.displayName !== codexPlugin.interface?.displayName) {
+        err(marketRel, "interface.displayName must match interface.displayName in .codex-plugin/plugin.json");
+      }
+      const plugins = Array.isArray(agentsMarketplace.plugins) ? agentsMarketplace.plugins : [];
+      if (plugins.length !== 1) err(marketRel, `expected exactly one plugin, found ${plugins.length}`);
+      const entry = plugins[0] ?? {};
+      const pluginName = marketplace?.plugins?.[0]?.name;
+      if (pluginName && entry.name !== pluginName) err(marketRel, `plugins[0].name "${entry.name ?? ""}" differs from the plugin "${pluginName}"`);
+      const path = typeof entry.source === "string" ? entry.source : entry.source?.source === "local" ? entry.source.path : undefined;
+      if (path !== "./") err(marketRel, 'plugins[0].source must be the repository root: {"source": "local", "path": "./"}');
+      if (entry.policy?.installation !== "AVAILABLE") err(marketRel, 'plugins[0].policy.installation must be "AVAILABLE"');
+      if (entry.policy?.authentication !== "ON_INSTALL") err(marketRel, 'plugins[0].policy.authentication must be "ON_INSTALL", so signing in is part of installing');
+      if (codexPlugin && entry.category !== codexPlugin.interface?.category) {
+        err(marketRel, "plugins[0].category must match interface.category in .codex-plugin/plugin.json");
       }
     }
   });

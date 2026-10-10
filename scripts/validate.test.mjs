@@ -246,6 +246,14 @@ test("command-line instructions, third-party keys and fixed prices fail in publi
 test("the README and .mcp.json must follow claims.json", () => {
   expectError(withCopy((d) => editJson(d, "claims.json", (j) => ({ ...j, tagline: "Something else." }))), /block "tagline" differs from claims\.json/);
   expectError(withCopy((d) => editJson(d, ".mcp.json", (j) => ({ mcpServers: { cuddler: { ...j.mcpServers.cuddler, url: "https://example.test/mcp" } } }))), /\.mcp\.json: cuddler\.url/);
+  expectError(
+    withCopy((d) => editJson(d, ".mcp.json", (j) => ({ mcpServers: { cuddler: { ...j.mcpServers.cuddler, http_headers: undefined } } }))),
+    /\.mcp\.json: cuddler\.http_headers must set X-Cuddler-Source: plugin/,
+  );
+  expectError(
+    withCopy((d) => editJson(d, ".mcp.json", (j) => ({ mcpServers: { cuddler: { ...j.mcpServers.cuddler, headers: { ...j.mcpServers.cuddler.headers, "X-Extra": "1" } } } }))),
+    /\.mcp\.json: cuddler\.headers and cuddler\.http_headers must be identical/,
+  );
   expectError(withCopy((d) => editJson(d, "claims.json", (j) => ({ ...j, links: { ...j.links, signup: { label: "Cuddler", url: "https://cuddler.ai/" } } }))), /must carry utm_source=github/);
   expectError(withCopy((d) => appendFileSync(join(d, "README.md"), "\nTry https://cuddler.ai/studio today.\n")), /needs the GitHub attribution/);
   expectError(withCopy((d) => edit(d, "README.md", (t) => t.replace(/<!-- claims:limits -->[\s\S]*?<!-- \/claims:limits -->\n/, ""))), /missing the generated block <!-- claims:limits -->/);

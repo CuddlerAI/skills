@@ -2,7 +2,13 @@
   "mcpServers": {
     "cuddler": {
       "type": "http",
-      "url": "https://mcp.cuddler.ai/mcp"
+      "url": "https://mcp.cuddler.ai/mcp",
+      "headers": {
+        "X-Cuddler-Source": "plugin"
+      },
+      "http_headers": {
+        "X-Cuddler-Source": "plugin"
+      }
     }
   }
 }

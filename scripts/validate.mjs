@@ -7,10 +7,10 @@
 // SKILL.md ≤ 300 lines, identical "Hard rules" blocks, references and scripts resolve with no orphans and no ../ paths,
 // skills name only real Cuddler MCP tools, no command-line instructions, no third-party keys and no fixed prices in public
 // text, every skill listed in the marketplace, plugin manifests, README and INSTALL (and nothing extra), VERSION in sync with
-// every manifest and CHANGELOG, .mcp.json and the README in sync with claims.json, the Codex manifest and marketplace within
-// the OpenAI plugin directory's listing rules, an eval case for every skill, eval mocks that carry the server's tool list and
-// answer in its formats, actions pinned to a commit, and safety lints (no direct API calls, no admin routes or internal
-// addresses, no secrets or emails).
+// every manifest and CHANGELOG, .mcp.json and the README in sync with claims.json, the plugin source header in .mcp.json for
+// every host, the Codex manifest and marketplace within the OpenAI plugin directory's listing rules, an eval case for every
+// skill, eval mocks that carry the server's tool list and answer in its formats, actions pinned to a commit, and safety lints
+// (no direct API calls, no admin routes or internal addresses, no secrets or emails).
 //
 // Exit 0 when every check passes, 1 otherwise. On GitHub Actions each failure is also an ::error annotation.
 
@@ -46,6 +46,11 @@ export const MCP_TOOLS = Object.freeze([
 ]);
 /** The MCP server key in .mcp.json, and the name the plugin's tools carry in eval runs. */
 export const MCP_SERVER = "cuddler";
+/**
+ * The header that tells the Cuddler server a connection came from this plugin. Claude Code and Cursor send
+ * `headers`, Codex sends `http_headers` (it ignores `headers`), so .mcp.json carries both with the same value.
+ */
+export const SOURCE_HEADER = Object.freeze({ name: "X-Cuddler-Source", value: "plugin" });
 const EVAL_TOOL_PREFIX = "mcp__plugin_cuddler_cuddler__";
 /** The tools whose results the server returns inside an <untrusted-user-content> block (they carry text a user wrote). */
 export const FENCED_RESULTS = Object.freeze([
@@ -753,7 +758,7 @@ export function validate(root) {
     }
   });
 
-  group(".mcp.json declares the cuddler server at claims.json mcp.url", () => {
+  group(".mcp.json declares the cuddler server at claims.json mcp.url, with the plugin source header for every host", () => {
     const rel = ".mcp.json";
     if (!mcpConfig) return;
     const servers = mcpConfig.mcpServers && typeof mcpConfig.mcpServers === "object" ? Object.keys(mcpConfig.mcpServers) : [];
@@ -762,6 +767,14 @@ export function validate(root) {
     if (server.type !== "http") err(rel, `${MCP_SERVER}.type must be "http"`);
     const url = claims ? lookup(claims, "mcp.url") : undefined;
     if (url && server.url !== url) err(rel, `${MCP_SERVER}.url is "${server.url ?? "missing"}"; claims.json mcp.url is "${url}"`);
+    for (const key of ["headers", "http_headers"]) {
+      if (server[key]?.[SOURCE_HEADER.name] !== SOURCE_HEADER.value) {
+        err(rel, `${MCP_SERVER}.${key} must set ${SOURCE_HEADER.name}: ${SOURCE_HEADER.value} (Claude Code and Cursor send headers, Codex sends http_headers)`);
+      }
+    }
+    if (JSON.stringify(server.headers ?? {}) !== JSON.stringify(server.http_headers ?? {})) {
+      err(rel, `${MCP_SERVER}.headers and ${MCP_SERVER}.http_headers must be identical, so every host sends the same headers`);
+    }
   });
 
   group("claims.json is complete and the README matches it", () => {

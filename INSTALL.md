@@ -21,17 +21,40 @@ You rarely need to type them: ask for what you want ("make a 10-second clip of �
 
 Update: `/plugin marketplace update cuddler`. Remove: `/plugin uninstall cuddler@cuddler`.
 
-## Codex
+## Codex app
 
-```bash
-codex plugin marketplace add CuddlerAI/skills
-codex plugin add cuddler@cuddler
-codex mcp login cuddler
-```
+The Codex app (inside the ChatGPT desktop app) and the Codex CLI share their plugin settings, so the marketplace is added once from a terminal.
 
-The last command opens the Cuddler sign-in page in your browser. Finish it within a few minutes; `codex mcp login` stops waiting after that and you run it again. Tick **Spend credits** if you want images and videos. The page may say Cuddler hasn't reviewed the app: that's expected for Codex, so continue if you started the connection. Then start a new Codex session.
+1. Add the Cuddler marketplace:
 
-**Scripts and `codex exec`.** Non-interactive Codex never asks for approval, so it refuses the tools that spend credits. Allow them for that run only:
+   ```bash
+   codex plugin marketplace add CuddlerAI/skills
+   ```
+
+   No `codex` command yet? Install it with `npm install -g @openai/codex`.
+2. Quit the app completely and open it again, so it reads the new marketplace.
+3. Open **Plugins**, choose the **cuddler** marketplace and install **Cuddler**. A Cuddler sign-in page opens in your browser: sign in, tick **Spend credits** if you want images and videos, and allow it within five minutes. The page may say Cuddler hasn't reviewed the app; that's expected for Codex. Missed it? Settings → MCP servers → Cuddler → Authenticate.
+4. Start a new chat and mention the plugin: `@Cuddler make a 10-second vertical clip of a paper boat in the rain`.
+5. Keep the permission mode on **Ask for approval**. Before a paid render Codex asks to allow `create_image` or `create_video`: choose **Allow**, or **Always allow** to stop that question for this tool. Either way the skills still show the price first and wait for your OK. With **Full access**, Codex doesn't ask at all.
+
+## Codex CLI
+
+1. Use a CLI at least as new as your Codex app (`codex --version`; update with `codex update` or `npm install -g @openai/codex@latest`). An older CLI fails with "The '…' model is not supported" after the app switched to a newer model.
+2. Install and sign in:
+
+   ```bash
+   codex plugin marketplace add CuddlerAI/skills
+   codex plugin add cuddler@cuddler
+   codex mcp login cuddler
+   ```
+
+   Inside Codex, `/plugins` does the first two steps. The login opens the Cuddler sign-in page: finish it within five minutes, and tick **Spend credits** if you want images and videos. On a remote machine add `--no-browser` and open the printed link yourself. Check the connection with `/mcp`.
+3. Start a new session and ask for what you want, or call a skill directly with `$cuddler-generate`.
+4. Before a paid render Codex asks to allow `create_image` or `create_video`: **Allow**, **Allow for this session** or **Always allow**.
+
+### Scripts and `codex exec`
+
+Non-interactive Codex never asks for approval, so it refuses the tools that spend credits. Allow them for that run only:
 
 ```bash
 codex exec \
@@ -40,9 +63,9 @@ codex exec \
   "Make a square image of a paper boat on a rain puddle at dusk"
 ```
 
-The skills still quote every render first and wait for you: answer with `codex exec resume --last "proceed"` and the same `-c` flags.
+The skills still quote every render first and wait for you: answer with `codex exec resume --last "proceed"` and the same `-c` flags. Don't use `--dangerously-bypass-approvals-and-sandbox` for this; it removes every other safeguard too.
 
-Update: `codex plugin marketplace upgrade`. Remove: `codex plugin remove cuddler@cuddler`.
+Update (app and CLI): `codex plugin marketplace upgrade`. Remove: `codex plugin remove cuddler@cuddler`.
 
 ## Gemini CLI
 

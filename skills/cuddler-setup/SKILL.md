@@ -33,7 +33,8 @@ Look for the Cuddler tools (`whoami`, `list_models`, `quote_video` …) in your 
 | Agent | Install |
 |---|---|
 | Claude Code | `claude plugin install cuddler --marketplace CuddlerAI/skills` |
-| Codex | `codex plugin marketplace add CuddlerAI/skills`, then `codex plugin add cuddler@cuddler` |
+| Codex app | In a terminal, `codex plugin marketplace add CuddlerAI/skills`; quit and reopen the app; Plugins → cuddler → install Cuddler |
+| Codex CLI | `codex plugin marketplace add CuddlerAI/skills`, then `codex plugin add cuddler@cuddler` (or `/plugins` inside Codex) |
 | Gemini CLI | `gemini mcp add --transport http cuddler https://mcp.cuddler.ai/mcp` |
 | Cursor and others | Add the MCP server `https://mcp.cuddler.ai/mcp` (Streamable HTTP); https://cuddler.ai/mcp has one-click links |
 
@@ -44,7 +45,8 @@ You may run an install command for the user when they ask you to; never edit the
 | Agent | Sign in |
 |---|---|
 | Claude Code | `/mcp` → pick the Cuddler server → Authenticate (or `claude mcp login cuddler` for a server added by hand) |
-| Codex | `codex mcp login cuddler` |
+| Codex app | Installing the plugin opens the sign-in; if it was missed, Settings → MCP servers → Cuddler → Authenticate |
+| Codex CLI | `codex mcp login cuddler` (within five minutes; `--no-browser` on a remote machine), then check with `/mcp` |
 | Gemini CLI | `/mcp auth cuddler` |
 | Cursor | The MCP settings page → Connect |
 
@@ -85,4 +87,7 @@ Starter prompts to offer: "Make a 10-second vertical clip of …" · "Turn my ch
 | "Spending credits was not allowed" | Connect again and allow spending credits |
 | A tool says the feature isn't open | The account's plan doesn't include it yet |
 | The sign-in page shows another account | Sign out of cuddler.ai in that browser, then sign in again |
+| Codex asks to allow `create_image` or `create_video` | That is Codex's own approval, on top of the price gate: Allow, or Always allow for that tool |
+| Codex refuses a paid tool in `codex exec` ("approval policy is never") | Non-interactive Codex never asks; allow the tool for that run, as the install guide shows |
+| Codex says the model is not supported | The Codex CLI is older than the Codex app; update the CLI |
 | Disconnect this agent | cuddler.ai → Settings → Developer API tokens → revoke the connection; then remove the plugin or server in the agent |

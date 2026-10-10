@@ -41,6 +41,8 @@ codex mcp login cuddler
 ```
 <!-- /claims:install.codex -->
 
+In the Codex app: run the first command, quit and reopen the app, then install Cuddler from **Plugins**. Step by step for the [Codex app](INSTALL.md#codex-app) and the [Codex CLI](INSTALL.md#codex-cli).
+
 ### Cursor, Gemini CLI and other agents
 
 <!-- claims:install.other -->

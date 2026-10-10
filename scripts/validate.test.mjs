@@ -260,6 +260,41 @@ test("eval cases must cover every skill and name only real tools", () => {
   expectError(withCopy((d) => edit(d, "evals/quote-gate/prompt.md", (t) => t.replace("max_turns:", "turns:"))), /frontmatter key "turns" is not a claude plugin eval field/);
 });
 
+test("eval mocks must carry the server's tool list and answer in its formats", () => {
+  const listing = "evals/mocks/cuddler/_tools.json";
+  expectError(withCopy((d) => rmSync(join(d, listing))), /_tools\.json: missing: save the server's tools\/list/);
+  const tool = (data, name) => data.tools.find((t) => t.name === name);
+  expectError(
+    withCopy((d) =>
+      editJson(d, listing, (data) => {
+        const schema = tool(data, "create_video").inputSchema;
+        schema.required = schema.required.filter((arg) => arg !== "idempotencyKey");
+        return data;
+      }),
+    ),
+    /create_video does not require idempotencyKey/,
+  );
+  const renamed = withCopy((d) =>
+    editJson(d, listing, (data) => {
+      tool(data, "quote_video").name = "price_video";
+      return data;
+    }),
+  );
+  expectError(renamed, /no entry for quote_video/);
+  expectError(renamed, /"price_video" is not a Cuddler MCP tool/);
+  const unfence = (t) => t.replace(/^<untrusted-user-content[^>]*>\n/, "").replace(/\n<\/untrusted-user-content>\n?$/, "\n");
+  expectError(withCopy((d) => edit(d, "evals/mocks/cuddler/whoami.md", unfence)), /whoami\.md: the server returns whoami inside <untrusted-user-content source="cuddler\.whoami">/);
+  expectError(
+    withCopy((d) => edit(d, "evals/mocks/cuddler/quote_video.md", (t) => `<untrusted-user-content source="cuddler.quote_video">\n${t.trim()}\n</untrusted-user-content>\n`)),
+    /quote_video\.md: the server returns quote_video as plain JSON/,
+  );
+  expectError(withCopy((d) => edit(d, "evals/mocks/cuddler/list_models.md", (t) => t.replace("{", "{,"))), /list_models\.md: the result is not JSON/);
+  expectError(
+    withCopy((d) => edit(d, "evals/approval-link/mocks/cuddler/create_video.md", (t) => t.replace("FORBIDDEN: ", "Forbidden - "))),
+    /create_video\.md: an error starts with the server's "CODE: message" line/,
+  );
+});
+
 test("unpinned actions and pull_request_target fail", () => {
   expectError(withCopy((d) => edit(d, ".github/workflows/validate.yml", (t) => t.replace(/actions\/checkout@[0-9a-f]{40}/, "actions/checkout@v4"))), /pin actions\/checkout@v4 to a full commit SHA/);
   expectError(withCopy((d) => edit(d, ".github/workflows/validate.yml", (t) => t.replace("  pull_request:\n", "  pull_request_target:\n"))), /pull_request_target/);

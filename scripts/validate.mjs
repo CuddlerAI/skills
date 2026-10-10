@@ -8,8 +8,9 @@
 // skills name only real Cuddler MCP tools, no command-line instructions, no third-party keys and no fixed prices in public
 // text, every skill listed in the marketplace, plugin manifests, README and INSTALL (and nothing extra), VERSION in sync with
 // every manifest and CHANGELOG, .mcp.json and the README in sync with claims.json, the Codex manifest and marketplace within
-// the OpenAI plugin directory's listing rules, an eval case for every skill, actions pinned to a commit, and safety lints
-// (no direct API calls, no admin routes or internal addresses, no secrets or emails).
+// the OpenAI plugin directory's listing rules, an eval case for every skill, eval mocks that carry the server's tool list and
+// answer in its formats, actions pinned to a commit, and safety lints (no direct API calls, no admin routes or internal
+// addresses, no secrets or emails).
 //
 // Exit 0 when every check passes, 1 otherwise. On GitHub Actions each failure is also an ::error annotation.
 
@@ -46,6 +47,23 @@ export const MCP_TOOLS = Object.freeze([
 /** The MCP server key in .mcp.json, and the name the plugin's tools carry in eval runs. */
 export const MCP_SERVER = "cuddler";
 const EVAL_TOOL_PREFIX = "mcp__plugin_cuddler_cuddler__";
+/** The tools whose results the server returns inside an <untrusted-user-content> block (they carry text a user wrote). */
+export const FENCED_RESULTS = Object.freeze([
+  "whoami",
+  "list_my_characters",
+  "get_character",
+  "create_image",
+  "get_image",
+  "create_video",
+  "get_video",
+  "retry_video",
+]);
+/** Arguments the skills pass on every spending call; the server's tool list must require them. */
+const SPEND_ARGS = Object.freeze({
+  create_video: ["maxCredits", "idempotencyKey"],
+  create_image: ["maxCredits", "idempotencyKey"],
+  retry_video: ["maxCredits"],
+});
 /** Phrases the shared Hard rules block must keep; editing the rules on purpose means editing this list too. */
 export const RULE_PHRASES = [
   "Never call `api.cuddler.ai`",
@@ -186,6 +204,60 @@ export function frontmatterEntries(text) {
     if (match) entries.set(match[1], match[2].trim());
   }
   return entries;
+}
+
+/** Why a saved tools/list response is not the Cuddler server's tool list, as a list of problems. */
+export function toolListProblems(listing) {
+  const tools = listing?.result?.tools ?? listing?.tools;
+  if (!Array.isArray(tools)) return ['expected a saved tools/list response: {"tools": [{"name", "description", "inputSchema"}]}'];
+  const problems = [];
+  const names = tools.map((tool) => tool?.name);
+  for (const name of MCP_TOOLS) if (!names.includes(name)) problems.push(`no entry for ${name}`);
+  for (const name of names) if (!MCP_TOOLS.includes(name)) problems.push(`"${name}" is not a Cuddler MCP tool`);
+  for (const tool of tools) {
+    if (!MCP_TOOLS.includes(tool?.name)) continue;
+    if (typeof tool.description !== "string" || !tool.description.trim()) problems.push(`${tool.name} has no description`);
+    if (tool.inputSchema?.type !== "object") problems.push(`${tool.name} has no object inputSchema`);
+    for (const arg of SPEND_ARGS[tool.name] ?? []) {
+      if (!tool.inputSchema?.required?.includes(arg)) problems.push(`${tool.name} does not require ${arg}, which the skills pass on every call`);
+    }
+  }
+  return problems;
+}
+
+/** Why a mock's text is not a result in the server's own format, or null when it is. */
+export function mockBodyProblem(tool, text) {
+  const entries = frontmatterEntries(text);
+  if (entries?.get("type") === "agent") return null;
+  const lines = text.split(/\r?\n/);
+  const body = (entries ? lines.slice(lines.indexOf("---", 1) + 1) : lines).join("\n").trim();
+  if (entries?.get("error") === "true") {
+    const [first, ...details] = body.split("\n");
+    if (!/^[A-Z][A-Z_]*: \S/.test(first)) return 'an error starts with the server\'s "CODE: message" line';
+    if (details.length) {
+      try {
+        JSON.parse(details.join("\n"));
+      } catch {
+        return "an error's details, after its first line, must be JSON";
+      }
+    }
+    return null;
+  }
+  const open = `<untrusted-user-content source="cuddler.${tool}">`;
+  const close = "</untrusted-user-content>";
+  const fenced = FENCED_RESULTS.includes(tool);
+  if (fenced !== body.startsWith("<untrusted-user-content")) {
+    return fenced ? `the server returns ${tool} inside ${open} … ${close}` : `the server returns ${tool} as plain JSON`;
+  }
+  if (fenced && !(body.startsWith(`${open}\n`) && body.endsWith(`\n${close}`))) {
+    return `${open} and ${close} go on lines of their own around the JSON`;
+  }
+  try {
+    JSON.parse(fenced ? body.slice(open.length + 1, -(close.length + 1)) : body);
+  } catch (e) {
+    return `the result is not JSON (${e.message})`;
+  }
+  return null;
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -748,7 +820,7 @@ export function validate(root) {
     }
   });
 
-  group("eval cases: prompt and graders present, real tools only, mocks for every tool, every skill covered", () => {
+  group("eval cases: prompt and graders present, real tools only, mocks in the server's formats for every tool, every skill covered", () => {
     if (!exists("evals")) return;
     const cases = readdirSync(join(root, "evals"), { withFileTypes: true })
       .filter((d) => d.isDirectory() && !d.name.startsWith(".") && !SKIP_DIRS.has(d.name) && d.name !== "mocks")
@@ -760,13 +832,31 @@ export function validate(root) {
       for (const entry of readdirSync(join(root, dir))) {
         if (entry.startsWith(".") || entry.startsWith("_")) continue;
         const tool = entry.replace(/\.md$/, "");
-        if (!entry.endsWith(".md") || !MCP_TOOLS.includes(tool)) err(`${dir}/${entry}`, `a mock must be <tool>.md for a Cuddler MCP tool`);
+        if (!entry.endsWith(".md") || !MCP_TOOLS.includes(tool)) {
+          err(`${dir}/${entry}`, `a mock must be <tool>.md for a Cuddler MCP tool`);
+          continue;
+        }
+        const problem = mockBodyProblem(tool, read(`${dir}/${entry}`));
+        if (problem) err(`${dir}/${entry}`, problem);
         tools.push(tool);
       }
       return tools;
     };
+    const suiteMocks = checkMocks(`evals/mocks/${MCP_SERVER}`);
     for (const tool of MCP_TOOLS) {
-      if (!checkMocks(`evals/mocks/${MCP_SERVER}`).includes(tool)) err(`evals/mocks/${MCP_SERVER}`, `no suite mock for ${tool}: without one the tool is unavailable in eval runs`);
+      if (!suiteMocks.includes(tool)) err(`evals/mocks/${MCP_SERVER}`, `no suite mock for ${tool}: without one the tool is unavailable in eval runs`);
+    }
+    const listingFile = `evals/mocks/${MCP_SERVER}/_tools.json`;
+    if (!exists(listingFile)) {
+      err(listingFile, "missing: save the server's tools/list here so eval runs show the real tool descriptions and schemas");
+    } else {
+      let listing = null;
+      try {
+        listing = JSON.parse(read(listingFile));
+      } catch (e) {
+        err(listingFile, `not JSON (${e.message})`);
+      }
+      if (listing) for (const problem of toolListProblems(listing)) err(listingFile, problem);
     }
     for (const id of cases) {
       const base = `evals/${id}`;

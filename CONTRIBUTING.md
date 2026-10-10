@@ -23,7 +23,7 @@ Node.js 20 or newer; no other dependencies.
 
 ## Changing what a skill does
 
-1. Add or update a case in `evals/` (see [evals/README.md](evals/README.md)): a `prompt.md`, its `graders/`, and mocks for any tool answer the case needs.
+1. Add or update a case in `evals/` (see [evals/README.md](evals/README.md)): a `prompt.md`, its `graders/`, and mocks for any tool answer the case needs. Write mocks in the server's own format; the validator checks it.
 2. Run it with and without the plugin: `claude plugin eval . --case <name> --no-publish`. The with-plugin arm should win clearly; paste the result in the pull request.
 3. Run the validator and its tests.
 

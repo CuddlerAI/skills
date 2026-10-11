@@ -1,0 +1,50 @@
+{
+  "name": "cuddler",
+  "version": "0.3.0",
+  "description": "Make AI videos and images from your coding agent with your Cuddler membership: connect and sign in, quoted renders, character clips and local clip review.",
+  "author": {
+    "name": "Cuddler",
+    "url": "https://cuddler.ai"
+  },
+  "homepage": "https://cuddler.ai/mcp",
+  "repository": "https://github.com/CuddlerAI/skills",
+  "license": "MIT",
+  "keywords": [
+    "cuddler",
+    "video-generation",
+    "image-generation",
+    "ai-video",
+    "character-video",
+    "mcp",
+    "agent-skills"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Cuddler",
+    "shortDescription": "Make AI videos and images",
+    "longDescription": "Make AI videos and images on your own Cuddler account from your coding agent. Sign in once in the browser. Before every render the agent shows the cost in credits and waits for your OK, and larger renders also need one approval in your browser. Turn your own Cuddler characters into short clips that talk to the viewer, and check finished clips locally with ffmpeg before you post them. Videos need a Cuddler plan that includes video; the setup skill shows what your account can make. Everything you make stays private in your Cuddler account.",
+    "developerName": "Cuddler",
+    "category": "Creativity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://cuddler.ai/mcp",
+    "supportURL": "https://cuddler.ai/support",
+    "privacyPolicyURL": "https://cuddler.ai/privacy",
+    "termsOfServiceURL": "https://cuddler.ai/terms",
+    "defaultPrompt": [
+      "Make a 10-second vertical clip of a paper boat in the rain",
+      "Turn my character into a 15-second clip",
+      "Make a square image of a paper boat on a puddle at dusk"
+    ],
+    "composerIcon": "./assets/logo.png",
+    "logo": "./assets/logo.png"
+  },
+  "extensions": {
+    "com.openai": {
+      "onboardingSkill": "./skills/cuddler-setup/SKILL.md"
+    }
+  }
+}

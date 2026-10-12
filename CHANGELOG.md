@@ -2,6 +2,19 @@
 
 All notable changes to the Cuddler skills. The version here, `VERSION` and every plugin manifest must match (CI checks).
 
+## [0.3.1] — 2026-10-12
+
+Fixes from the first end-to-end run on a paid account, in Claude Code and the Codex app.
+
+### Changed
+
+- **The price question speaks the user's language.** It still gives the price in credits and asks once; in English it ends in "reply proceed", in another language with the same words in that language (Hard rule 2, all four skills).
+- **Images are saved locally.** After `create_image` the skills save the picture into `./out/` and give its path. The Codex app doesn't show pictures from web addresses, but it shows a local file. Hard rule 1 now lists image URLs among the addresses the skills may download from.
+- **The account is named.** `cuddler-setup` reports which Cuddler account the connection uses, and the video price question names it, so a sign-in to the wrong account shows before anything is spent. Troubleshooting says how to switch accounts.
+- **Sign-in links are opened right away.** `cuddler-setup` says the agent waits for the browser only a few minutes and what to do when the page can't reach `localhost`.
+- **`cuddler-review` catches softer cuts.** The default cut threshold is 0.2 (was 0.35): two hard cuts in misty shots scored 0.26 and 0.30 and were missed, while motion in the same clips stayed under 0.09.
+- **Codex downloads are explained.** The install guide and `cuddler-setup` say that Codex asks to allow network access when the skill saves a finished file.
+
 ## [0.3.0] — 2026-10-09
 
 First public version. The numbering continues from the internal 0.2.0 skills, which this repository replaces for everyone outside the Cuddler team.

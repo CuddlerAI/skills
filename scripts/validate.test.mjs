@@ -245,11 +245,12 @@ test("command-line instructions, third-party keys and fixed prices fail in publi
 });
 
 test("skills that sell credits, plans or upgrades fail", () => {
-  expectError(withCopy((d) => appendFileSync(join(d, "skills/cuddler-generate/SKILL.md"), "\n| Not enough credits | | Stop; the user tops up on cuddler.ai |\n")), /"tops up" pushes a purchase/);
-  expectError(withCopy((d) => appendFileSync(join(d, "skills/cuddler-generate/references/model-routing.md"), "\n`requiredPlan` says what would unlock it.\n")), /"unlock" pushes a purchase/);
-  expectError(withCopy((d) => appendFileSync(join(d, "skills/cuddler-setup/SKILL.md"), "\nUpgrade to Pro for videos.\n")), /"Upgrade to" pushes a purchase/);
+  expectError(withCopy((d) => appendFileSync(join(d, "skills/cuddler-generate/SKILL.md"), "\n| Not enough credits | | Stop; the user tops up on cuddler.ai |\n")), /"tops up" sells credits or plans/);
+  expectError(withCopy((d) => appendFileSync(join(d, "skills/cuddler-generate/references/model-routing.md"), "\n`requiredPlan` says what would unlock it.\n")), /"unlock" sells credits or plans/);
+  expectError(withCopy((d) => appendFileSync(join(d, "skills/cuddler-setup/SKILL.md"), "\nUpgrade to Pro for videos.\n")), /"Upgrade to" sells credits or plans/);
+  expectError(withCopy((d) => appendFileSync(join(d, "skills/cuddler-setup/SKILL.md"), "\nPlans are at https://cuddler.ai/membership\n")), /"cuddler\.ai\/membership" sells credits or plans/);
   const allowed = withCopy((d) => appendFileSync(join(d, "skills/cuddler-setup/SKILL.md"), "\nVideos aren't in this plan; never suggest buying credits or an upgrade. Update with `codex plugin marketplace upgrade`.\n"));
-  assert.ok(!allowed.some((e) => /pushes a purchase/.test(e)), allowed.join("\n"));
+  assert.ok(!allowed.some((e) => /sells credits or plans/.test(e)), allowed.join("\n"));
 });
 
 test("the README and .mcp.json must follow claims.json", () => {

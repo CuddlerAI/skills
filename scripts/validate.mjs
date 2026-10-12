@@ -148,8 +148,11 @@ const PACKAGE_DESCRIPTION_MAX = 1024;
 const SKILL_IDENTITY_MAX = 64; // "plugin-name:skill-name"
 /** Directory listings may not advertise prices, subscriptions, upgrades or promotions. */
 const PROMOTION = /free trial|discount|promo(?:tion)?s?\b|subscri\w*|membership|upgrade|\$\s?\d|\b\d[\d,.]*\s?(?:credits?|CR)\b/i;
-/** Plugins may say that a feature isn't in the user's plan, but may not sell credits or plans or promote upgrades. */
-const UPSELL = /\btop(?:s|ping)?[ -]?up\b|\bunlock(?:s|ed|ing)?\b|\bupgrad(?:e|es|ing)\s+(?:to|your)\b|\bsubscrib(?:e|es|ing)\s+to\b|\b(?:buy|purchase)\s+(?:more\s+)?credits\b|\bcheckout\b/i;
+/**
+ * Plugins may say that a feature isn't in the user's plan, but may not sell credits or plans, promote upgrades
+ * or link to a page that takes payment (the membership page does).
+ */
+const UPSELL = /\btop(?:s|ping)?[ -]?up\b|\bunlock(?:s|ed|ing)?\b|\bupgrad(?:e|es|ing)\s+(?:to|your)\b|\bsubscrib(?:e|es|ing)\s+to\b|\b(?:buy|purchase)\s+(?:more\s+)?credits\b|\bcheckout\b|cuddler\.ai\/membership/i;
 
 // ── frontmatter ──────────────────────────────────────────────────────────────
 
@@ -559,7 +562,7 @@ export function validate(root) {
     for (const rel of skillText) {
       read(rel).split(/\r?\n/).forEach((line, i) => {
         const match = UPSELL.exec(line);
-        if (match) err(rel, `line ${i + 1}: "${match[0]}" pushes a purchase; a skill may say what the plan doesn't include, but may not sell credits or plans or promote upgrades (OpenAI plugin directory rules)`);
+        if (match) err(rel, `line ${i + 1}: "${match[0]}" sells credits or plans; a skill may say what the plan doesn't include, but may not sell credits or plans, promote upgrades or link to a page that takes payment (OpenAI plugin directory rules)`);
       });
     }
   });

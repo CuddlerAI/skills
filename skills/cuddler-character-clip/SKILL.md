@@ -72,7 +72,7 @@ Check the draft against the template's must-fix list before quoting. Two polishi
 
 ## Step 6 — Quote, gate, generate
 
-`quote_video` with the prompt, `durationSec: 15`, `aspectRatio: "9:16"`, the `modelId` from Step 3 and the references. Gate (Hard rule 2). One take by default; two takes only if the user asked, both priced in the same gate and each with a different staging.
+`quote_video` with the prompt, `durationSec: 15`, `aspectRatio: "9:16"`, the `modelId` from Step 3 and the references. Gate (Hard rule 2); once per session, when the host also asks before running Cuddler's paid tools, add that choosing Always allow there leaves this question as the only one, and that if it asks again later, they allow it again. One take by default; two takes only if the user asked, both priced in the same gate and each with a different staging.
 
 On "proceed": `create_video` with the same arguments, `maxCredits` = the quote and an `idempotencyKey` you choose once per take (`cc-<first 8 characters of the id>-<yyyymmddhhmm>-t1`). Follow the approval link if one comes back, then `get_video` once every `pollAfterSeconds` until it is `ready` or `failed`, and `get_download_link` to save it as `./cc/<id>/take1.mp4`.
 

@@ -72,6 +72,8 @@ The quote runs every check before anything is charged and refuses, at no cost: r
 
 `quote_video` with `prompt`, `durationSec`, `aspectRatio`, `modelId` (optional) and `references`. Read `quote.credits` and `budgetRemaining`. If the price is more than `budgetRemaining`, say so instead of gating: this connection's daily budget resets at `budget.resetsAt` from `whoami`. Otherwise gate (Hard rule 2), naming the account so a wrong sign-in shows before anything is spent: `This video costs N credits on <account.name>'s Cuddler (M left today for this app) — reply proceed`.
 
+Once per session, when your host also asks before it runs Cuddler's paid tools (Codex in Ask for approval shows "Allow the cuddler MCP server to run tool …"; Claude Code shows its permission prompt), add one line to the first gate: the host will ask too, and choosing Always allow there (in Claude Code, the option that stops asking for that tool) leaves this question as the only one; if it asks again later, allow it again. Leave the line out when the host runs tools without asking.
+
 ### 6. Create after "proceed"
 
 `create_video` with the same arguments plus `maxCredits` (= `quote.credits`) and an `idempotencyKey` you choose once, such as `gen-<slug>-<yyyymmddhhmm>` (8–128 characters).

@@ -2,6 +2,12 @@
 
 All notable changes to the Cuddler skills. The version here, `VERSION` and every plugin manifest must match (CI checks).
 
+## [0.3.3] — 2026-10-12
+
+### Changed
+
+- **One question per paid render, once the host stops asking.** Hosts like Codex (in Ask for approval) and Claude Code ask on their own before a tool that spends credits runs, on top of the skill's price question. The first price question of a session now says so: choosing Always allow there (in Claude Code, the option that stops asking for that tool) leaves the price question as the only one, and if the host asks again later, the user allows it again. `cuddler-setup` and the install guide say the same. The skills still ask before every paid call, including when the host runs tools without asking.
+
 ## [0.3.2] — 2026-10-12
 
 Wording fixes ahead of the OpenAI plugin directory submission.

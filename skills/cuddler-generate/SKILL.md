@@ -97,10 +97,12 @@ The quote runs every check before anything is charged and refuses, at no cost: r
 | `permission_not_granted` | Spending was not allowed when Cuddler was connected | The `cuddler-setup` skill |
 | `feature_unavailable` | The plan doesn't include it | Say so; offer images if those are open |
 | Daily budget spent | This connection reached its daily budget | Stop; it resets at `budget.resetsAt` |
-| Not enough credits | The balance is too low | Stop; the user tops up on cuddler.ai |
+| Not enough credits | The balance is below the price; nothing was charged | Stop and say so; something the balance covers (a shorter clip, an image) is a new quote and gate |
 | `member_cost_breaker` | This billing period's plan credits can no longer be spent through agents; only credits the user bought can, and they don't cover this | Stop and say so: until the date in `resetsAt` (until the plan renews when there is none), nothing was charged, the Cuddler app is not affected. Don't suggest buying credits or a plan |
 | Model or option not in the plan | | Offer an available model |
 | Busy | Every render slot is in use | Wait for a running video with `get_video`, then repeat with the same key |
+
+When credits or the plan stop a render, say what happened and what is still possible; never suggest buying credits, a plan or an upgrade.
 
 Every refusal, with what to change, is in [references/model-routing.md](references/model-routing.md).
 

@@ -2,6 +2,19 @@
 
 All notable changes to the Cuddler skills. The version here, `VERSION` and every plugin manifest must match (CI checks).
 
+## [0.3.2] — 2026-10-12
+
+Wording fixes ahead of the OpenAI plugin directory submission.
+
+### Changed
+
+- **No sales pitch when credits or the plan stop a render.** `cuddler-generate` says what happened and what is still possible; it no longer tells the user to top up or which plan would unlock a model. `cuddler-setup` no longer links the membership page, which takes payments; asked which plans include video, it reads `requiredPlan` from `list_models`. The OpenAI plugin directory lets a plugin say that a feature isn't in the user's plan, but not sell credits or plans, promote upgrades or link to a page that takes payment. The `video-not-in-plan` eval now fails a reply that presses for an upgrade.
+- **`contact-sheet.sh` points to `get_download_link`** when it is given a web address, instead of the retired `cuddler download` command.
+
+### Added
+
+- Validator checks: the command-line check reads the skills' scripts too, and a new check fails skill text that tells the user to top up, upgrade or buy credits, or links the membership page.
+
 ## [0.3.1] — 2026-10-12
 
 Fixes from the first end-to-end run on a paid account, in Claude Code and the Codex app.

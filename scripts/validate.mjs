@@ -148,6 +148,11 @@ const PACKAGE_DESCRIPTION_MAX = 1024;
 const SKILL_IDENTITY_MAX = 64; // "plugin-name:skill-name"
 /** Directory listings may not advertise prices, subscriptions, upgrades or promotions. */
 const PROMOTION = /free trial|discount|promo(?:tion)?s?\b|subscri\w*|membership|upgrade|\$\s?\d|\b\d[\d,.]*\s?(?:credits?|CR)\b/i;
+/**
+ * Plugins may say that a feature isn't in the user's plan, but may not sell credits or plans, promote upgrades
+ * or link to a page that takes payment (the membership page does).
+ */
+const UPSELL = /\btop(?:s|ping)?[ -]?up\b|\bunlock(?:s|ed|ing)?\b|\bupgrad(?:e|es|ing)\s+(?:to|your)\b|\bsubscrib(?:e|es|ing)\s+to\b|\b(?:buy|purchase)\s+(?:more\s+)?credits\b|\bcheckout\b|cuddler\.ai\/membership/i;
 
 // ── frontmatter ──────────────────────────────────────────────────────────────
 
@@ -524,7 +529,8 @@ export function validate(root) {
     }
   });
 
-  const skillMarkdown = listFiles(root).filter((rel) => rel.startsWith("skills/") && rel.endsWith(".md"));
+  const skillText = listFiles(root).filter((rel) => rel.startsWith("skills/") && TEXT_EXT.test(rel));
+  const skillMarkdown = skillText.filter((rel) => rel.endsWith(".md"));
 
   group("skills name only real Cuddler MCP tools", () => {
     for (const rel of skillMarkdown) {
@@ -538,14 +544,25 @@ export function validate(root) {
     }
   });
 
-  group("public text: no command-line tool, no third-party keys, no fixed prices", () => {
+  group("public text and skill scripts: no command-line tool, no third-party keys, no fixed prices", () => {
     const publicDocs = ["README.md", "INSTALL.md", "INSTALL_FOR_AGENTS.md"].filter(exists);
-    for (const rel of [...skillMarkdown, ...publicDocs]) {
+    for (const rel of [...skillText, ...publicDocs]) {
       const text = rel === "README.md" ? withoutBlocks(read(rel)) : read(rel);
+      // Prices only in prose: in a script, $1 is an argument.
+      const prose = rel.endsWith(".md");
       text.split(/\r?\n/).forEach((line, i) => {
         if (CLI_COMMAND.test(line)) err(rel, `line ${i + 1}: a command-line instruction (\`${CLI_COMMAND.exec(line)[0]}\`); the public skills use the Cuddler MCP tools`);
         if (THIRD_PARTY_KEYS.test(line)) err(rel, `line ${i + 1}: mentions a third-party provider key; keep the public skills on Cuddler only`);
-        if (FIXED_PRICE.test(line)) err(rel, `line ${i + 1}: a fixed price (${FIXED_PRICE.exec(line)[0]}); prices come from the tools at runtime, public figures from claims.json`);
+        if (prose && FIXED_PRICE.test(line)) err(rel, `line ${i + 1}: a fixed price (${FIXED_PRICE.exec(line)[0]}); prices come from the tools at runtime, public figures from claims.json`);
+      });
+    }
+  });
+
+  group("skills don't sell credits, plans or upgrades", () => {
+    for (const rel of skillText) {
+      read(rel).split(/\r?\n/).forEach((line, i) => {
+        const match = UPSELL.exec(line);
+        if (match) err(rel, `line ${i + 1}: "${match[0]}" sells credits or plans; a skill may say what the plan doesn't include, but may not sell credits or plans, promote upgrades or link to a page that takes payment (OpenAI plugin directory rules)`);
       });
     }
   });

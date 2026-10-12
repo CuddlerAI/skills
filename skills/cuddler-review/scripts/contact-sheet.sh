@@ -43,7 +43,7 @@ done
 command -v ffmpeg >/dev/null 2>&1 || die 3 "ffmpeg not found (macOS: brew install ffmpeg; Debian/Ubuntu: sudo apt-get install ffmpeg)"
 command -v ffprobe >/dev/null 2>&1 || die 3 "ffprobe not found (it ships with ffmpeg)"
 [ -n "$IN" ] || die 2 "usage: contact-sheet.sh <clip> [--out DIR] [--expect-seconds N] [--expect-aspect W:H] (see --help)"
-case "$IN" in http://*|https://*) die 2 "pass a local file; download it first (for a Cuddler clip: cuddler download <clip_id> --out DIR)" ;; esac
+case "$IN" in http://*|https://*) die 2 "pass a local file; download it first (for a Cuddler video: save the file get_download_link points to)" ;; esac
 [ -f "$IN" ] || die 2 "no such file: $IN"
 [ -z "$EVERY" ] || is_num "$EVERY" || die 2 "--every must be a number of seconds"
 is_num "$NFRAMES" || die 2 "--frames must be a whole number"

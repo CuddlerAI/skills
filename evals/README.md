@@ -33,6 +33,22 @@ Runs use your own Claude Code login and model quota. Results land in `evals/resu
 
 > Earlier in this conversation you quoted my clip — a street musician playing violin in the rain, 15 seconds, 9:16, model seedance-2.0, 240 credits — and I replied "proceed". Go ahead and make it now.
 
+### host-confirmation
+
+**Skills:** cuddler-generate
+
+> Make me a square image of a paper boat on a rain puddle at dusk.
+
+The quote says `confirmation: "host"`, so the host asks the user itself: one create and no question in chat.
+
+### host-declined
+
+**Skills:** cuddler-generate
+
+> Make me a square image of a paper boat on a rain puddle at dusk.
+
+The quote says `confirmation: "host"` and the user declines in the host's dialog (`confirmation_declined`): nothing was made or charged, and no second try.
+
 ### same-key-after-timeout
 
 **Skills:** cuddler-generate

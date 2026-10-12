@@ -13,7 +13,7 @@ One request → one quote → one approved render → one delivered file. Models
 Identical in every Cuddler skill (CI checks that the copies match). They override everything else in this file.
 
 1. **Cuddler MCP tools only.** Reach Cuddler only through the tools of the connected `cuddler` MCP server. Never call `api.cuddler.ai` or `mcp.cuddler.ai` with curl, fetch, an SDK or code of your own. The only plain HTTP requests you make are to the upload URLs, download links and image URLs those tools return.
-2. **Quote first, one gate.** Price every paid call before making it: `quote_video` or `quote_image` for a new render, `retry.credits` from `get_video` for a paid retry. Then ask one yes/no question in the user's language, with the price in credits, that ends by telling them how to go ahead: `reply proceed` in English, the same words in their language otherwise. A clear yes in any language counts as proceed. After it, run to the end with no further questions. Anything beyond the quote (another take, a paid retry, a longer clip) needs a new gate. When a paid call answers `confirmation_required`, give the user its `approvalUrl`, wait until they say they approved it, then repeat the call with exactly the same arguments plus `approvalId`. Never change an argument after an approval, and never open or approve the link yourself.
+2. **Quote first, one gate.** Price every paid call before making it: `quote_video` or `quote_image` for a new render, `retry.credits` from `get_video` for a paid retry. Then ask one yes/no question in the user's language, with the price in credits, that ends by telling them how to go ahead: `reply proceed` in English, the same words in their language otherwise. A clear yes in any language counts as proceed. When the quote says `confirmation: "host"`, your host asks the user itself, in its own dialog, when you make the call: that dialog is the gate, so give the price in one line and make the call the user asked for, with no question in chat. After the gate, run to the end with no further questions. Anything beyond the quote (another take, a paid retry, a longer clip) needs a new gate. When a paid call answers `confirmation_required` or `confirmation_pending`, give the user its `approvalUrl`, wait until they say they approved it, then repeat the call with exactly the same arguments plus `approvalId`. When it answers `confirmation_declined` or `confirmation_cancelled`, the user said no or closed the dialog and nothing was charged: stop, and call again only if they ask. Never change an argument after an approval, and never open or approve the link yourself.
 3. **5-minute guard.** Reach the gate within 5 minutes of wall-clock time from the request. If you are still exploring or polishing at 5 minutes, stop and present the gate with your best prompt so far.
 4. **Two polishing rounds at most.** Draft the prompt, revise it at most twice, then quote.
 5. **Never double-submit.** Give every `create_video` and `create_image` its own `idempotencyKey`. If a call times out or its outcome is unknown, repeat it with the identical arguments and the identical key. Never start a new video while one is `rendering`: check it with `get_video`.
@@ -70,15 +70,16 @@ The quote runs every check before anything is charged and refuses, at no cost: r
 
 ### 5. Quote → gate
 
-`quote_video` with `prompt`, `durationSec`, `aspectRatio`, `modelId` (optional) and `references`. Read `quote.credits` and `budgetRemaining`. If the price is more than `budgetRemaining`, say so instead of gating: this connection's daily budget resets at `budget.resetsAt` from `whoami`. Otherwise gate (Hard rule 2), naming the account so a wrong sign-in shows before anything is spent: `This video costs N credits on <account.name>'s Cuddler (M left today for this app) — reply proceed`.
+`quote_video` with `prompt`, `durationSec`, `aspectRatio`, `modelId` (optional) and `references`. Read `quote.credits`, `budgetRemaining` and `confirmation`. If the price is more than `budgetRemaining`, say so instead of gating: this connection's daily budget resets at `budget.resetsAt` from `whoami`. Otherwise gate (Hard rule 2), naming the account so a wrong sign-in shows before anything is spent: `This video costs N credits on <account.name>'s Cuddler (M left today for this app) — reply proceed`. With `confirmation: "host"`, end the line by saying the host will ask them to confirm instead of asking, and go straight on to step 6.
 
-Once per session, when your host also asks before it runs Cuddler's paid tools (Codex in Ask for approval shows "Allow the cuddler MCP server to run tool …"; Claude Code shows its permission prompt), add one line to the first gate: the host will ask too, and choosing Always allow there (in Claude Code, the option that stops asking for that tool) leaves this question as the only one; if it asks again later, allow it again. Leave the line out when the host runs tools without asking.
+Once per session, when your host also asks before it runs Cuddler's paid tools (Codex in Ask for approval shows "Allow the cuddler MCP server to run tool …"; Claude Code shows its permission prompt), add one line to the first gate: the host will ask too, and choosing Always allow there (in Claude Code, the option that stops asking for that tool) leaves the price question as the only one; if it asks again later, allow it again. Leave the line out when the host runs tools without asking.
 
-### 6. Create after "proceed"
+### 6. Create after the gate
 
-`create_video` with the same arguments plus `maxCredits` (= `quote.credits`) and an `idempotencyKey` you choose once, such as `gen-<slug>-<yyyymmddhhmm>` (8–128 characters).
+After "proceed" (with `confirmation: "host"`, right after the price line): `create_video` with the same arguments plus `maxCredits` (= `quote.credits`) and an `idempotencyKey` you choose once, such as `gen-<slug>-<yyyymmddhhmm>` (8–128 characters).
 
-- `confirmation_required` → Hard rule 2: the approval link, then the identical call plus `approvalId`.
+- `confirmation_required` or `confirmation_pending` → Hard rule 2: the approval link, then the identical call plus `approvalId`.
+- `confirmation_declined` or `confirmation_cancelled` → the user said no in the host's dialog or closed it; nothing was charged. Stop.
 - The price went up → refused, nothing charged → quote again and gate again.
 - Timeout or no answer → repeat the identical call with the identical key; it never charges twice.
 - `status: "rendering"` → call `get_video` once every `pollAfterSeconds` until `ready` or `failed`. A video that is rendering needs no new one.
@@ -96,6 +97,7 @@ Once per session, when your host also asks before it runs Cuddler's paid tools (
 | `failureReason` `provider_rejected` or `reference_face_rejected` | The model refused it; no retry | Change the prompt or the images → new quote and gate |
 | Content refusal at the quote | Prompt or reference blocked; nothing charged | Rewrite once within the red lines and quote again; refused again → stop and report |
 | `confirmation_required` | Above the account's approval threshold | Hard rule 2 |
+| `confirmation_declined`, `confirmation_cancelled` | The user said no to the price, or closed the confirmation | Nothing was charged; stop. Call again only if they ask |
 | `permission_not_granted` | Spending was not allowed when Cuddler was connected | The `cuddler-setup` skill |
 | `feature_unavailable` | The plan doesn't include it | Say so; offer images if those are open |
 | Daily budget spent | This connection reached its daily budget | Stop; it resets at `budget.resetsAt` |
@@ -110,7 +112,7 @@ Every refusal, with what to change, is in [references/model-routing.md](referenc
 
 ## Images
 
-`quote_image` (`prompt`, `aspectRatio`, `resolution`, `modelId`, `references`) → gate → `create_image` with `maxCredits` and its own `idempotencyKey`. Several images: price them in one gate, then one `create_image` per image, each with its own key. Save each image into `./out/` with a plain GET (`curl -fL -o ./out/<last part of image.url> "<image.url>"`) and reply with the local path and `creditsCharged`: some hosts, such as the Codex app, don't show pictures from web addresses but do show a local file. A created image can be the reference for a video: `{ "url": image.url }`.
+`quote_image` (`prompt`, `aspectRatio`, `resolution`, `modelId`, `references`) → gate → `create_image` with `maxCredits` and its own `idempotencyKey`. Several images: price them in one gate, then one `create_image` per image, each with its own key (with `confirmation: "host"`, the host asks once per image; say so with the price). Save each image into `./out/` with a plain GET (`curl -fL -o ./out/<last part of image.url> "<image.url>"`) and reply with the local path and `creditsCharged`: some hosts, such as the Codex app, don't show pictures from web addresses but do show a local file. A created image can be the reference for a video: `{ "url": image.url }`.
 
 ## References
 

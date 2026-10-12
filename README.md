@@ -60,7 +60,7 @@ Renders spend credits from your own Cuddler account, at the same price as in the
 <!-- /claims:credits -->
 
 <!-- claims:limits -->
-A render above 200 credits also needs one click on an approval link in your browser, and each connected app can spend up to 3,000 credits a day.
+A render above 200 credits (500 on the Ultra plan) also needs one click on an approval link in your browser, and each connected app can spend up to 3,000 credits a day.
 <!-- /claims:limits -->
 
 <!-- claims:plans -->

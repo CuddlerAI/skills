@@ -19,7 +19,7 @@
     ]
   },
   "credits": "Renders spend credits from your own Cuddler account, at the same price as in the Cuddler app. Your agent shows the price first and waits for your OK.",
-  "limits": "A render above 200 credits also needs one click on an approval link in your browser, and each connected app can spend up to 3,000 credits a day.",
+  "limits": "A render above 200 credits (500 on the Ultra plan) also needs one click on an approval link in your browser, and each connected app can spend up to 3,000 credits a day.",
   "plans": "Videos need a Cuddler plan that includes video. The setup skill tells you what your account can make.",
   "links": {
     "signup": {

@@ -89,7 +89,8 @@ Starter prompts to offer: "Make a 10-second vertical clip of …" · "Turn my ch
 | A tool says the feature isn't open | The account's plan doesn't include it yet |
 | The sign-in page shows another account | Sign out of cuddler.ai in that browser, then sign in again |
 | Connected to the wrong account | Sign out of cuddler.ai in the browser and sign in with the right account, then connect again: Claude Code `/mcp` → Cuddler → re-authenticate; Codex `codex mcp logout cuddler`, then `codex mcp login cuddler` (the app and the CLI share it) |
-| Codex asks to allow `create_image` or `create_video` | That is Codex's own approval, on top of the price gate: Allow, or Always allow for that tool |
+| Codex asks to allow `create_image` or `create_video` | That is Codex's own approval, on top of the price question: choose Always allow so the price question is the only one; if Codex asks again later, allow it again |
+| Claude Code asks to allow a Cuddler tool that spends credits | Its own permission prompt: choose the option that stops asking for that tool; the skills still show the price and wait for an OK |
 | Codex asks to allow network access for a `curl` download | The skill is saving the finished file from Cuddler's storage into `./out/`, and Codex's sandbox has no network by default: allow it |
 | Codex refuses a paid tool in `codex exec` ("approval policy is never") | Non-interactive Codex never asks; allow the tool for that run, as the install guide shows |
 | Codex says the model is not supported | The Codex CLI is older than the Codex app; update the CLI |

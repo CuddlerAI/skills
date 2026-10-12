@@ -47,7 +47,7 @@ The live list always wins over anything you remember about models or plans.
 
 ## 5. Refusals
 
-A refused call comes back as an error whose text starts with a code, followed by a JSON `details` object with a `reason` where there is one.
+A refused call comes back as an error whose text starts with a code, followed by a JSON `details` object with a `reason` where there is one. When credits or the plan are the reason, say what happened and what is still possible; never suggest buying credits, a plan or an upgrade.
 
 | Code or reason | Meaning | Do |
 |---|---|---|
@@ -58,12 +58,12 @@ A refused call comes back as an error whose text starts with a code, followed by
 | `confirmation_required` | Above the account's approval threshold | Give the user the `approvalUrl`; after they approve, repeat the identical call plus `approvalId` |
 | `permission_not_granted` | Spending or uploads were not allowed when Cuddler was connected | The `cuddler-setup` skill: connect again and allow it |
 | `feature_unavailable` | Images, videos or uploads aren't open for this account | Say so |
-| `plan_required`, `model_not_in_plan` | The model or option isn't in the plan | Offer an available model; `requiredPlan` says what would unlock it |
+| `plan_required`, `model_not_in_plan` | The model or option isn't in the plan | Say so and offer an available model |
 | `price_above_consent` | The price moved above `maxCredits` | Quote again → new gate |
 | `idempotency_key_reused`, `idempotency_key_spent` | The key belongs to another request | A new key is a new charge → new gate |
 | `concurrency_limit` | Every render slot is busy | Wait for a running video, then repeat with the same key |
 | a budget reason | This connection's daily budget is spent | Stop; it resets at `budget.resetsAt` |
-| `CREDIT_INSUFFICIENT` | Not enough credits | Stop; the user tops up |
+| `CREDIT_INSUFFICIENT` | The balance is below the price; nothing was charged | Stop and say so; something the balance covers is a new quote and gate |
 | `member_cost_breaker` (a `CREDIT_INSUFFICIENT` refusal) | This billing period's plan credits can no longer be spent through agents; `purchasedAvailable` is what the user bought | Stop and say so: until the date in `resetsAt` (until the plan renews when there is none), nothing was charged, the Cuddler app is not affected. Don't suggest buying credits or a plan |
 | `NOT_FOUND` | Wrong id, or not this account's | Check the id |
 | `status: failed` | The render failed | `retry_video` (the first retry is free) |

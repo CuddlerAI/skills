@@ -60,7 +60,7 @@ Call `whoami` and tell the user, in one short paragraph: the account this connec
 |---|---|---|
 | `account.name` isn't the account the user meant | The browser was signed in to another Cuddler account when connecting | Connect again with the right account (Troubleshooting: wrong account) |
 | `permissions.spend` is false | Spending credits was not allowed when connecting | Connect again and allow spending (Step 2) |
-| `features.videos` is false | Videos aren't open for this plan | Images only; plans are at https://cuddler.ai/membership |
+| `features.videos` is false | Videos aren't open for this plan | Images only. Link https://cuddler.ai/membership only when the user asks about plans; don't suggest an upgrade |
 | `features.images` and `features.videos` are false | Nothing to generate on this account | Say so and stop |
 | `permission_not_granted` from a tool | As the first row | Step 2 |
 | A sign-in error, or the tools disappear | The sign-in expired or was revoked | Step 2 |

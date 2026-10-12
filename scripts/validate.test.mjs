@@ -239,8 +239,17 @@ test("a tool name that the Cuddler MCP server doesn't have fails", () => {
 
 test("command-line instructions, third-party keys and fixed prices fail in public text", () => {
   expectError(withCopy((d) => appendFileSync(join(d, "skills/cuddler-generate/SKILL.md"), "\nRun `cuddler video generate \"x\"`.\n")), /command-line instruction/);
+  expectError(withCopy((d) => appendFileSync(join(d, "skills/cuddler-review/scripts/contact-sheet.sh"), "\n# or: cuddler download <clip_id>\n")), /contact-sheet\.sh: line \d+: a command-line instruction/);
   expectError(withCopy((d) => appendFileSync(join(d, "README.md"), "\nBring your Higgsfield key.\n")), /third-party provider key/);
   expectError(withCopy((d) => appendFileSync(join(d, "skills/cuddler-character-clip/SKILL.md"), "\nA 15-second take costs 240 credits.\n")), /a fixed price/);
+});
+
+test("skills that sell credits, plans or upgrades fail", () => {
+  expectError(withCopy((d) => appendFileSync(join(d, "skills/cuddler-generate/SKILL.md"), "\n| Not enough credits | | Stop; the user tops up on cuddler.ai |\n")), /"tops up" pushes a purchase/);
+  expectError(withCopy((d) => appendFileSync(join(d, "skills/cuddler-generate/references/model-routing.md"), "\n`requiredPlan` says what would unlock it.\n")), /"unlock" pushes a purchase/);
+  expectError(withCopy((d) => appendFileSync(join(d, "skills/cuddler-setup/SKILL.md"), "\nUpgrade to Pro for videos.\n")), /"Upgrade to" pushes a purchase/);
+  const allowed = withCopy((d) => appendFileSync(join(d, "skills/cuddler-setup/SKILL.md"), "\nVideos aren't in this plan; never suggest buying credits or an upgrade. Update with `codex plugin marketplace upgrade`.\n"));
+  assert.ok(!allowed.some((e) => /pushes a purchase/.test(e)), allowed.join("\n"));
 });
 
 test("the README and .mcp.json must follow claims.json", () => {
@@ -360,6 +369,9 @@ test(
       assert.equal(status("cuts"), "WARN");
       const bad = spawnSync("bash", [script, join(dir, "missing.mp4")], { encoding: "utf8" });
       assert.equal(bad.status, 2);
+      const url = spawnSync("bash", [script, "https://example.com/clip.mp4"], { encoding: "utf8" });
+      assert.equal(url.status, 2);
+      assert.match(url.stderr, /get_download_link/);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

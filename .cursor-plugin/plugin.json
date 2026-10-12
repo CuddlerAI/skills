@@ -1,7 +1,7 @@
 {
   "name": "cuddler",
   "displayName": "Cuddler",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Make AI videos and images from your coding agent with your Cuddler membership: connect and sign in, quoted renders, character clips and local clip review.",
   "author": {
     "name": "Cuddler"

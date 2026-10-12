@@ -12,8 +12,8 @@ One request → one quote → one approved render → one delivered file. Models
 
 Identical in every Cuddler skill (CI checks that the copies match). They override everything else in this file.
 
-1. **Cuddler MCP tools only.** Reach Cuddler only through the tools of the connected `cuddler` MCP server. Never call `api.cuddler.ai` or `mcp.cuddler.ai` with curl, fetch, an SDK or code of your own. The only plain HTTP requests you make are to the signed upload and download URLs those tools return.
-2. **Quote first, one gate.** Price every paid call before making it: `quote_video` or `quote_image` for a new render, `retry.credits` from `get_video` for a paid retry. Then ask one yes/no question that ends in `reply proceed`, with the price in credits. A clear yes in any language counts as proceed. After it, run to the end with no further questions. Anything beyond the quote (another take, a paid retry, a longer clip) needs a new gate. When a paid call answers `confirmation_required`, give the user its `approvalUrl`, wait until they say they approved it, then repeat the call with exactly the same arguments plus `approvalId`. Never change an argument after an approval, and never open or approve the link yourself.
+1. **Cuddler MCP tools only.** Reach Cuddler only through the tools of the connected `cuddler` MCP server. Never call `api.cuddler.ai` or `mcp.cuddler.ai` with curl, fetch, an SDK or code of your own. The only plain HTTP requests you make are to the upload URLs, download links and image URLs those tools return.
+2. **Quote first, one gate.** Price every paid call before making it: `quote_video` or `quote_image` for a new render, `retry.credits` from `get_video` for a paid retry. Then ask one yes/no question in the user's language, with the price in credits, that ends by telling them how to go ahead: `reply proceed` in English, the same words in their language otherwise. A clear yes in any language counts as proceed. After it, run to the end with no further questions. Anything beyond the quote (another take, a paid retry, a longer clip) needs a new gate. When a paid call answers `confirmation_required`, give the user its `approvalUrl`, wait until they say they approved it, then repeat the call with exactly the same arguments plus `approvalId`. Never change an argument after an approval, and never open or approve the link yourself.
 3. **5-minute guard.** Reach the gate within 5 minutes of wall-clock time from the request. If you are still exploring or polishing at 5 minutes, stop and present the gate with your best prompt so far.
 4. **Two polishing rounds at most.** Draft the prompt, revise it at most twice, then quote.
 5. **Never double-submit.** Give every `create_video` and `create_image` its own `idempotencyKey`. If a call times out or its outcome is unknown, repeat it with the identical arguments and the identical key. Never start a new video while one is `rendering`: check it with `get_video`.
@@ -70,7 +70,7 @@ The quote runs every check before anything is charged and refuses, at no cost: r
 
 ### 5. Quote → gate
 
-`quote_video` with `prompt`, `durationSec`, `aspectRatio`, `modelId` (optional) and `references`. Read `quote.credits` and `budgetRemaining`. If the price is more than `budgetRemaining`, say so instead of gating: this connection's daily budget resets at `budget.resetsAt` from `whoami`. Otherwise gate (Hard rule 2): `This video costs N credits (M left today for this app) — reply proceed`.
+`quote_video` with `prompt`, `durationSec`, `aspectRatio`, `modelId` (optional) and `references`. Read `quote.credits` and `budgetRemaining`. If the price is more than `budgetRemaining`, say so instead of gating: this connection's daily budget resets at `budget.resetsAt` from `whoami`. Otherwise gate (Hard rule 2), naming the account so a wrong sign-in shows before anything is spent: `This video costs N credits on <account.name>'s Cuddler (M left today for this app) — reply proceed`.
 
 ### 6. Create after "proceed"
 
@@ -106,7 +106,7 @@ Every refusal, with what to change, is in [references/model-routing.md](referenc
 
 ## Images
 
-`quote_image` (`prompt`, `aspectRatio`, `resolution`, `modelId`, `references`) → gate → `create_image` with `maxCredits` and its own `idempotencyKey`. Several images: price them in one gate, then one `create_image` per image, each with its own key. A created image can be the reference for a video: `{ "url": image.url }`.
+`quote_image` (`prompt`, `aspectRatio`, `resolution`, `modelId`, `references`) → gate → `create_image` with `maxCredits` and its own `idempotencyKey`. Several images: price them in one gate, then one `create_image` per image, each with its own key. Save each image into `./out/` with a plain GET (`curl -fL -o ./out/<last part of image.url> "<image.url>"`) and reply with the local path and `creditsCharged`: some hosts, such as the Codex app, don't show pictures from web addresses but do show a local file. A created image can be the reference for a video: `{ "url": image.url }`.
 
 ## References
 

@@ -12,8 +12,8 @@ Goal: the `cuddler` MCP server is connected in this agent, the user is signed in
 
 Identical in every Cuddler skill (CI checks that the copies match). They override everything else in this file.
 
-1. **Cuddler MCP tools only.** Reach Cuddler only through the tools of the connected `cuddler` MCP server. Never call `api.cuddler.ai` or `mcp.cuddler.ai` with curl, fetch, an SDK or code of your own. The only plain HTTP requests you make are to the signed upload and download URLs those tools return.
-2. **Quote first, one gate.** Price every paid call before making it: `quote_video` or `quote_image` for a new render, `retry.credits` from `get_video` for a paid retry. Then ask one yes/no question that ends in `reply proceed`, with the price in credits. A clear yes in any language counts as proceed. After it, run to the end with no further questions. Anything beyond the quote (another take, a paid retry, a longer clip) needs a new gate. When a paid call answers `confirmation_required`, give the user its `approvalUrl`, wait until they say they approved it, then repeat the call with exactly the same arguments plus `approvalId`. Never change an argument after an approval, and never open or approve the link yourself.
+1. **Cuddler MCP tools only.** Reach Cuddler only through the tools of the connected `cuddler` MCP server. Never call `api.cuddler.ai` or `mcp.cuddler.ai` with curl, fetch, an SDK or code of your own. The only plain HTTP requests you make are to the upload URLs, download links and image URLs those tools return.
+2. **Quote first, one gate.** Price every paid call before making it: `quote_video` or `quote_image` for a new render, `retry.credits` from `get_video` for a paid retry. Then ask one yes/no question in the user's language, with the price in credits, that ends by telling them how to go ahead: `reply proceed` in English, the same words in their language otherwise. A clear yes in any language counts as proceed. After it, run to the end with no further questions. Anything beyond the quote (another take, a paid retry, a longer clip) needs a new gate. When a paid call answers `confirmation_required`, give the user its `approvalUrl`, wait until they say they approved it, then repeat the call with exactly the same arguments plus `approvalId`. Never change an argument after an approval, and never open or approve the link yourself.
 3. **5-minute guard.** Reach the gate within 5 minutes of wall-clock time from the request. If you are still exploring or polishing at 5 minutes, stop and present the gate with your best prompt so far.
 4. **Two polishing rounds at most.** Draft the prompt, revise it at most twice, then quote.
 5. **Never double-submit.** Give every `create_video` and `create_image` its own `idempotencyKey`. If a call times out or its outcome is unknown, repeat it with the identical arguments and the identical key. Never start a new video while one is `rendering`: check it with `get_video`.
@@ -50,14 +50,15 @@ You may run an install command for the user when they ask you to; never edit the
 | Gemini CLI | `/mcp auth cuddler` |
 | Cursor | The MCP settings page → Connect |
 
-A Cuddler page opens in the browser. The user signs in and allows the connection. To create images and videos they must allow **spending credits**; it is never pre-selected. If the browser doesn't open, give the user the link the agent printed.
+A Cuddler page opens in the browser. The user signs in and allows the connection. To create images and videos they must allow **spending credits**; it is never pre-selected. If the browser doesn't open, give the user the link the agent printed. Ask them to open it right away: the agent waits for the browser only a few minutes (Codex: five). If the page the browser lands on can't reach `localhost`, that wait is over; start the sign-in again.
 
 ## Step 3 — Check the account
 
-Call `whoami` and tell the user, in one short paragraph: plan (`plan.tier`), credit balance (`credits.balance`), what this connection may still spend today (`budget.remaining` of `budget.limit`, resets at `budget.resetsAt`), and which generations are open (`features.images`, `features.videos`).
+Call `whoami` and tell the user, in one short paragraph: the account this connection uses (`account.name`), plan (`plan.tier`), credit balance (`credits.balance`), what this connection may still spend today (`budget.remaining` of `budget.limit`, resets at `budget.resetsAt`), and which generations are open (`features.images`, `features.videos`).
 
 | Result | Meaning | Do |
 |---|---|---|
+| `account.name` isn't the account the user meant | The browser was signed in to another Cuddler account when connecting | Connect again with the right account (Troubleshooting: wrong account) |
 | `permissions.spend` is false | Spending credits was not allowed when connecting | Connect again and allow spending (Step 2) |
 | `features.videos` is false | Videos aren't open for this plan | Images only; plans are at https://cuddler.ai/membership |
 | `features.images` and `features.videos` are false | Nothing to generate on this account | Say so and stop |
@@ -71,11 +72,11 @@ Only when the user wants to try it.
 1. `list_models` → among `image` entries with `available: true`, the one with the lowest `creditsPerImage`.
 2. `quote_image` with a simple prompt ("A paper boat on a rain puddle at dusk, soft light, no people") and `aspectRatio: "1:1"`.
 3. Gate (Hard rule 2). If the user declines, setup is still complete.
-4. On "proceed": `create_image` with `maxCredits` = the quote and an `idempotencyKey` you choose once (`setup-test-<yyyymmddhhmm>`). Report the image link and the credits charged.
+4. On "proceed": `create_image` with `maxCredits` = the quote and an `idempotencyKey` you choose once (`setup-test-<yyyymmddhhmm>`). Save the image into `./out/` as the `cuddler-generate` skill does, and report the local path and the credits charged.
 
 ## Done — what to report
 
-The connected agent · account plan · credits and today's budget for this connection · the test image link, or "skipped by the user".
+The connected agent · account name and plan · credits and today's budget for this connection · the test image's local path, or "skipped by the user".
 
 Starter prompts to offer: "Make a 10-second vertical clip of …" · "Turn my character into a 15-second clip" · "Review ./clip.mp4".
 
@@ -87,7 +88,9 @@ Starter prompts to offer: "Make a 10-second vertical clip of …" · "Turn my ch
 | "Spending credits was not allowed" | Connect again and allow spending credits |
 | A tool says the feature isn't open | The account's plan doesn't include it yet |
 | The sign-in page shows another account | Sign out of cuddler.ai in that browser, then sign in again |
+| Connected to the wrong account | Sign out of cuddler.ai in the browser and sign in with the right account, then connect again: Claude Code `/mcp` → Cuddler → re-authenticate; Codex `codex mcp logout cuddler`, then `codex mcp login cuddler` (the app and the CLI share it) |
 | Codex asks to allow `create_image` or `create_video` | That is Codex's own approval, on top of the price gate: Allow, or Always allow for that tool |
+| Codex asks to allow network access for a `curl` download | The skill is saving the finished file from Cuddler's storage into `./out/`, and Codex's sandbox has no network by default: allow it |
 | Codex refuses a paid tool in `codex exec` ("approval policy is never") | Non-interactive Codex never asks; allow the tool for that run, as the install guide shows |
 | Codex says the model is not supported | The Codex CLI is older than the Codex app; update the CLI |
 | Disconnect this agent | cuddler.ai → Settings → Developer API tokens → revoke the connection; then remove the plugin or server in the agent |

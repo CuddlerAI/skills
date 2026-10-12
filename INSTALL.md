@@ -29,7 +29,7 @@ Cuddler isn't in the public plugin directory yet, so add its marketplace first. 
 2. Find **Cuddler** on the **Personal** tab, where added marketplaces show, and install it. The four Cuddler skills come with it; there is nothing to add under **Skills**.
 3. Installing opens a Cuddler sign-in page in your browser: sign in, tick **Spend credits** if you want images and videos, and allow it within five minutes. The page may say Cuddler hasn't reviewed the app; that's expected for Codex. Missed it? Settings → MCP servers → Cuddler → Authenticate.
 4. Start a new chat and mention the plugin: `@Cuddler make a 10-second vertical clip of a paper boat in the rain`.
-5. Keep the permission mode on **Ask for approval**. Before a paid render Codex asks to allow `create_image` or `create_video`: choose **Allow**, or **Always allow** to stop that question for this tool. Either way the skills still show the price first and wait for your OK. With **Full access**, Codex doesn't ask at all.
+5. Keep the permission mode on **Ask for approval**. Before a paid render Codex asks to allow `create_image` or `create_video`: choose **Allow**, or **Always allow** to stop that question for this tool. Either way the skills still show the price first and wait for your OK. With **Full access**, Codex doesn't ask at all. When an image or clip is ready, the skill saves it into `./out/`; Codex's sandbox has no network by default, so Codex also asks to allow that download.
 
 ## Codex CLI
 
@@ -44,7 +44,7 @@ Cuddler isn't in the public plugin directory yet, so add its marketplace first. 
 
    Inside Codex, `/plugins` does the first two steps. The login opens the Cuddler sign-in page: finish it within five minutes, and tick **Spend credits** if you want images and videos. On a remote machine add `--no-browser` and open the printed link yourself. Check the connection with `/mcp`.
 3. Start a new session and ask for what you want, or call a skill directly with `$cuddler-generate`.
-4. Before a paid render Codex asks to allow `create_image` or `create_video`: **Allow**, **Allow for this session** or **Always allow**.
+4. Before a paid render Codex asks to allow `create_image` or `create_video`: **Allow**, **Allow for this session** or **Always allow**. Saving the finished file into `./out/` asks for network access the same way.
 
 ### Scripts and `codex exec`
 

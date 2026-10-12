@@ -118,7 +118,7 @@ test("a SKILL.md over 300 lines fails", () => {
 });
 
 test("Hard rules that drift in one skill fail", () => {
-  expectError(withCopy((d) => edit(d, "skills/cuddler-review/SKILL.md", (t) => t.replace("ends in `reply proceed`", "ends in `reply yes`"))), /Hard rules differ/);
+  expectError(withCopy((d) => edit(d, "skills/cuddler-review/SKILL.md", (t) => t.replace("`reply proceed` in English", "`reply yes` in English"))), /Hard rules differ/);
   expectError(
     withCopy((d) => {
       for (const s of SKILLS) edit(d, `skills/${s}/SKILL.md`, (t) => t.replace("**Content red lines.** Adults only, in adult contexts.", "**Content red lines.** Use judgement."));

@@ -2,7 +2,7 @@
 # contact-sheet.sh — a local review pack for one video clip. Uses only ffmpeg and ffprobe; nothing leaves the machine.
 #
 # usage: contact-sheet.sh <clip> [--out DIR] [--every SEC] [--frames N] [--cols N]
-#                         [--expect-seconds N] [--expect-aspect W:H] [--cut-threshold 0.35]
+#                         [--expect-seconds N] [--expect-aspect W:H] [--cut-threshold 0.2]
 #
 # Writes into DIR (default: <clip without extension>.review next to the clip):
 #   summary.txt, summary.json   measurements and PASS / WARN / FAIL checks
@@ -19,7 +19,7 @@ die() { echo "contact-sheet: $2" >&2; exit "$1"; }
 is_num() { printf '%s' "$1" | grep -Eq '^[0-9]+([.][0-9]+)?$'; }
 fmt() { awk -v x="$1" 'BEGIN { printf "%.2f", x }'; }
 
-IN=""; OUT=""; EVERY=""; NFRAMES=12; COLS=""; EXP_S=""; EXP_A=""; CUT_T=0.35
+IN=""; OUT=""; EVERY=""; NFRAMES=12; COLS=""; EXP_S=""; EXP_A=""; CUT_T=0.2
 while [ $# -gt 0 ]; do
   case "$1" in
     --out|--every|--frames|--cols|--expect-seconds|--expect-aspect|--cut-threshold)

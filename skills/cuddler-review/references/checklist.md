@@ -12,7 +12,7 @@ Score every clip against all three parts. Anchor each finding to a timestamp or 
 | First sound onset (voice band) | ≤ 2.0 s | 2.0–3.0 s | > 3.0 s | Approximate; confirm the mouth starts moving in the frames |
 | End hold (after the last sound) | ≥ 1.5 s | < 1.5 s | — | Ambience can hide it; check the last frames for a closed mouth and eye contact |
 | Longest silence inside the clip | ≤ 3.5 s | > 3.5 s | — | A long hole often means a dropped line |
-| Cuts | 0 when one take was asked for | any | — | Fast motion can trigger false cuts; confirm on the sheet at the listed times |
+| Cuts | 0 when one take was asked for | any | — | Fast motion can trigger false cuts, and soft or misty shots score low (a hard cut there can read about 0.25); confirm on the sheet at the listed times |
 | True peak | ≤ −1 dBTP | > −1 dBTP | — | Clipping risk after re-encoding on social platforms |
 | Loudness | reported | — | — | Integrated LUFS, for information (social platforms normalise around −14) |
 

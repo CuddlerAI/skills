@@ -12,8 +12,8 @@ You can't watch video or hear audio. This skill turns a clip into pictures and n
 
 Identical in every Cuddler skill (CI checks that the copies match). They override everything else in this file.
 
-1. **Cuddler MCP tools only.** Reach Cuddler only through the tools of the connected `cuddler` MCP server. Never call `api.cuddler.ai` or `mcp.cuddler.ai` with curl, fetch, an SDK or code of your own. The only plain HTTP requests you make are to the signed upload and download URLs those tools return.
-2. **Quote first, one gate.** Price every paid call before making it: `quote_video` or `quote_image` for a new render, `retry.credits` from `get_video` for a paid retry. Then ask one yes/no question that ends in `reply proceed`, with the price in credits. A clear yes in any language counts as proceed. After it, run to the end with no further questions. Anything beyond the quote (another take, a paid retry, a longer clip) needs a new gate. When a paid call answers `confirmation_required`, give the user its `approvalUrl`, wait until they say they approved it, then repeat the call with exactly the same arguments plus `approvalId`. Never change an argument after an approval, and never open or approve the link yourself.
+1. **Cuddler MCP tools only.** Reach Cuddler only through the tools of the connected `cuddler` MCP server. Never call `api.cuddler.ai` or `mcp.cuddler.ai` with curl, fetch, an SDK or code of your own. The only plain HTTP requests you make are to the upload URLs, download links and image URLs those tools return.
+2. **Quote first, one gate.** Price every paid call before making it: `quote_video` or `quote_image` for a new render, `retry.credits` from `get_video` for a paid retry. Then ask one yes/no question in the user's language, with the price in credits, that ends by telling them how to go ahead: `reply proceed` in English, the same words in their language otherwise. A clear yes in any language counts as proceed. After it, run to the end with no further questions. Anything beyond the quote (another take, a paid retry, a longer clip) needs a new gate. When a paid call answers `confirmation_required`, give the user its `approvalUrl`, wait until they say they approved it, then repeat the call with exactly the same arguments plus `approvalId`. Never change an argument after an approval, and never open or approve the link yourself.
 3. **5-minute guard.** Reach the gate within 5 minutes of wall-clock time from the request. If you are still exploring or polishing at 5 minutes, stop and present the gate with your best prompt so far.
 4. **Two polishing rounds at most.** Draft the prompt, revise it at most twice, then quote.
 5. **Never double-submit.** Give every `create_video` and `create_image` its own `idempotencyKey`. If a call times out or its outcome is unknown, repeat it with the identical arguments and the identical key. Never start a new video while one is `rendering`: check it with `get_video`.
@@ -36,7 +36,7 @@ Run the script that ships with this skill, `scripts/contact-sheet.sh`, from this
 bash <skill-dir>/scripts/contact-sheet.sh ./clip.mp4 --expect-seconds 15 --expect-aspect 9:16
 ```
 
-Options: `--out DIR` (default `<clip>.review/`), `--every S` (sheet interval: 0.5 s for clips up to 16 s, else 1 s), `--frames N` (full-size frames, default 12), `--cut-threshold T` (default 0.35).
+Options: `--out DIR` (default `<clip>.review/`), `--every S` (sheet interval: 0.5 s for clips up to 16 s, else 1 s), `--frames N` (full-size frames, default 12), `--cut-threshold T` (default 0.2).
 
 It writes `summary.txt` and `summary.json` (measurements with PASS / WARN / FAIL), `sheet.jpg`, `frames/t<seconds>.jpg`, `cuts.txt`, `audio.txt` and `meta.json`, then prints what to read. Exit 0 = analysed (read the verdicts), 2 = usage error, 3 = ffmpeg or ffprobe missing, 4 = the clip could not be analysed.
 

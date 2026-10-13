@@ -12,6 +12,7 @@ import { fileURLToPath } from "node:url";
 import { inflateRawSync } from "node:zlib";
 import { render, syncReadme } from "./claims.mjs";
 import { crc32, packOpenai, packageFiles } from "./pack-openai.mjs";
+import { wordingProblems } from "./public-wording.mjs";
 import { githubSlug, parseFrontmatter, validate } from "./validate.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -237,10 +238,21 @@ test("a tool name that the Cuddler MCP server doesn't have fails", () => {
   expectError(withCopy((d) => appendFileSync(join(d, "skills/cuddler-generate/SKILL.md"), "\nCall `get_clip` first.\n")), /`get_clip` is not a Cuddler MCP tool/);
 });
 
+test("a SKILL.md license other than MIT fails", () => {
+  expectError(withCopy((d) => edit(d, "skills/cuddler-setup/SKILL.md", (t) => t.replace("license: MIT", "license: Proprietary"))), /license must be "MIT"/);
+});
+
+test("public wording: private repositories, internal paths and server settings are named", () => {
+  assert.equal(wordingProblems([["t", "docs: explain the plan credits cap\n\nSee CuddlerAI/skills#6 and apps-only wording."]]).length, 0);
+  const found = wordingProblems([["t", "Follows CuddlerAI/Cuddler#5813."], ["u", "the switch MCP_EXAMPLE_FLAG"], ["v", "see apps/api/src/x.ts"]]);
+  assert.deepEqual(found.map((p) => p.what), ["a private repository or one of its pull requests", "a server setting", "an internal path"]);
+  assert.equal(found[0].line, 1);
+});
+
 test("command-line instructions, third-party keys and fixed prices fail in public text", () => {
   expectError(withCopy((d) => appendFileSync(join(d, "skills/cuddler-generate/SKILL.md"), "\nRun `cuddler video generate \"x\"`.\n")), /command-line instruction/);
   expectError(withCopy((d) => appendFileSync(join(d, "skills/cuddler-review/scripts/contact-sheet.sh"), "\n# or: cuddler download <clip_id>\n")), /contact-sheet\.sh: line \d+: a command-line instruction/);
-  expectError(withCopy((d) => appendFileSync(join(d, "README.md"), "\nBring your Higgsfield key.\n")), /third-party provider key/);
+  expectError(withCopy((d) => appendFileSync(join(d, "README.md"), "\nBring your own provider key.\n")), /third-party provider key/);
   expectError(withCopy((d) => appendFileSync(join(d, "skills/cuddler-character-clip/SKILL.md"), "\nA 15-second take costs 240 credits.\n")), /a fixed price/);
 });
 
@@ -323,7 +335,7 @@ test("unpinned actions and pull_request_target fail", () => {
 test("direct API calls, admin routes, internal addresses, secrets and email addresses fail", () => {
   expectError(withCopy((d) => appendFileSync(join(d, "skills/cuddler-generate/references/model-routing.md"), "\n```bash\ncurl -s https://api.cuddler.ai/api/v1/me\n```\n")), /calls the API directly/);
   expectError(withCopy((d) => appendFileSync(join(d, "README.md"), "\nOps: POST /api/admin/report\n")), /admin route/);
-  expectError(withCopy((d) => appendFileSync(join(d, "CONTRIBUTING.md"), "\nSee docs/design_open_agent_skills_repo_2026-10.md\n")), /internal document path/);
+  expectError(withCopy((d) => appendFileSync(join(d, "CONTRIBUTING.md"), "\nSee docs/design_example_2026-01.md\n")), /document path from a private repository/);
   expectError(withCopy((d) => appendFileSync(join(d, "INSTALL.md"), `\ntoken: cud_pat_${"a1B2".repeat(6)}\n`)), /personal access token/);
   expectError(withCopy((d) => appendFileSync(join(d, "evals/README.md"), "\nContact someone@example.com\n")), /email address/);
 });

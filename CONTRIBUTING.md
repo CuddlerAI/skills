@@ -12,6 +12,12 @@ claude plugin validate --strict .      # the plugin manifests, as Claude Code re
 
 Node.js 20 or newer; no other dependencies.
 
+## Writing for a public repository
+
+Everything here is public, commit messages, pull request descriptions and comments included. Describe what the skills do. Don't name private repositories or their pull requests, internal paths, server settings or internal addresses, and don't paste from internal documents; CI checks the description and the commit messages of every pull request (`scripts/public-wording.mjs`).
+
+By opening a pull request you license your contribution under the MIT License and confirm that you wrote it or have the right to submit it.
+
 ## The rules every skill keeps
 
 - **The Hard rules block is identical in every skill.** Change it in one, copy it to all, and update `RULE_PHRASES` in `scripts/validate.mjs` if you change a protected phrase.
@@ -24,12 +30,12 @@ Node.js 20 or newer; no other dependencies.
 ## Changing what a skill does
 
 1. Add or update a case in `evals/` (see [evals/README.md](evals/README.md)): a `prompt.md`, its `graders/`, and mocks for any tool answer the case needs. Write mocks in the server's own format; the validator checks it.
-2. Run it with and without the plugin: `claude plugin eval . --case <name> --no-publish`. The with-plugin arm should win clearly; paste the result in the pull request.
+2. Run it with and without the plugin: `claude plugin eval . --case <name> --no-publish`. The with-plugin arm should win clearly; paste the result in the pull request. A run costs about half a dollar per case on your own Claude Code quota; if you can't run it, say so and the maintainer runs it before merging.
 3. Run the validator and its tests.
 
 ## Releasing
 
-Bump `VERSION`, the three plugin manifests, the marketplace entry and `CHANGELOG.md` together (CI checks they match), merge, then tag `v<version>` on `main`.
+Every change that reaches `main` bumps `VERSION` (a patch bump is enough for wording), together with the three plugin manifests, the marketplace entry and `CHANGELOG.md` (CI checks they match). After the merge, tag `v<version>` on `main` and create a GitHub Release from the tag with the CHANGELOG entry.
 
 ## The OpenAI plugin directory
 
@@ -39,7 +45,7 @@ ChatGPT and Codex share one plugin directory, and its listing is built from this
 node scripts/pack-openai.mjs   # dist/cuddler-<version>-openai.zip
 ```
 
-The ZIP holds the Codex manifest, `.mcp.json`, `skills/`, `assets/` and `LICENSE`, and the script refuses to build while `validate.mjs` reports an error; the validator holds the Codex manifest to the directory's listing rules. The Cuddler team uploads it on the OpenAI Platform. Changes to skills, the listing text or the icons need a new upload; changes to the Cuddler MCP tools don't.
+The ZIP holds the Codex manifest, `.mcp.json`, `skills/`, `assets/`, `LICENSE` and `TRADEMARKS.md`, and the script refuses to build while `validate.mjs` reports an error; the validator holds the Codex manifest to the directory's listing rules. The Cuddler team uploads it on the OpenAI Platform. Changes to skills, the listing text or the icons need a new upload; changes to the Cuddler MCP tools don't.
 
 ## Code owners
 

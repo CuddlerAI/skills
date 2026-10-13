@@ -56,6 +56,10 @@ A refused call comes back as an error whose text starts with a code, followed by
 | `photoreal_unavailable` | Realistic looks aren't enabled for the account | Use an illustrated or 2.5D look and say so |
 | `prompt_too_long`, bad duration or aspect | A request outside the model's limits | Fix the named problem; nothing was charged |
 | `confirmation_required` | Above the account's approval threshold | Give the user the `approvalUrl`; after they approve, repeat the identical call plus `approvalId` |
+| `confirmation_pending` | The approval page has not been approved yet | Give the user the `approvalUrl` again; after they approve, repeat the identical call plus `approvalId` |
+| `confirmation_declined`, `confirmation_cancelled` | The user said no to the price, or closed the confirmation (the host's dialog or the approval page) | Nothing was charged; stop. Call again only if they ask |
+| `confirmation_mismatch` | The host answered a confirmation that belongs to other arguments | Nothing was charged; make the call you mean again and the host asks again |
+| `confirmation_used` | That confirmation already ran the call once | Nothing more was charged. If you have no result, repeat the identical call with the same `idempotencyKey`: the host asks once more and the key never charges twice |
 | `permission_not_granted` | Spending or uploads were not allowed when Cuddler was connected | The `cuddler-setup` skill: connect again and allow it |
 | `feature_unavailable` | Images, videos or uploads aren't open for this account | Say so |
 | `plan_required`, `model_not_in_plan` | The model or option isn't in the plan | Say so and offer an available model |

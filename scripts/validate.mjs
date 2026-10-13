@@ -75,6 +75,8 @@ export const RULE_PHRASES = [
   "`quote_video`",
   "reply proceed",
   "`confirmation_required`",
+  "`confirmation: \"host\"`",
+  "`confirmation_declined`",
   "`approvalId`",
   "5 minutes",
   "at most twice",

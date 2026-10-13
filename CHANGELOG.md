@@ -2,6 +2,18 @@
 
 All notable changes to the Cuddler skills. The version here, `VERSION` and every plugin manifest must match (CI checks).
 
+## [0.3.4] — 2026-10-12
+
+### Changed
+
+- **One confirmation when Cuddler asks through the host.** Cuddler can ask the user itself, in the host's own dialog, before a paid call runs (a form with the price at or under the approval threshold, the approval page above it). A quote then says `confirmation: "host"`, and the skills give the price in one line and make the call instead of also asking in chat, so the user confirms once (Hard rule 2, all four skills). Without that field, or with `confirmation: "chat"`, nothing changes: the skills ask, as before. A paid retry has no quote, so the skills still ask in chat.
+- **The confirmation refusals are handled.** `confirmation_declined` and `confirmation_cancelled` (the user said no or closed the dialog; nothing was charged) stop the request until the user asks again; `confirmation_pending` gets the approval link again; `confirmation_mismatch` and `confirmation_used` are in the refusal table of `cuddler-generate`.
+
+### Added
+
+- Evals `host-confirmation` (a quote that says `confirmation: "host"` leads to one create and no question in chat) and `host-declined` (a declined dialog ends the request with nothing charged and no second try).
+- The validator keeps `confirmation: "host"` and `confirmation_declined` in the Hard rules.
+
 ## [0.3.3] — 2026-10-12
 
 ### Changed

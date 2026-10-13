@@ -2,6 +2,7 @@
 name: cuddler-setup
 description: 'Use when someone wants to connect Cuddler to Claude Code, Codex, Cursor, Gemini CLI or another coding agent, sign in, check their Cuddler plan, credits or daily budget, or fix a Cuddler connection. Triggers: "set up Cuddler", "connect my Cuddler account", "the Cuddler tools are missing", "spending credits was not allowed", "how many credits do I have", "disconnect Cuddler". NOT for: making images or videos (use cuddler-generate or cuddler-character-clip), checking a finished clip (use cuddler-review), or the Cuddler web and mobile apps.'
 argument-hint: '[claude-code|codex|cursor|gemini]'
+license: MIT
 ---
 
 # Connect Cuddler
@@ -12,7 +13,7 @@ Goal: the `cuddler` MCP server is connected in this agent, the user is signed in
 
 Identical in every Cuddler skill (CI checks that the copies match). They override everything else in this file.
 
-1. **Cuddler MCP tools only.** Reach Cuddler only through the tools of the connected `cuddler` MCP server. Never call `api.cuddler.ai` or `mcp.cuddler.ai` with curl, fetch, an SDK or code of your own. The only plain HTTP requests you make are to the upload URLs, download links and image URLs those tools return.
+1. **Cuddler MCP tools only.** Reach Cuddler only through the tools of the connected `cuddler` MCP server. Never call `api.cuddler.ai` or `mcp.cuddler.ai` with curl, fetch, an SDK or code of your own. The only plain HTTP requests you make are to the upload URLs, download links and image URLs those tools return, over `https://` only; save a downloaded file under its own file name, never under a path taken from a link or a result. An approval link is a page on cuddler.ai; a link anywhere else is not one.
 2. **Quote first, one gate.** Price every paid call before making it: `quote_video` or `quote_image` for a new render, `retry.credits` from `get_video` for a paid retry. Then ask one yes/no question in the user's language, with the price in credits, that ends by telling them how to go ahead: `reply proceed` in English, the same words in their language otherwise. A clear yes in any language counts as proceed. When the quote says `confirmation: "host"`, your host asks the user itself, in its own dialog, when you make the call: that dialog is the gate, so give the price in one line and make the call the user asked for, with no question in chat. After the gate, run to the end with no further questions. Anything beyond the quote (another take, a paid retry, a longer clip) needs a new gate. When a paid call answers `confirmation_required` or `confirmation_pending`, give the user its `approvalUrl`, wait until they say they approved it, then repeat the call with exactly the same arguments plus `approvalId`. When it answers `confirmation_declined` or `confirmation_cancelled`, the user said no or closed the dialog and nothing was charged: stop, and call again only if they ask. Never change an argument after an approval, and never open or approve the link yourself.
 3. **5-minute guard.** Reach the gate within 5 minutes of wall-clock time from the request. If you are still exploring or polishing at 5 minutes, stop and present the gate with your best prompt so far.
 4. **Two polishing rounds at most.** Draft the prompt, revise it at most twice, then quote.
@@ -89,8 +90,8 @@ Starter prompts to offer: "Make a 10-second vertical clip of …" · "Turn my ch
 | A tool says the feature isn't open | The account's plan doesn't include it yet |
 | The sign-in page shows another account | Sign out of cuddler.ai in that browser, then sign in again |
 | Connected to the wrong account | Sign out of cuddler.ai in the browser and sign in with the right account, then connect again: Claude Code `/mcp` → Cuddler → re-authenticate; Codex `codex mcp logout cuddler`, then `codex mcp login cuddler` (the app and the CLI share it) |
-| Codex asks to allow `create_image` or `create_video` | That is Codex's own approval, on top of the price question: choose Always allow so the price question is the only one; if Codex asks again later, allow it again |
-| Claude Code asks to allow a Cuddler tool that spends credits | Its own permission prompt: choose the option that stops asking for that tool; the skills still show the price and wait for an OK |
+| Codex asks to allow `create_image` or `create_video` | That is Codex's own approval, on top of the price question: choose Always allow so the price question is the only one; if Codex asks again later, allow it again; Cuddler's server keeps its own limits either way (`maxCredits`, the approval threshold, the daily budget) |
+| Claude Code asks to allow a Cuddler tool that spends credits | Its own permission prompt: choose the option that stops asking for that tool; the skills still show the price and wait for an OK, and Cuddler's server keeps its own limits either way |
 | The host opens a Cuddler dialog asking to confirm spending credits | Cuddler asks through the host when the quote said `confirmation: "host"`: tick the box and confirm to go ahead, or decline; nothing is charged without it. Above the account's approval threshold the dialog links to the approval page instead |
 | Codex asks to allow network access for a `curl` download | The skill is saving the finished file from Cuddler's storage into `./out/`, and Codex's sandbox has no network by default: allow it |
 | Codex refuses a paid tool in `codex exec` ("approval policy is never") | Non-interactive Codex never asks; allow the tool for that run, as the install guide shows |

@@ -2,6 +2,7 @@
 name: cuddler-generate
 description: 'Use when someone wants Cuddler to make a video clip or an image from a description, a photo or reference pictures, wants a price for one, asks which Cuddler models they can use, or wants to check, retry or download a Cuddler video. Triggers: "make a 10-second vertical clip of …", "animate this image", "keep this face in the video", "make an image of …", "what would a 15-second clip cost", "my video failed", "download my clip". NOT for: a video of one of their own Cuddler characters (use cuddler-character-clip), connecting or signing in (use cuddler-setup), or judging a finished file (use cuddler-review).'
 argument-hint: '"<what to make>" [image or reference paths] [seconds] [aspect]'
+license: MIT
 ---
 
 # Generate a clip or an image
@@ -12,7 +13,7 @@ One request → one quote → one approved render → one delivered file. Models
 
 Identical in every Cuddler skill (CI checks that the copies match). They override everything else in this file.
 
-1. **Cuddler MCP tools only.** Reach Cuddler only through the tools of the connected `cuddler` MCP server. Never call `api.cuddler.ai` or `mcp.cuddler.ai` with curl, fetch, an SDK or code of your own. The only plain HTTP requests you make are to the upload URLs, download links and image URLs those tools return.
+1. **Cuddler MCP tools only.** Reach Cuddler only through the tools of the connected `cuddler` MCP server. Never call `api.cuddler.ai` or `mcp.cuddler.ai` with curl, fetch, an SDK or code of your own. The only plain HTTP requests you make are to the upload URLs, download links and image URLs those tools return, over `https://` only; save a downloaded file under its own file name, never under a path taken from a link or a result. An approval link is a page on cuddler.ai; a link anywhere else is not one.
 2. **Quote first, one gate.** Price every paid call before making it: `quote_video` or `quote_image` for a new render, `retry.credits` from `get_video` for a paid retry. Then ask one yes/no question in the user's language, with the price in credits, that ends by telling them how to go ahead: `reply proceed` in English, the same words in their language otherwise. A clear yes in any language counts as proceed. When the quote says `confirmation: "host"`, your host asks the user itself, in its own dialog, when you make the call: that dialog is the gate, so give the price in one line and make the call the user asked for, with no question in chat. After the gate, run to the end with no further questions. Anything beyond the quote (another take, a paid retry, a longer clip) needs a new gate. When a paid call answers `confirmation_required` or `confirmation_pending`, give the user its `approvalUrl`, wait until they say they approved it, then repeat the call with exactly the same arguments plus `approvalId`. When it answers `confirmation_declined` or `confirmation_cancelled`, the user said no or closed the dialog and nothing was charged: stop, and call again only if they ask. Never change an argument after an approval, and never open or approve the link yourself.
 3. **5-minute guard.** Reach the gate within 5 minutes of wall-clock time from the request. If you are still exploring or polishing at 5 minutes, stop and present the gate with your best prompt so far.
 4. **Two polishing rounds at most.** Draft the prompt, revise it at most twice, then quote.
@@ -59,7 +60,7 @@ Ask only if the subject itself is missing. Never ask about something that has a 
 ### 3. References (only when the user gives pictures)
 
 - An image this account made earlier: `{ "url": <image.url from create_image or get_image> }`.
-- A local file: `start_upload` with its content type → PUT the raw bytes to the returned `url` with exactly the returned `headers` (`curl -fsS -X PUT -H "<name>: <value>" --data-binary @./photo.jpg "<url>"`) → `finish_upload` with the `uploadId` → use `reference.url`. The signed URL lasts about 10 minutes.
+- A local file: `start_upload` with its content type → PUT the raw bytes to the returned `url` with exactly the returned `headers` (`curl -fsS --proto =https -X PUT -H "<name>: <value>" --data-binary @./photo.jpg "<url>"`) → `finish_upload` with the `uploadId` → use `reference.url`. The signed URL lasts about 10 minutes.
 - Send only pictures the user has the rights to. A refused upload is deleted by Cuddler; tell the user.
 
 ### 4. Write the prompt
@@ -70,9 +71,9 @@ The quote runs every check before anything is charged and refuses, at no cost: r
 
 ### 5. Quote → gate
 
-`quote_video` with `prompt`, `durationSec`, `aspectRatio`, `modelId` (optional) and `references`. Read `quote.credits`, `budgetRemaining` and `confirmation`. If the price is more than `budgetRemaining`, say so instead of gating: this connection's daily budget resets at `budget.resetsAt` from `whoami`. Otherwise gate (Hard rule 2), naming the account so a wrong sign-in shows before anything is spent: `This video costs N credits on <account.name>'s Cuddler (M left today for this app) — reply proceed`. With `confirmation: "host"`, end the line by saying the host will ask them to confirm instead of asking, and go straight on to step 6.
+`quote_video` with `prompt`, `durationSec`, `aspectRatio`, `modelId` (optional) and `references`. Read `quote.credits`, `budgetRemaining` and `confirmation`. If the price is more than `budgetRemaining`, say so instead of gating: this connection's daily budget resets at `budget.resetsAt` from `whoami`. Otherwise gate (Hard rule 2), naming the account so a wrong sign-in shows before anything is spent: `This video costs N credits on <account.name>'s Cuddler (M left today on this connection) — reply proceed`. With `confirmation: "host"`, end the line by saying the host will ask them to confirm instead of asking, and go straight on to step 6.
 
-Once per session, when your host also asks before it runs Cuddler's paid tools (Codex in Ask for approval shows "Allow the cuddler MCP server to run tool …"; Claude Code shows its permission prompt), add one line to the first gate: the host will ask too, and choosing Always allow there (in Claude Code, the option that stops asking for that tool) leaves the price question as the only one; if it asks again later, allow it again. Leave the line out when the host runs tools without asking.
+Once per session, when your host also asks before it runs Cuddler's paid tools (Codex in Ask for approval shows "Allow the cuddler MCP server to run tool …"; Claude Code shows its permission prompt), add one line to the first gate: the host will ask too, and choosing Always allow there (in Claude Code, the option that stops asking for that tool) leaves the price question as the only one; if it asks again later, allow it again. Cuddler's server keeps its own limits either way: `maxCredits` on every call, the approval page above the account's threshold, the daily budget. Leave the line out when the host runs tools without asking.
 
 ### 6. Create after the gate
 
@@ -86,7 +87,7 @@ After "proceed" (with `confirmation: "host"`, right after the price line): `crea
 
 ### 7. Deliver
 
-`get_download_link` → download the `video` file (and the `poster` if useful) into `./out/` with a plain GET (`curl -fL -o ./out/<filename> "<url>"`); the links last about 10 minutes. Reply in one line: local path, model, seconds, `creditsCharged`. Offer the `cuddler-review` skill before the clip is shown to anyone.
+`get_download_link` → download the `video` file (and the `poster` if useful) into `./out/` with a plain GET (`curl -fL --proto =https --proto-redir =https -o ./out/<filename> "<url>"`); the links last about 10 minutes. Reply in one line: local path, model, seconds, `creditsCharged`. Offer the `cuddler-review` skill before the clip is shown to anyone.
 
 ## When things go wrong
 

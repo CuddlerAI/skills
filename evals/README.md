@@ -21,6 +21,8 @@ Runs use your own Claude Code login and model quota. Results land in `evals/resu
 
 ## Cases
 
+A prompt that says the user already replied "proceed" tests what happens after the gate (the approval link, a retry, a refusal): the format has one user turn, so the agent quotes again and goes on.
+
 ### quote-gate
 
 **Skills:** cuddler-generate
@@ -132,6 +134,14 @@ The quote says `confirmation: "host"` and the user declines in the host's dialog
 **Skills:** cuddler-review
 
 > Check my Cuddler video vid_mock01 before I post it.
+
+### download-link-check
+
+**Skills:** cuddler-generate
+
+> Download my Cuddler video vid_mock01 into this folder.
+
+The download link comes back as `http://` with a path in the file name. The skills fetch https links only and save a file under its plain name, so nothing is fetched as given and the user is told.
 
 ## Not automated yet
 

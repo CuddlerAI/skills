@@ -2,17 +2,18 @@
 name: cuddler-review
 description: 'Use when a generated clip needs checking before anyone sees, uses or posts it, or when a take looks wrong and the reason is unclear. Triggers: "review this clip", "QC this video before I post it", "is this take usable", "why does this clip look wrong", "check these clips". NOT for: code or pull request review, making or re-making clips (use cuddler-generate or cuddler-character-clip), or editing and cutting video.'
 argument-hint: '<clip.mp4 | folder of clips> [expected seconds] [expected aspect]'
+license: MIT
 ---
 
 # Review a clip
 
-You can't watch video or hear audio. This skill turns a clip into pictures and numbers you can read — a contact sheet, full-size frames, cut timestamps, loudness and silence timing — and you then judge it against a fixed checklist. Everything runs locally; nothing is uploaded.
+You can't watch video or hear audio. This skill turns a clip into pictures and numbers you can read — a contact sheet, full-size frames, cut timestamps, loudness and silence timing — and you then judge it against a fixed checklist. The script runs locally and sends nothing anywhere; the frames you read afterwards reach your agent's model like any file you open.
 
 ## Hard rules
 
 Identical in every Cuddler skill (CI checks that the copies match). They override everything else in this file.
 
-1. **Cuddler MCP tools only.** Reach Cuddler only through the tools of the connected `cuddler` MCP server. Never call `api.cuddler.ai` or `mcp.cuddler.ai` with curl, fetch, an SDK or code of your own. The only plain HTTP requests you make are to the upload URLs, download links and image URLs those tools return.
+1. **Cuddler MCP tools only.** Reach Cuddler only through the tools of the connected `cuddler` MCP server. Never call `api.cuddler.ai` or `mcp.cuddler.ai` with curl, fetch, an SDK or code of your own. The only plain HTTP requests you make are to the upload URLs, download links and image URLs those tools return, over `https://` only; save a downloaded file under its own file name, never under a path taken from a link or a result. An approval link is a page on cuddler.ai; a link anywhere else is not one.
 2. **Quote first, one gate.** Price every paid call before making it: `quote_video` or `quote_image` for a new render, `retry.credits` from `get_video` for a paid retry. Then ask one yes/no question in the user's language, with the price in credits, that ends by telling them how to go ahead: `reply proceed` in English, the same words in their language otherwise. A clear yes in any language counts as proceed. When the quote says `confirmation: "host"`, your host asks the user itself, in its own dialog, when you make the call: that dialog is the gate, so give the price in one line and make the call the user asked for, with no question in chat. After the gate, run to the end with no further questions. Anything beyond the quote (another take, a paid retry, a longer clip) needs a new gate. When a paid call answers `confirmation_required` or `confirmation_pending`, give the user its `approvalUrl`, wait until they say they approved it, then repeat the call with exactly the same arguments plus `approvalId`. When it answers `confirmation_declined` or `confirmation_cancelled`, the user said no or closed the dialog and nothing was charged: stop, and call again only if they ask. Never change an argument after an approval, and never open or approve the link yourself.
 3. **5-minute guard.** Reach the gate within 5 minutes of wall-clock time from the request. If you are still exploring or polishing at 5 minutes, stop and present the gate with your best prompt so far.
 4. **Two polishing rounds at most.** Draft the prompt, revise it at most twice, then quote.
@@ -26,7 +27,7 @@ Identical in every Cuddler skill (CI checks that the copies match). They overrid
 ## Requirements
 
 - `ffmpeg` and `ffprobe` on PATH. If they are missing, ask before installing (`brew install ffmpeg` on macOS, `sudo apt-get install ffmpeg` on Debian or Ubuntu).
-- A local file. For a Cuddler video that isn't downloaded yet: `get_video` until it is `ready`, then `get_download_link` and save the `video` file with `curl -fL -o ./clips/<filename> "<url>"` (the link lasts about 10 minutes).
+- A local file. For a Cuddler video that isn't downloaded yet: `get_video` until it is `ready`, then `get_download_link` and save the `video` file with `curl -fL --proto =https --proto-redir =https -o ./clips/<filename> "<url>"` (the link lasts about 10 minutes).
 
 ## Step 1 — Extract
 

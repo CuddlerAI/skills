@@ -4,6 +4,19 @@ All notable changes to the Cuddler skills. The version here, `VERSION` and every
 
 Versions stay at 0.x while the skills are in beta: a minor version may change the hard rules or what the skills expect from the tools, only the latest version gets fixes, and every change that reaches `main` bumps the version. Each version is tagged `v<version>` and published as a GitHub Release with its entry below.
 
+## [0.3.6] — 2026-10-13
+
+Listing copy for the OpenAI plugin directory, ahead of the submission.
+
+### Changed
+
+- **The package description names the account, not a membership.** The three plugin manifests say "Make AI videos and images on your own Cuddler account from ChatGPT, Codex, Claude Code or Cursor: connect and sign in, quoted renders, character clips and local clip review."
+- **The directory listing's long description is rewritten** for ChatGPT and Codex users: what the plugin does, how it stays safe (sign-in in the browser, the price before every render, the approval page and the daily limit, characters rated for all audiences only, private until published) and what an account needs.
+
+### Added
+
+- The review information the directory asks for, in the Codex manifest under `extensions.com.openai`: five positive and three negative test cases, the commerce declaration and the release notes. The demo recording link is filled in at submission.
+
 ## [0.3.5] — 2026-10-13
 
 Follow-ups from a review of the repository as an open-source project.

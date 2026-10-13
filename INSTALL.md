@@ -1,6 +1,6 @@
 # Install
 
-Two parts: the **skills** (instructions your agent reads) and the **Cuddler MCP server** (the tools that actually make images and videos). On Claude Code and Codex the plugin brings both; elsewhere you add them one by one.
+Two parts: the **skills** (instructions your agent reads) and the **Cuddler MCP server** (the tools that actually make images and videos). On Claude Code and Codex the plugin brings both. The Cursor plugin is ready but not listed in Cursor's marketplace yet, so on Cursor and other agents you add them one by one.
 
 ## Claude Code
 
@@ -8,7 +8,7 @@ Two parts: the **skills** (instructions your agent reads) and the **Cuddler MCP 
 claude plugin install cuddler --marketplace CuddlerAI/skills
 ```
 
-Inside Claude Code you can do the same with `/plugin marketplace add CuddlerAI/skills` and then `/plugin install cuddler@cuddler`. Restart Claude Code, then type `/mcp`, choose the Cuddler server and sign in. A Cuddler page opens in your browser: sign in and allow the connection, including **spending credits** if you want to make images and videos. When Claude Code asks to allow a Cuddler tool that spends credits, choose the option that stops asking for that tool: the skills still show the price first and wait for your OK.
+Inside Claude Code you can do the same with `/plugin marketplace add CuddlerAI/skills` and then `/plugin install cuddler@cuddler`. Restart Claude Code, then type `/mcp`, choose the Cuddler server and sign in. A Cuddler page opens in your browser: sign in and allow the connection, including **spending credits** if you want to make images and videos. When Claude Code asks to allow a Cuddler tool that spends credits, choose the option that stops asking for that tool: the skills still show the price first and wait for your OK, and Cuddler's server keeps its own limits either way (every paid call is capped at the quoted `maxCredits`, larger renders need your approval in the browser, and each connection has a daily budget).
 
 The skills are then available as:
 
@@ -29,7 +29,7 @@ Cuddler isn't in the public plugin directory yet, so add its marketplace first. 
 2. Find **Cuddler** on the **Personal** tab, where added marketplaces show, and install it. The four Cuddler skills come with it; there is nothing to add under **Skills**.
 3. Installing opens a Cuddler sign-in page in your browser: sign in, tick **Spend credits** if you want images and videos, and allow it within five minutes. The page may say Cuddler hasn't reviewed the app; that's expected for Codex. Missed it? Settings → MCP servers → Cuddler → Authenticate.
 4. Start a new chat and mention the plugin: `@Cuddler make a 10-second vertical clip of a paper boat in the rain`.
-5. Keep the permission mode on **Ask for approval**. Before a paid render Codex asks to allow `create_image` or `create_video`: choose **Always allow**, so the skill's price question is the only one next time; if Codex asks again later, allow it again. The skills always show the price first and wait for your OK. With **Full access**, Codex doesn't ask at all, and the price question is the only check. When an image or clip is ready, the skill saves it into `./out/`; Codex's sandbox has no network by default, so Codex also asks to allow that download.
+5. Keep the permission mode on **Ask for approval**. Before a paid render Codex asks to allow `create_image` or `create_video`: choose **Always allow**, so the skill's price question is the only one next time; if Codex asks again later, allow it again. The skills always show the price first and wait for your OK, and Cuddler's server keeps its own limits either way (the quoted `maxCredits`, the approval page for larger renders, the daily budget). With **Full access**, Codex doesn't ask at all, so the price question and those server limits are the only checks. When an image or clip is ready, the skill saves it into `./out/`; Codex's sandbox has no network by default, so Codex also asks to allow that download.
 
 ## Codex CLI
 
@@ -71,6 +71,8 @@ gemini mcp add --transport http cuddler https://mcp.cuddler.ai/mcp
 Then, inside Gemini CLI: `/mcp auth cuddler`.
 
 ## Cursor and other agents
+
+The repository carries a Cursor plugin manifest, but Cuddler isn't listed in Cursor's marketplace yet. Until it is:
 
 1. Install the skills: `npx skills add CuddlerAI/skills` (it asks which agent; `-a <agent>` picks one).
 2. Add the MCP server `https://mcp.cuddler.ai/mcp` (Streamable HTTP). For Cursor, the Cuddler assistants page at https://cuddler.ai/mcp has a one-click link.

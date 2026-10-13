@@ -19,6 +19,12 @@ Skills and a plugin for coding agents. Install them, connect your Cuddler accoun
 | [`cuddler-character-clip`](skills/cuddler-character-clip/SKILL.md) | "Turn my character into a 15-second clip" — one of your own Cuddler characters talking to the viewer |
 | [`cuddler-review`](skills/cuddler-review/SKILL.md) | "Review ./clip.mp4 before I post it" — a local ffmpeg check with a pass, fix or reject verdict |
 
+## What you need
+
+- A Cuddler account. You sign in once in your browser, and the setup skill tells you what your plan can make.
+- `curl`, which the skills use to save finished files; `ffmpeg` and `ffprobe` only for `cuddler-review`.
+- Room in your project: finished files go to `./out/` (character clips to `./cc/`, reviewed clips to `./clips/` and `<clip>.review/`). Add those folders to your `.gitignore` if the project is a repository.
+
 ## Install
 
 ### Claude Code
@@ -29,7 +35,7 @@ claude plugin install cuddler --marketplace CuddlerAI/skills
 ```
 <!-- /claims:install.claude_code -->
 
-The first time you make something, type `/mcp`, choose the Cuddler server and sign in.
+Restart Claude Code, then type `/mcp`, choose the Cuddler server and sign in.
 
 ### Codex
 
@@ -60,7 +66,7 @@ Renders spend credits from your own Cuddler account, at the same price as in the
 <!-- /claims:credits -->
 
 <!-- claims:limits -->
-A render above 200 credits (500 on the Ultra plan) also needs one click on an approval link in your browser, and each connected app can spend up to 3,000 credits a day.
+A render above 200 credits (500 on the Ultra plan) also needs one click on an approval link in your browser, and each connection (one per agent you connect) can spend up to 3,000 credits a day.
 <!-- /claims:limits -->
 
 <!-- claims:plans -->
@@ -75,6 +81,12 @@ Videos need a Cuddler plan that includes video. The setup skill tells you what y
 - The skills refuse content with minors, school settings, real people, and other people's characters or brands.
 - Found a security problem? Report it privately: [SECURITY.md](SECURITY.md).
 
+## Help
+
+- A skill did something wrong, or a page here is unclear: open an issue here (the Issues tab) with your agent and its version, what you asked and what came back. Leave out tokens, approval links and screenshots of sign-in pages.
+- Your account, plan, credits or a charge: [Cuddler support](https://cuddler.ai/support?utm_source=github&utm_medium=readme&utm_campaign=agent_skills); this repository can't see your account.
+- A security problem: [SECURITY.md](SECURITY.md), privately.
+
 ## Links
 
 <!-- claims:links -->
@@ -87,4 +99,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). Every skill shares the same hard rules, 
 
 ## License
 
-The skills, scripts and manifests are MIT licensed ([LICENSE](LICENSE)). The Cuddler name and logo are trademarks of Cuddler and are not covered by the MIT license.
+The skills, scripts and manifests are MIT licensed ([LICENSE](LICENSE)). The Cuddler name and logo are trademarks of Cuddler and are not covered by the MIT license; [TRADEMARKS.md](TRADEMARKS.md) says what that means for forks.

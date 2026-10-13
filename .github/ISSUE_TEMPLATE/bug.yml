@@ -1,0 +1,36 @@
+name: A skill did something wrong
+description: A Cuddler skill misbehaved, or a page in this repository is unclear.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Account, plan, credits or a charge: use Cuddler support (https://cuddler.ai/support) instead; this repository can't see your account. A security problem: use the private report described in SECURITY.md.
+
+        Leave out tokens, approval links and screenshots of sign-in pages.
+  - type: input
+    id: agent
+    attributes:
+      label: Agent and version
+      placeholder: Claude Code 2.1.x, Codex app 1.x, Codex CLI 0.1xx, Cursor 3.x …
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Cuddler skills version
+      description: The plugin version your agent shows, or the Release you installed.
+      placeholder: 0.3.5
+  - type: textarea
+    id: asked
+    attributes:
+      label: What you asked
+    validations:
+      required: true
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened
+      description: What the agent said or did, and what you expected instead.
+    validations:
+      required: true

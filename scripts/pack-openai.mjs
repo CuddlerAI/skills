@@ -5,7 +5,7 @@
 //   node scripts/pack-openai.mjs [--out <file>]    (default: dist/cuddler-<version>-openai.zip)
 //
 // The plugin sits at the root of the archive with the Codex manifest only: .codex-plugin/plugin.json, .mcp.json,
-// skills/, assets/ and LICENSE. Other hosts' manifests, the evals, CI files and docs stay out. The build stops when
+// skills/, assets/, LICENSE and TRADEMARKS.md. Other hosts' manifests, the evals, CI files and docs stay out. The build stops when
 // validate.mjs reports an error, and the same files always give the same bytes.
 
 import { createHash } from "node:crypto";
@@ -16,7 +16,7 @@ import { deflateRawSync } from "node:zlib";
 import { validate } from "./validate.mjs";
 
 /** What the package holds; the directory reads the manifest, the MCP configuration, the skills and the images. */
-export const PACKAGE_ENTRIES = Object.freeze([".codex-plugin/plugin.json", ".mcp.json", "LICENSE", "assets", "skills"]);
+export const PACKAGE_ENTRIES = Object.freeze([".codex-plugin/plugin.json", ".mcp.json", "LICENSE", "TRADEMARKS.md", "assets", "skills"]);
 /** Upload limits of the directory. */
 export const ARCHIVE_LIMITS = Object.freeze({ bytes: 100 * 1024 * 1024, entries: 5000, depth: 20 });
 

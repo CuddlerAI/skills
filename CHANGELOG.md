@@ -2,11 +2,32 @@
 
 All notable changes to the Cuddler skills. The version here, `VERSION` and every plugin manifest must match (CI checks).
 
+Versions stay at 0.x while the skills are in beta: a minor version may change the hard rules or what the skills expect from the tools, only the latest version gets fixes, and every change that reaches `main` bumps the version. Each version is tagged `v<version>` and published as a GitHub Release with its entry below.
+
+## [0.3.5] — 2026-10-13
+
+Follow-ups from a review of the repository as an open-source project.
+
+### Changed
+
+- **Downloads are https only and keep plain file names.** Hard rule 1 says the skills fetch the links the tools return over `https://` only and save a file under its own name, never under a path from a link or a result, and that an approval link is a page on cuddler.ai. The curl commands in `cuddler-generate`, `cuddler-character-clip` and `cuddler-review` carry `--proto =https --proto-redir =https`. New eval `download-link-check`.
+- **The Always allow advice names the server's limits.** Where the skills and the install guide suggest letting the host stop asking before Cuddler's paid tools, they say that Cuddler's server keeps its own limits either way: `maxCredits` on every call, the approval page above the account's threshold, the daily budget. `SECURITY.md` separates how the skills are built to behave from what the server enforces, and now acknowledges reports instead of promising an answer.
+- **`cuddler-review` no longer says "nothing is uploaded".** The script runs locally; the frames the agent reads afterwards reach its model like any opened file.
+- **One word for the daily budget.** It belongs to a connection (one per agent you connect), in `claims.json` and in `cuddler-generate`.
+- The validator's own patterns describe no infrastructure: the command-line check matches any `cuddler <word>` command, the provider-key check matches "bring your own key", the project-id check matches any `<word>-<six digits>`, and the test fixtures use made-up names.
+
+### Added
+
+- `TRADEMARKS.md`: the Cuddler name and logo are not under the MIT license, and what that means for forks. It ships in the OpenAI directory package. Each `SKILL.md` carries `license: MIT` in its frontmatter, so a flat install keeps the license, and the validator accepts only that value.
+- README sections **What you need** and **Help**; issue templates that send account and credit questions to Cuddler support and security problems to the private report; a contact address in the code of conduct.
+- CI fails a pull request whose title, description or commit messages name a private repository, an internal path or a server setting (`scripts/public-wording.mjs`); CONTRIBUTING says the same and states the contribution license.
+- This changelog states the versioning policy; the install guide says the Cursor plugin isn't listed in Cursor's marketplace yet.
+
 ## [0.3.4] — 2026-10-12
 
 ### Changed
 
-- **One confirmation when Cuddler asks through the host.** Cuddler can ask the user itself, in the host's own dialog, before a paid call runs (a form with the price at or under the approval threshold, the approval page above it). A quote then says `confirmation: "host"`, and the skills give the price in one line and make the call instead of also asking in chat, so the user confirms once (Hard rule 2, all four skills). Without that field, or with `confirmation: "chat"`, nothing changes: the skills ask, as before. A paid retry has no quote, so the skills still ask in chat.
+- **One confirmation when Cuddler asks through the host.** Cuddler can ask the user itself, in the host's own dialog, before a paid call runs (a form with the price at or under the approval threshold, the approval page above it). Cuddler is turning this on account by account, so most quotes carry no `confirmation` field yet. A quote then says `confirmation: "host"`, and the skills give the price in one line and make the call instead of also asking in chat, so the user confirms once (Hard rule 2, all four skills). Without that field, or with `confirmation: "chat"`, nothing changes: the skills ask, as before. A paid retry has no quote, so the skills still ask in chat.
 - **The confirmation refusals are handled.** `confirmation_declined` and `confirmation_cancelled` (the user said no or closed the dialog; nothing was charged) stop the request until the user asks again; `confirmation_pending` gets the approval link again; `confirmation_mismatch` and `confirmation_used` are in the refusal table of `cuddler-generate`.
 
 ### Added
@@ -48,7 +69,7 @@ Fixes from the first end-to-end run on a paid account, in Claude Code and the Co
 
 ## [0.3.0] — 2026-10-09
 
-First public version. The numbering continues from the internal 0.2.0 skills, which this repository replaces for everyone outside the Cuddler team.
+First public version. The numbering continues from an earlier version that only the Cuddler team used.
 
 ### Changed
 
@@ -60,7 +81,7 @@ First public version. The numbering continues from the internal 0.2.0 skills, wh
 
 ### Removed
 
-- The prompt-remix skill (rights risk) and every bring-your-own provider key path.
+- The prompt-remix skill and every path that used a provider key of your own.
 - Every price and credit figure inside the skills: prices come from the tools at runtime.
 
 ### Added

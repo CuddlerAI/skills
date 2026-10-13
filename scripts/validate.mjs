@@ -24,7 +24,7 @@ export const LIMITS = Object.freeze({ nameMax: 64, descriptionMax: 1024, skillLi
 const NAME_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 /** Every skill name starts with this, so flat installs (~/.claude/skills/<name>) can't collide with other vendors' skills. */
 export const SKILL_PREFIX = "cuddler-";
-const ALLOWED_KEYS = ["name", "description", "argument-hint", "allowed-tools"];
+const ALLOWED_KEYS = ["name", "description", "argument-hint", "allowed-tools", "license"];
 const SKILL_ENTRIES = new Set(["SKILL.md", "references", "scripts", "assets"]);
 const HARD_RULES_HEADING = "## Hard rules";
 /** The tools of the Cuddler MCP server (https://mcp.cuddler.ai/mcp). A skill may name no other tool. */
@@ -72,6 +72,7 @@ const SPEND_ARGS = Object.freeze({
 /** Phrases the shared Hard rules block must keep; editing the rules on purpose means editing this list too. */
 export const RULE_PHRASES = [
   "Never call `api.cuddler.ai`",
+  "over `https://` only",
   "`quote_video`",
   "reply proceed",
   "`confirmation_required`",
@@ -111,7 +112,9 @@ const REQUIRED_FILES = [
 ];
 const PUBLIC_REPOSITORY = "https://github.com/CuddlerAI/skills";
 /** Files that legitimately contain the lint patterns (they define or test them). */
-const LINT_EXEMPT = new Set(["scripts/validate.mjs", "scripts/validate.test.mjs"]);
+const LINT_EXEMPT = new Set(["scripts/validate.mjs", "scripts/validate.test.mjs", "scripts/public-wording.mjs"]);
+/** Addresses the public text may show: GitHub's SSH user and the Cuddler team's support address. */
+const ALLOWED_EMAILS = new Set(["git@github.com", "support@cuddler.ai"]);
 const TEXT_EXT = /\.(md|mjs|js|json|sh|ya?ml|txt)$/i;
 const SKIP_DIRS = new Set([".git", "node_modules", "results"]);
 /** prompt.md frontmatter keys `claude plugin eval` accepts; unknown keys are errors there too. */
@@ -119,8 +122,9 @@ const EVAL_PROMPT_KEYS = new Set([
   "name", "description", "expected_outcome", "tags", "plugins", "runs", "model", "max_turns",
   "timeout_seconds", "allowed_tools", "append_system_prompt", "env", "schema_version",
 ]);
-const CLI_COMMAND = /\bcuddler (?:video|image|login|logout|whoami|models|character|batch|ledger|download|upload|skills|providers|tools|version|setup)\b/;
-const THIRD_PARTY_KEYS = /\bbyok\b|higgsfield/i;
+/** A command of the retired `cuddler` command-line tool: `cuddler` and a lowercase word (a URL after it is not a command). */
+const CLI_COMMAND = /\bcuddler [a-z]+\b(?!:)/;
+const THIRD_PARTY_KEYS = /\bbyok\b|\bbring your own (?:provider |api )?key\b/i;
 const FIXED_PRICE = /\b\d[\d,.]*\s?(?:credits?|CR)\b|\$\s?\d/;
 const TOOLISH = /^(?:whoami|(?:list|get|quote|create|retry|start|finish)_[a-z_]+)$/;
 /** Listing limits of the OpenAI plugin directory (shared by ChatGPT and Codex) for a Codex-format manifest. */
@@ -450,6 +454,7 @@ export function validate(root) {
       for (const key of Object.keys(fm)) {
         if (!ALLOWED_KEYS.includes(key)) err(rel, `frontmatter key "${key}" is not allowed (allowed: ${ALLOWED_KEYS.join(", ")})`);
       }
+      if ("license" in fm && fm.license !== "MIT") err(rel, `frontmatter license must be "MIT" (the repository's license), found "${fm.license}"`);
       if (fm.name !== name) err(rel, `name "${fm.name ?? ""}" must equal the directory name "${name}"`);
       const description = fm.description;
       if (typeof description !== "string" || !description.trim()) {
@@ -974,9 +979,9 @@ export function validate(root) {
     const internal = [
       [/\/api\/admin\b|admin[ _-]secret/i, "an admin route or secret; keep internal operations out of this repo"],
       [/\bgcloud\s+secrets\b/, "a secret store; skills must never fetch secrets"],
-      [/feishu\.cn|larksuite\.com/i, "an internal chat link"],
-      [/\bdocs\/(?:design|research|runbook|plans)[\w/-]*/, "an internal document path"],
-      [/\bcuddler-\d{6}\b/, "an internal cloud project id"],
+      [/feishu\.cn|larksuite\.com/i, "a chat link"],
+      [/\bdocs\/(?:design|research|runbook|plans)[\w/-]*/, "a document path from a private repository"],
+      [/\b[a-z]+-\d{6}\b/, "a cloud project id"],
     ];
     const email = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}\b/g;
     for (const rel of listFiles(root)) {
@@ -991,7 +996,7 @@ export function validate(root) {
         for (const [pattern, what] of internal) if (pattern.test(line)) err(rel, `line ${i + 1}: mentions ${what}`);
         for (const [pattern, what] of secrets) if (pattern.test(line)) err(rel, `line ${i + 1}: looks like ${what}`);
         for (const match of line.matchAll(email)) {
-          if (match[0] !== "git@github.com") err(rel, `line ${i + 1}: contains an email address (${match[0]})`);
+          if (!ALLOWED_EMAILS.has(match[0])) err(rel, `line ${i + 1}: contains an email address (${match[0]})`);
         }
       });
     }

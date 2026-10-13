@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Account, plan, credits or a charge
+    url: https://cuddler.ai/support
+    about: The Cuddler team handles these; this repository can't see your account.
+  - name: Security problem
+    url: https://github.com/CuddlerAI/skills/security/advisories/new
+    about: Report it privately, as SECURITY.md describes.

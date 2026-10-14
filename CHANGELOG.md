@@ -4,6 +4,14 @@ All notable changes to the Cuddler skills. The version here, `VERSION` and every
 
 Versions stay at 0.x while the skills are in beta: a minor version may change the hard rules or what the skills expect from the tools, only the latest version gets fixes, and every change that reaches `main` bumps the version. Each version is tagged `v<version>` and published as a GitHub Release with its entry below.
 
+## [0.3.16] — 2026-10-14
+
+Wording. Nothing changes in what the skills do.
+
+### Changed
+
+- CONTRIBUTING no longer says that a pull request changing `scripts/` or `.github/` is checked again with the scripts from `main`: no workflow does that.
+
 ## [0.3.15] — 2026-10-14
 
 What outside contributions can look like, and two more checks. Nothing changes in what the skills do.

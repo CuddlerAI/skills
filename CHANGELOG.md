@@ -4,6 +4,20 @@ All notable changes to the Cuddler skills. The version here, `VERSION` and every
 
 Versions stay at 0.x while the skills are in beta: a minor version may change the hard rules or what the skills expect from the tools, only the latest version gets fixes, and every change that reaches `main` bumps the version. Each version is tagged `v<version>` and published as a GitHub Release with its entry below.
 
+## [0.3.15] — 2026-10-14
+
+What outside contributions can look like, and two more checks. Nothing changes in what the skills do.
+
+### Added
+
+- **What to send.** CONTRIBUTING says which changes can come straight as a pull request: a typo, a broken link, a clearer sentence, or a clear bug with its fix. Anything that changes what a skill does, the Hard rules, `scripts/` or `.github/` starts with an issue and an agreed plan. CI runs on an outside pull request once a maintainer approves the run.
+- **No invisible characters.** The validator rejects zero-width and direction-changing characters, Unicode tags and variation selectors in every text file: an agent reads them, a reviewer can't see them.
+- **Skills link only to cuddler.ai and mcp.cuddler.ai, over https.**
+
+### Changed
+
+- Issues start from a template; blank issues are off.
+
 ## [0.3.14] — 2026-10-14
 
 Listing details for Anthropic's plugin directory. Nothing changes in what the skills do.

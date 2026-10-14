@@ -2,6 +2,12 @@
 
 Thanks for helping. These skills run on other people's machines and spend other people's credits, so the bar is: safe first, then useful.
 
+## What to send
+
+- **A small fix can come straight as a pull request:** a typo, a broken link, a clearer sentence in the docs, or a clear bug together with its fix.
+- **Everything else starts with an issue.** A change to what a skill does, to the Hard rules, to `scripts/` or to `.github/` needs a plan the maintainer has agreed to. Open an issue first and wait for an answer; a pull request that skips this step is closed with a note on where to start.
+- CI runs on your pull request once a maintainer approves the run. A pull request that changes `scripts/` or `.github/` is checked again with the scripts from `main`.
+
 ## Before you open a pull request
 
 ```bash

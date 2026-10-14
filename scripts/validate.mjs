@@ -11,7 +11,8 @@
 // claims.json, the plugin source header in .mcp.json for every host, openclaw.plugin.json loading the skills and the
 // Cuddler server with OAuth, the Codex manifest and marketplace within the OpenAI plugin directory's listing rules, an eval case for every
 // skill, eval mocks that carry the server's tool list and answer in its formats, actions pinned to a commit, and safety lints
-// (no direct API calls, no admin routes or internal addresses, no secrets or emails).
+// (no direct API calls, no admin routes or internal addresses, no secrets or emails, no invisible characters, and skills
+// link only to cuddler.ai over https).
 //
 // Exit 0 when every check passes, 1 otherwise. On GitHub Actions each failure is also an ::error annotation.
 
@@ -1083,6 +1084,34 @@ export function validate(root) {
         for (const [pattern, what] of secrets) if (pattern.test(line)) err(rel, `line ${i + 1}: looks like ${what}`);
         for (const match of line.matchAll(email)) {
           if (!ALLOWED_EMAILS.has(match[0])) err(rel, `line ${i + 1}: contains an email address (${match[0]})`);
+        }
+      });
+    }
+  });
+
+  group("no invisible characters in any text file", () => {
+    // Zero-width and direction-changing characters, Unicode tags and variation selectors: an agent reads them, a reviewer doesn't see them.
+    const invisible = /[\u00AD\u034F\u061C\u115F\u1160\u17B4\u17B5\u180B-\u180F\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u206F\u3164\uFE00-\uFE0F\uFEFF\uFFA0\uFFF9-\uFFFB\u{E0000}-\u{E007F}\u{E0100}-\u{E01EF}\u{1D173}-\u{1D17A}]/u;
+    for (const rel of listFiles(root)) {
+      if (!TEXT_EXT.test(rel)) continue;
+      read(rel).split(/\r?\n/).forEach((line, i) => {
+        const match = invisible.exec(line);
+        if (match) {
+          const code = match[0].codePointAt(0).toString(16).toUpperCase().padStart(4, "0");
+          err(rel, `line ${i + 1}: an invisible character (U+${code}); an agent reads it but a reviewer can't see it`);
+        }
+      });
+    }
+  });
+
+  group("skills link only to cuddler.ai, over https", () => {
+    const hosts = ["cuddler.ai", "mcp.cuddler.ai"];
+    for (const rel of skillText) {
+      read(rel).split(/\r?\n/).forEach((line, i) => {
+        for (const [, scheme, name] of line.matchAll(/\b(https?):\/\/([A-Za-z0-9.-]+)/gi)) {
+          const host = name.toLowerCase().replace(/[.-]+$/, "");
+          if (!hosts.includes(host)) err(rel, `line ${i + 1}: links to ${host}; skills link only to ${hosts.join(" and ")}`);
+          else if (scheme.toLowerCase() !== "https") err(rel, `line ${i + 1}: ${scheme}://${host} must use https`);
         }
       });
     }

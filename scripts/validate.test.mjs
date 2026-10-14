@@ -1,4 +1,4 @@
-// Tests for validate.mjs and claims.mjs (and a smoke test for skills/cuddler-review/scripts/contact-sheet.sh).
+// Tests for validate.mjs and claims.mjs (and smoke tests for skills/cuddler-review/scripts/contact-sheet.sh and skills/cuddler-watermark/scripts/watermark.sh).
 //   node --test scripts/validate.test.mjs
 // Every red fixture copies the repository to a temp directory, breaks one thing, and expects the matching error.
 
@@ -17,7 +17,7 @@ import { wordingProblems } from "./public-wording.mjs";
 import { githubSlug, parseFrontmatter, validate } from "./validate.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const SKILLS = ["cuddler-setup", "cuddler-generate", "cuddler-character-clip", "cuddler-review"];
+const SKILLS = ["cuddler-setup", "cuddler-generate", "cuddler-character-clip", "cuddler-review", "cuddler-watermark"];
 
 function copyRepo(dir) {
   cpSync(ROOT, dir, {
@@ -490,6 +490,54 @@ test(
       const url = spawnSync("bash", [script, "https://example.com/clip.mp4"], { encoding: "utf8" });
       assert.equal(url.status, 2);
       assert.match(url.stderr, /get_download_link/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  },
+);
+
+// ── skills/cuddler-watermark/scripts/watermark.sh ────────────────────────────
+
+test(
+  "watermark.sh stamps the app's corner mark",
+  { skip: hasFfmpeg || process.env.REQUIRE_FFMPEG ? false : "ffmpeg is not installed" },
+  () => {
+    assert.ok(hasFfmpeg, "ffmpeg and ffprobe are required (REQUIRE_FFMPEG is set)");
+    const dir = mkdtempSync(join(tmpdir(), "cuddler-watermark-test-"));
+    try {
+      const dark = join(dir, "dark.mp4");
+      const bright = join(dir, "bright.mp4");
+      execFileSync("ffmpeg", [
+        "-v", "error", "-y", "-f", "lavfi", "-i", "color=c=black:s=1080x1920:r=24:d=3",
+        "-f", "lavfi", "-i", "sine=f=440:r=48000:d=3", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest", dark,
+      ]);
+      execFileSync("ffmpeg", ["-v", "error", "-y", "-f", "lavfi", "-i", "color=c=white:s=1920x1080:r=30:d=2", "-c:v", "libx264", "-pix_fmt", "yuv420p", bright]);
+      const script = join(ROOT, "skills/cuddler-watermark/scripts/watermark.sh");
+      const probe = (file, entries) =>
+        execFileSync("ffprobe", ["-v", "error", "-select_streams", entries[0], "-show_entries", entries[1], "-of", "default=nw=1:nk=1", file], { encoding: "utf8" }).trim();
+      const yavg = (file, crop) => {
+        const out = execFileSync("ffmpeg", [
+          "-v", "error", "-ss", "1", "-i", file, "-frames:v", "1",
+          "-vf", `crop=${crop},signalstats,metadata=print:key=lavfi.signalstats.YAVG:file=-`, "-f", "null", "-",
+        ], { encoding: "utf8" });
+        return Number(/YAVG=([0-9.]+)/.exec(out)?.[1]);
+      };
+
+      // 1080×1920: 151 px wide (14% of the width), 32 px margin, white ink on a black corner.
+      assert.match(execFileSync("bash", [script, dark], { encoding: "utf8" }), /stamped: .*dark-cuddler\.mp4 \(1080x1920, light mark 151px wide/);
+      const marked = join(dir, "dark-cuddler.mp4");
+      assert.equal(probe(marked, ["v:0", "stream=width,height"]), "1080\n1920");
+      assert.equal(probe(marked, ["a:0", "stream=codec_name"]), "aac");
+      assert.ok(yavg(marked, "151:34:897:32") > 40, "the top-right corner carries the mark");
+      assert.ok(yavg(marked, "151:34:32:900") < 25, "the rest of the frame is untouched");
+
+      // 1920×1080: 259 px wide (24% of the short side), dark ink on a white corner.
+      assert.match(execFileSync("bash", [script, bright], { encoding: "utf8" }), /\(1920x1080, dark mark 259px wide/);
+      assert.ok(yavg(join(dir, "bright-cuddler.mp4"), "259:59:1629:32") < 215, "dark ink lands on the white corner");
+
+      for (const args of [[join(dir, "missing.mp4")], ["https://example.com/clip.mp4"], [dark], [dark, "--ink", "purple"], [dark, "--out", dark, "--force"]]) {
+        assert.equal(spawnSync("bash", [script, ...args], { encoding: "utf8" }).status, 2, args.join(" "));
+      }
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

@@ -29,7 +29,7 @@ Either way a Cuddler page opens in your browser. Sign in, allow the connection a
 
 - OpenClaw 2026.9.9 or newer.
 - A Cuddler account. The setup skill tells you what your plan can make.
-- `curl` on the machine OpenClaw runs on, to save finished files, and `ffmpeg` and `ffprobe` for `cuddler-review`. If you turn on OpenClaw's sandbox, the sandbox needs network access and those tools too.
+- For `cuddler-review`: `curl`, `ffmpeg` and `ffprobe` on the machine OpenClaw runs on (and network access in OpenClaw's sandbox, if you turn it on). Finished images and clips come back in your chat without them.
 
 ## Credits
 
@@ -50,7 +50,7 @@ OpenClaw runs Cuddler's tools without stopping to ask, so the price question in 
 ## Privacy and safety
 
 - You sign in on cuddler.ai in your own browser; OpenClaw never sees your password. Disconnect any time on cuddler.ai under Settings → Developer API tokens, and remove the plugin with `openclaw plugins uninstall cuddler`.
-- Your prompts and reference pictures go to Cuddler to make the render. Finished files are saved on the machine OpenClaw runs on and sent into your chat.
+- Your prompts and reference pictures go to Cuddler to make the render. Finished files come back in your chat, which fetches them from Cuddler's storage.
 - Everything you make stays private in your Cuddler account until you publish it in the Cuddler app.
 - The skills decline minors and school settings, real people, and other people's characters and brands.
 - The plugin adds one fixed header, `X-Cuddler-Source: plugin`, to its requests to the Cuddler MCP server, so Cuddler can count the connections that come from the plugin. It says nothing about you or your machine.

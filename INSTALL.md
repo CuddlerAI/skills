@@ -81,7 +81,7 @@ Needs OpenClaw 2026.9.9 or newer.
 
    A Cuddler page opens in your browser: sign in, tick **Spend credits** if you want images and videos, and allow it within five minutes. If the browser runs on another machine than OpenClaw (a server, for example), the page it lands on can't load; copy the `code` value from its address and run `openclaw mcp login cuddler --code <code>`. Check with `openclaw mcp status --verbose`.
 3. Start a new session and ask for what you want, in any chat your OpenClaw answers. Before a paid render the skill posts the price and waits for you to reply proceed. OpenClaw runs Cuddler's tools without asking on its own, so that reply is the go-ahead, and anyone who can message your OpenClaw can ask for a render too: connect Cuddler to an OpenClaw only you talk to, or limit who can use it.
-4. Finished files are saved on the machine OpenClaw runs on (`./out/` in its workspace) and sent into your chat. That machine needs `curl`, and `ffmpeg` and `ffprobe` for `cuddler-review`; with OpenClaw's sandbox on, the sandbox needs network access and those tools too.
+4. Finished images and clips come back in your chat as attachments. To save files on the machine OpenClaw runs on, that machine needs `curl`, and `ffmpeg` and `ffprobe` for `cuddler-review`; with OpenClaw's sandbox on, the sandbox needs network access and those tools too.
 
 Update: `openclaw plugins update cuddler`. Remove: `openclaw plugins uninstall cuddler`.
 

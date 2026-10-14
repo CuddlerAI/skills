@@ -71,6 +71,15 @@ npx skills add CuddlerAI/skills
 
 Then add the Cuddler MCP server to your agent; the Cuddler assistants page below has one-click links. Step by step: [INSTALL.md](INSTALL.md). Or paste [INSTALL_FOR_AGENTS.md](INSTALL_FOR_AGENTS.md) to your agent and let it do the install.
 
+## Updates
+
+Each change to the skills ships as a new version, with its notes on the Releases page. The Cuddler MCP server updates on its own; the skills update like this:
+
+- **Claude Code**: in `/plugin`, open the Cuddler marketplace and choose **Enable auto-update**. By hand: `/plugin marketplace update cuddler`.
+- **Codex**: **Upgrade marketplace** next to Cuddler in the app, or `codex plugin marketplace upgrade cuddler`.
+- **OpenClaw**: `openclaw plugins update cuddler`.
+- **Cursor, Gemini CLI and other agents**: `npx skills update`.
+
 ## Credits and limits
 
 <!-- claims:credits -->

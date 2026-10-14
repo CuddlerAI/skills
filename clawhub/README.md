@@ -28,7 +28,7 @@ Either way a Cuddler page opens in your browser. Sign in, allow the connection a
 ## What you need
 
 - OpenClaw 2026.9.9 or newer.
-- A Cuddler account. The setup skill tells you what your plan can make.
+- A Cuddler account on a paid plan (Lite, Pro or Ultra), or in Cuddler's Creator Partnership Program. The setup skill tells you what your plan can make.
 - For `cuddler-review`: `curl`, `ffmpeg` and `ffprobe` on the machine OpenClaw runs on (and network access in OpenClaw's sandbox, if you turn it on). Finished images and clips come back in your chat without them.
 
 ## Credits
@@ -42,7 +42,7 @@ Cuddler's server charges at most the quoted price for each render, and in agents
 <!-- /claims:limits -->
 
 <!-- claims:plans -->
-Connecting needs a paid Cuddler plan (Lite, Pro or Ultra); free plans, trials and gifted plans can't connect. Videos need a plan that includes video. The setup skill tells you what your account can make.
+Connecting needs a paid Cuddler plan (Lite, Pro or Ultra) or a place in Cuddler's Creator Partnership Program; free plans, trials and gifted plans can't connect. Videos need a plan that includes video. The setup skill tells you what your account can make.
 <!-- /claims:plans -->
 
 OpenClaw runs Cuddler's tools without stopping to ask, so the price question in your chat is the go-ahead: the skill makes nothing until you reply proceed. Anyone who can message your OpenClaw can ask for a render and reply too, so connect Cuddler to an OpenClaw that only you talk to, or limit who can use it.

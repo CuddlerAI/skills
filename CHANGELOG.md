@@ -4,6 +4,15 @@ All notable changes to the Cuddler skills. The version here, `VERSION` and every
 
 Versions stay at 0.x while the skills are in beta: a minor version may change the hard rules or what the skills expect from the tools, only the latest version gets fixes, and every change that reaches `main` bumps the version. Each version is tagged `v<version>` and published as a GitHub Release with its entry below.
 
+## [0.3.11] — 2026-10-14
+
+Wording. Nothing changes in what the skills do.
+
+### Changed
+
+- **OpenClaw at the top of the README.** The tagline names OpenClaw next to Claude Code, Codex and Cursor, the introduction says OpenClaw sends the finished file into your chat, and the OpenClaw install section links the package on ClawHub.
+- **Creator partners can connect too.** The plans line, the README and ClawHub README requirements and both install guides say that a place in Cuddler's Creator Partnership Program also lets an account connect, as the skills and the server already do. The ClawHub README's requirements now name the paid plan as well.
+
 ## [0.3.10] — 2026-10-14
 
 Cuddler now leaves spending to the account's balance: no approval threshold and no daily limit unless Cuddler sets one, and connecting is for paid plans. The skills and the docs say what the server does.

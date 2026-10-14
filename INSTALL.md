@@ -1,6 +1,6 @@
 # Install
 
-Two parts: the **skills** (instructions your agent reads) and the **Cuddler MCP server** (the tools that actually make images and videos). Connecting needs a paid Cuddler plan (Lite, Pro or Ultra); free plans, trials and gifted plans can't connect. On Claude Code and Codex the plugin brings both. The Cursor plugin is ready but not listed in Cursor's marketplace yet, so on Cursor and other agents you add them one by one.
+Two parts: the **skills** (instructions your agent reads) and the **Cuddler MCP server** (the tools that actually make images and videos). Connecting needs a paid Cuddler plan (Lite, Pro or Ultra) or a place in Cuddler's Creator Partnership Program; free plans, trials and gifted plans can't connect. On Claude Code and Codex the plugin brings both. The Cursor plugin is ready but not listed in Cursor's marketplace yet, so on Cursor and other agents you add them one by one.
 
 ## Claude Code
 

@@ -1,14 +1,14 @@
 # Cuddler skills
 
 <!-- claims:tagline -->
-Make AI videos and images from Claude Code, Codex or Cursor, with the Cuddler membership you already have.
+Make AI videos and images from Claude Code, Codex, Cursor or OpenClaw, with the Cuddler membership you already have.
 <!-- /claims:tagline -->
 
 <!-- claims:beta -->
 **Beta.** The skills are new and still changing. Tell us what breaks in the issues.
 <!-- /claims:beta -->
 
-Skills and a plugin for coding agents. Install them, connect your Cuddler account once in the browser, and ask your agent for a video. It shows the price, waits for your OK, renders on Cuddler and saves the file next to your project.
+Skills and a plugin for coding agents and for OpenClaw. Install them, connect your Cuddler account once in the browser, and ask your agent for a video. It shows the price, waits for your OK, renders on Cuddler and saves the file next to your project; in OpenClaw it sends the file into your chat.
 
 ## What you can do
 
@@ -21,7 +21,7 @@ Skills and a plugin for coding agents. Install them, connect your Cuddler accoun
 
 ## What you need
 
-- A Cuddler account on a paid plan (Lite, Pro or Ultra). You sign in once in your browser, and the setup skill tells you what your plan can make.
+- A Cuddler account on a paid plan (Lite, Pro or Ultra), or in Cuddler's Creator Partnership Program. You sign in once in your browser, and the setup skill tells you what your plan can make.
 - `curl`, which the skills use to save finished files; `ffmpeg` and `ffprobe` only for `cuddler-review`.
 - Room in your project: finished files go to `./out/` (character clips to `./cc/`, reviewed clips to `./clips/` and `<clip>.review/`). Add those folders to your `.gitignore` if the project is a repository.
 
@@ -59,7 +59,7 @@ openclaw mcp login cuddler
 ```
 <!-- /claims:install.openclaw -->
 
-The plugin brings the skills and the Cuddler MCP server; the other two commands sign you in. In the Control UI: **Plugins → Cuddler → Accounts → Connect** instead. Finished files come back in your chat. Step by step: [INSTALL.md](INSTALL.md#openclaw).
+Cuddler is on ClawHub as [`cuddler`](https://clawhub.ai/cuddler/plugins/cuddler). The plugin brings the skills and the Cuddler MCP server; the other two commands sign you in. In the Control UI: **Plugins → Cuddler → Accounts → Connect** instead. Finished files come back in your chat. Step by step: [INSTALL.md](INSTALL.md#openclaw).
 
 ### Cursor, Gemini CLI and other agents
 
@@ -82,7 +82,7 @@ Cuddler's server charges at most the quoted price for each render, and in agents
 <!-- /claims:limits -->
 
 <!-- claims:plans -->
-Connecting needs a paid Cuddler plan (Lite, Pro or Ultra); free plans, trials and gifted plans can't connect. Videos need a plan that includes video. The setup skill tells you what your account can make.
+Connecting needs a paid Cuddler plan (Lite, Pro or Ultra) or a place in Cuddler's Creator Partnership Program; free plans, trials and gifted plans can't connect. Videos need a plan that includes video. The setup skill tells you what your account can make.
 <!-- /claims:plans -->
 
 ## Privacy and safety

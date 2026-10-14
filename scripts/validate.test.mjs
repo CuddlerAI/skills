@@ -122,9 +122,9 @@ test("Hard rules that drift in one skill fail", () => {
   expectError(withCopy((d) => edit(d, "skills/cuddler-review/SKILL.md", (t) => t.replace("`reply proceed` in English", "`reply yes` in English"))), /Hard rules differ/);
   expectError(
     withCopy((d) => {
-      for (const s of SKILLS) edit(d, `skills/${s}/SKILL.md`, (t) => t.replace("**Content red lines.** Adults only, in adult contexts.", "**Content red lines.** Use judgement."));
+      for (const s of SKILLS) edit(d, `skills/${s}/SKILL.md`, (t) => t.replace("**Content red lines.** Adult characters only, in grown-up (non-school) settings.", "**Content red lines.** Use judgement."));
     }),
-    /must keep the phrase "Adults only"/,
+    /must keep the phrase "Adult characters only"/,
   );
 });
 
@@ -170,6 +170,7 @@ test("the Codex manifest must fit the OpenAI plugin directory listing rules", ()
   expectError(codex(iface({ supportURL: undefined })), /interface\.supportURL is required/);
   expectError(codex(iface({ privacyPolicyURL: "http://cuddler.ai/privacy" })), /interface\.privacyPolicyURL must be an https URL/);
   expectError(codex(iface({ longDescription: "Upgrade your membership for more videos." })), /may not advertise prices, subscriptions, upgrades or promotions/);
+  expectError(codex((j) => ({ ...j, description: "Make videos with your Cuddler membership." })), /description mentions "membership"/);
   expectError(codex(iface({ composerIcon: undefined })), /interface\.composerIcon is required/);
   expectError(codex(iface({ category: "Design" })), /interface\.category "Design" is not a directory category/);
   expectError(codex((j) => ({ ...j, description: "x".repeat(1100) })), /description is 1100 characters; the limit is 1024/);

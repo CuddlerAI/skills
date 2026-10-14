@@ -40,7 +40,7 @@ Pick the one that fits the place and sets up the hook. Never use doorbells, knoc
 
 ## 4. Small gestures (pick one or two)
 
-Brushes hair out of her eyes · bites her lower lip · tilts her head · touches a fingertip to her lips · tucks hair behind her ear · smiles with narrowed eyes · takes a slow breath · raises an eyebrow.
+Brushes hair out of her eyes · tilts her head · tucks hair behind her ear · smiles with narrowed eyes · takes a slow breath · raises an eyebrow · glances down and back up.
 
 ## 5. Held expression at the end (rotate)
 
@@ -50,7 +50,7 @@ A smile · a raised eyebrow · a pressed-lips smile · smiling eyes · a slight 
 
 Closing line (fill the brackets):
 
-> The whole clip keeps a playful, flirtatious tension; one continuous long take with no cuts and no transitions; her appearance and outfit stay identical throughout; [light: warm sunset light / cool night lamps / soft morning light]; [style: anime style consistent with @Image1 / semi-realistic 2.5D illustration].
+> The whole clip keeps a playful, warm tension; one continuous long take with no cuts and no transitions; her appearance and outfit stay identical throughout; [light: warm sunset light / cool night lamps / soft morning light]; [style: anime style consistent with @Image1 / semi-realistic 2.5D illustration].
 
 Safety tail (always last):
 
@@ -71,7 +71,7 @@ Use "he" / "they" throughout when the character is not a woman.
 - [ ] Directions say "the camera", never "you" or "the viewer" (the spoken lines may say "you").
 - [ ] No names — character, franchise or brand. No microphones. No weapons or blood.
 - [ ] No nudity, undressing, body parts, underwear, wet or see-through clothing; "fully dressed, the outfit stays in place" is enough.
-- [ ] Adult context only: no school, students, uniforms or family roles.
+- [ ] Adult characters in a grown-up setting only: no school, students, uniforms or family roles.
 - [ ] The music rule is in the tail.
 - [ ] Every attached image is named `@Image1` … `@ImageN`.
 
@@ -85,6 +85,6 @@ Use "he" / "they" throughout when the character is not a woman.
 
 The hero image is attached as `@Image1` and shows her in the outfit described.
 
-> A rooftop herb garden at dusk, strings of warm bulbs overhead, potted herbs on long wooden benches, the city skyline soft in the distance. She stands at a potting bench in a dark green knit sweater and straight jeans, sleeves pushed up, a watering can in one hand; her phone lies face-down beside a basil pot. @Image1 is her face, hair and outfit reference only; the scene is described here. She tips the watering can over the basil and, still pouring, looks up at the camera and speaks — the first line starts before second 2: "You found the roof." The camera stays at her eye level in a medium shot, nearly still; she sets the can down and leans on the bench, tucks a strand of hair behind her ear and says with a half-smile: "Careful. The basil bites." The phone buzzes against the wooden bench and its edge lights up; she only glances toward it with her eyes, her head barely moves and her face stays toward the camera; she bites her lower lip, then looks straight into the lens: "That's my boss. Let it ring. Stay until the lights go out?" She finishes this line by second 13, then her lips close, she raises an eyebrow and holds eye contact for two seconds. The whole clip keeps a playful, flirtatious tension; one continuous long take with no cuts and no transitions; her appearance and outfit stay identical throughout; warm bulb light against blue dusk; anime style consistent with @Image1. Only she is in frame the whole time; no faces in frames, photos, posters or screens; no text, subtitles or watermarks anywhere. Only voices and ambient sound effects, no background music.
+> A rooftop herb garden at dusk, strings of warm bulbs overhead, potted herbs on long wooden benches, the city skyline soft in the distance. She stands at a potting bench in a dark green knit sweater and straight jeans, sleeves pushed up, a watering can in one hand; her phone lies face-down beside a basil pot. @Image1 is her face, hair and outfit reference only; the scene is described here. She tips the watering can over the basil and, still pouring, looks up at the camera and speaks — the first line starts before second 2: "You found the roof." The camera stays at her eye level in a medium shot, nearly still; she sets the can down and leans on the bench, tucks a strand of hair behind her ear and says with a half-smile: "Careful. The basil bites." The phone buzzes against the wooden bench and its edge lights up; she only glances toward it with her eyes, her head barely moves and her face stays toward the camera; she tilts her head, then looks straight into the lens: "That's my boss. Let it ring. Stay until the lights go out?" She finishes this line by second 13, then her lips close, she raises an eyebrow and holds eye contact for two seconds. The whole clip keeps a playful, warm tension; one continuous long take with no cuts and no transitions; her appearance and outfit stay identical throughout; warm bulb light against blue dusk; anime style consistent with @Image1. Only she is in frame the whole time; no faces in frames, photos, posters or screens; no text, subtitles or watermarks anywhere. Only voices and ambient sound effects, no background music.
 
 Lines: 4 + 4 + 12 = 20 words; hook 12 words. Staging: mid-task. Payoff: phone buzz. Ending: raised eyebrow.

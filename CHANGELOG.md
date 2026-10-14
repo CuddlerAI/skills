@@ -4,6 +4,19 @@ All notable changes to the Cuddler skills. The version here, `VERSION` and every
 
 Versions stay at 0.x while the skills are in beta: a minor version may change the hard rules or what the skills expect from the tools, only the latest version gets fixes, and every change that reaches `main` bumps the version. Each version is tagged `v<version>` and published as a GitHub Release with its entry below.
 
+## [0.3.7] — 2026-10-14
+
+Wording. Nothing changes in what the skills do.
+
+### Changed
+
+- **Hard rule 7 says what it means.** "Adult characters only, in grown-up (non-school) settings" replaces "Adults only, in adult contexts" in every skill, in the prompt-craft notes, in the validator's protected phrases and in CONTRIBUTING.
+- **The character-clip template keeps the tone warm.** Its closing line says "playful, warm tension", and the gesture list drops two mouth gestures.
+- **The quote is the price.** The README no longer says a render costs the same as in the Cuddler app: what the quote says is what is charged.
+- **A second no-retry reason.** `reference_not_registered` joins `provider_rejected` and `reference_face_rejected` in `cuddler-generate`: the model refused the video, so there is no retry; change the prompt or the images. The saved tool list in the evals carries the server's current wording.
+- The marketplace entry carries the package description from 0.3.6, and the validator's promotion check covers the package description too.
+- CI checks out the repository without keeping its credentials, and an issue template for ideas and questions joins the bug report.
+
 ## [0.3.6] — 2026-10-13
 
 Listing copy for the OpenAI plugin directory, ahead of the submission.

@@ -161,9 +161,13 @@ export const LISTING_CATEGORIES = Object.freeze([
 ]);
 /** Package limits the directory checks on upload. */
 const PACKAGE_DESCRIPTION_MAX = 1024;
+/** The first review of a directory plugin takes exactly this many test cases. */
+const REVIEW_CASES = Object.freeze({ positive: 5, negative: 3 });
 const SKILL_IDENTITY_MAX = 64; // "plugin-name:skill-name"
 /** Directory listings may not advertise prices, subscriptions, upgrades or promotions. */
-const PROMOTION = /free trial|discount|promo(?:tion)?s?\b|subscri\w*|membership|upgrade|\$\s?\d|\b\d[\d,.]*\s?(?:credits?|CR)\b/i;
+const PROMOTION = /\btrials?\b|\bfree plans?\b|discount|promo(?:tion)?s?\b|subscri\w*|membership|upgrade|\$\s?\d|\b\d[\d,.]*\s?(?:credits?|CR)\b/i;
+/** Cuddler's plan names: a listing says the account must be a paid one, and names no plan. */
+const PLAN_NAMES = /\b(?:Lite|Pro|Ultra)\b/;
 /**
  * Plugins may say that a feature isn't in the user's plan, but may not sell credits or plans, promote upgrades
  * or link to a page that takes payment (the membership page does).
@@ -721,10 +725,14 @@ export function validate(root) {
         ["interface.shortDescription", iface.shortDescription],
         ["interface.longDescription", iface.longDescription],
         ...(Array.isArray(prompts) ? prompts.map((prompt) => ["interface.defaultPrompt", prompt]) : []),
+        ["extensions.com.openai.publication.release_notes", openai.publication?.release_notes],
       ];
       for (const [key, value] of listing) {
         if (typeof value === "string" && PROMOTION.test(value)) {
-          err(rel, `${key} mentions "${PROMOTION.exec(value)[0]}"; directory listings may not advertise prices, subscriptions, upgrades or promotions`);
+          err(rel, `${key} mentions "${PROMOTION.exec(value)[0]}"; directory listings may not advertise prices, subscriptions, trials, upgrades or promotions`);
+        }
+        if (typeof value === "string" && PLAN_NAMES.test(value)) {
+          err(rel, `${key} names the plan "${PLAN_NAMES.exec(value)[0]}"; say the account must be a paid Cuddler account instead`);
         }
       }
       for (const key of ["composerIcon", "logo"]) {
@@ -742,6 +750,30 @@ export function validate(root) {
         if (size && (size.width !== size.height || size.width < CODEX_LISTING.iconMinPx || size.width > CODEX_LISTING.iconMaxPx)) {
           err(rel, `interface.${key} is ${size.width}×${size.height}; icons must be square, ${CODEX_LISTING.iconMinPx}–${CODEX_LISTING.iconMaxPx} px`);
         }
+      }
+      const review = openai.review ?? {};
+      if ("demo_recording_url" in review && !/^https:\/\/[^/@\s]+(?:\/\S*)?$/.test(String(review.demo_recording_url))) {
+        // An empty value clears the video already saved in the dashboard; leave the key out until there is a video.
+        err(rel, "extensions.com.openai.review.demo_recording_url must be an https URL; leave it out until the demo video exists");
+      }
+      const cases = review.test_cases ?? {};
+      const positive = Array.isArray(cases.positive) ? cases.positive : [];
+      const negative = Array.isArray(cases.negative) ? cases.negative : [];
+      if (positive.length !== REVIEW_CASES.positive || negative.length !== REVIEW_CASES.negative) {
+        err(rel, `extensions.com.openai.review.test_cases needs exactly ${REVIEW_CASES.positive} positive and ${REVIEW_CASES.negative} negative cases for the first review; found ${positive.length} and ${negative.length}`);
+      }
+      for (const [i, entry] of positive.entries()) {
+        const where = `extensions.com.openai.review.test_cases.positive[${i}]`;
+        if (typeof entry?.prompt !== "string" || !entry.prompt.trim() || typeof entry?.expected_behavior !== "string" || !entry.expected_behavior.trim()) {
+          err(rel, `${where} needs a prompt and the expected_behavior`);
+        }
+        // The directory takes tools_triggered as one string of comma-separated tool names.
+        const tools = typeof entry?.tools_triggered === "string" ? entry.tools_triggered.split(",").map((t) => t.trim()).filter(Boolean) : [];
+        if (!tools.length) err(rel, `${where}.tools_triggered must name the tools it expects, separated by commas`);
+        for (const tool of tools) if (!MCP_TOOLS.includes(tool)) err(rel, `${where}.tools_triggered names "${tool}", which isn't a Cuddler MCP tool`);
+      }
+      for (const [i, entry] of negative.entries()) {
+        if (typeof entry?.prompt !== "string" || !entry.prompt.trim()) err(rel, `extensions.com.openai.review.test_cases.negative[${i}] needs a prompt`);
       }
       if ("onboardingSkill" in openai) {
         const match = /^\.\/skills\/([^/]+)\/SKILL\.md$/.exec(String(openai.onboardingSkill));

@@ -5,8 +5,10 @@
 //   node scripts/pack-openai.mjs [--out <file>]    (default: dist/cuddler-<version>-openai.zip)
 //
 // The plugin sits at the root of the archive with the Codex manifest only: .codex-plugin/plugin.json, .mcp.json,
-// skills/, assets/, LICENSE and TRADEMARKS.md. Other hosts' manifests, the evals, CI files and docs stay out. The build stops when
-// validate.mjs reports an error, and the same files always give the same bytes.
+// skills/, assets/, LICENSE and TRADEMARKS.md. Other hosts' manifests, the evals, CI files and docs stay out. The package's
+// .mcp.json is the repository's without request headers: the directory rejects a server with headers, so the source header
+// the marketplace installs send stays out, and Cuddler tells directory connections apart by their OAuth client. The build
+// stops when validate.mjs reports an error, and the same files always give the same bytes.
 
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
@@ -113,6 +115,18 @@ export function zip(entries) {
   return Buffer.concat([...records, ...directory, end]);
 }
 
+/** The repository's .mcp.json without request headers on any server, as the directory takes it. */
+export function directoryMcpConfig(root) {
+  const config = JSON.parse(readFileSync(join(root, ".mcp.json"), "utf8"));
+  const servers = Object.fromEntries(
+    Object.entries(config.mcpServers ?? {}).map(([name, server]) => {
+      const { headers, http_headers, ...rest } = server;
+      return [name, rest];
+    }),
+  );
+  return Buffer.from(`${JSON.stringify({ ...config, mcpServers: servers }, null, 2)}\n`);
+}
+
 /** Validates the repository, then writes the package to `out`. Throws when validation or a directory limit fails. */
 export function packOpenai(root, out) {
   const { errors } = validate(root);
@@ -128,7 +142,8 @@ export function packOpenai(root, out) {
   const archive = zip(
     files.map((rel) => {
       const abs = join(root, rel);
-      return { name: rel, data: readFileSync(abs), executable: (statSync(abs).mode & 0o111) !== 0 };
+      const data = rel === ".mcp.json" ? directoryMcpConfig(root) : readFileSync(abs);
+      return { name: rel, data, executable: (statSync(abs).mode & 0o111) !== 0 };
     }),
   );
   if (archive.length > ARCHIVE_LIMITS.bytes) throw new Error(`the archive is ${archive.length} bytes; the directory takes at most 100 MB`);

@@ -1,6 +1,6 @@
 {
   "name": "cuddler",
-  "version": "0.3.16",
+  "version": "0.3.17",
   "description": "Make AI videos and images on your own Cuddler account from ChatGPT, Codex, Claude Code or Cursor: connect and sign in, quoted renders, character clips and local clip review.",
   "author": {
     "name": "Cuddler",
@@ -23,7 +23,7 @@
   "interface": {
     "displayName": "Cuddler",
     "shortDescription": "Make AI videos and images",
-    "longDescription": "Make AI videos and images on your own Cuddler account, from ChatGPT, the Codex app or the Codex CLI.\n\nWhat it does\n• Videos and images from a description, a photo or reference pictures, on the models your account can use.\n• Short clips of your own Cuddler characters: one continuous take in which the character talks to the viewer, with the character's picture as the reference.\n• The price comes first. Before every render the plugin asks Cuddler for a quote, shows the cost in credits and waits for your OK. Nothing is spent without it.\n• Finished files land in your Cuddler library. In Codex they are also saved next to your project, and a review skill checks a clip locally with ffmpeg (contact sheet, cut timestamps, loudness) before you post it.\n\nHow it stays safe\n• You sign in once on cuddler.ai in your own browser. The plugin never sees your password, and you can disconnect it at any time under Settings → Developer API tokens.\n• Every paid call is capped at the quoted credits, and nothing is spent unless you allowed spending credits when you signed in.\n• Only your characters rated for all audiences are available to connected apps. The plugin declines minors and school settings, real people, and other people's characters and brands.\n• Everything you make stays private in your Cuddler account until you publish it in the Cuddler app.\n\nWhat you need\nA Cuddler account on a paid plan (Lite, Pro or Ultra); free plans, trials and gifted plans can't connect apps. Videos are available on plans that include video, and the setup skill tells you what your account can make. Credits are spent from your own account; the quote is the price. The plugin sells nothing.",
+    "longDescription": "Make AI videos and images on your own Cuddler account, from ChatGPT, the Codex app or the Codex CLI.\n\nWhat it does\n• Videos and images from a description, a photo or reference pictures, on the models your account can use.\n• Short clips of your own Cuddler characters: one continuous take in which the character talks to the viewer, with the character's picture as the reference.\n• The price comes first. Before every render the plugin asks Cuddler for a quote, shows the cost in credits and waits for your OK. Nothing is spent without it.\n• Finished files land in your Cuddler library. In Codex they are also saved next to your project, and a review skill checks a clip locally with ffmpeg (contact sheet, cut timestamps, loudness) before you post it.\n\nHow it stays safe\n• You sign in once on cuddler.ai in your own browser. The plugin never sees your password, and you can disconnect it at any time under Settings → Developer API tokens.\n• Every paid call is capped at the quoted credits, and nothing is spent unless you allowed spending credits when you signed in.\n• Only your characters rated for all audiences are available to connected apps. The plugin declines minors and school settings, real people, and other people's characters and brands.\n• Everything you make stays private in your Cuddler account until you publish it in the Cuddler app.\n\nWhat you need\nA paid Cuddler account, or a place in Cuddler's Creator Partnership Program. Videos need an account that includes video, and the setup skill tells you what yours can make. Credits are spent from your own account; the quote is the price. The plugin sells nothing.",
     "developerName": "Cuddler",
     "category": "Creativity",
     "capabilities": [
@@ -94,12 +94,11 @@
             }
           ]
         },
-        "demo_recording_url": "",
         "commerce": false,
         "commerce_description": "The plugin sells nothing and opens no checkout. Renders spend credits the user already holds on their Cuddler account, at the price quoted before the call, and only after the price has been shown and the user has agreed. If a feature is not included in the user's plan, the plugin says so and stops; it never links to a purchase or upgrade page."
       },
       "publication": {
-        "release_notes": "First directory release (0.3.6). Four skills: cuddler-setup (connect and check the account), cuddler-generate (videos and images, quoted before every render), cuddler-character-clip (a 15–30 second one-take clip of one of the user's own characters) and cuddler-review (a local ffmpeg check of a finished clip). MCP server: mcp.cuddler.ai with 14 tools, OAuth sign-in in the browser, every paid call capped at the quoted credits, approval page above the account's threshold, daily budget per connected app."
+        "release_notes": "First directory release. Four skills: cuddler-setup (connect the account and see what it can make), cuddler-generate (videos and images, priced before every render), cuddler-character-clip (a 15–30 second one-take clip of one of the user's own characters) and cuddler-review (a local ffmpeg check of a finished clip). MCP server: mcp.cuddler.ai with 14 tools and OAuth sign-in in the browser. Every paid call is capped at the quoted credits and waits for the user's OK, and nothing is spent unless spending was allowed at sign-in."
       }
     }
   }

@@ -11,7 +11,7 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { inflateRawSync } from "node:zlib";
 import { render, syncReadme } from "./claims.mjs";
-import { crc32, packOpenai, packageFiles } from "./pack-openai.mjs";
+import { crc32, directoryMcpConfig, packOpenai, packageFiles } from "./pack-openai.mjs";
 import { openclawPackage, packOpenclaw } from "./pack-openclaw.mjs";
 import { wordingProblems } from "./public-wording.mjs";
 import { githubSlug, parseFrontmatter, validate } from "./validate.mjs";
@@ -170,13 +170,22 @@ test("the Codex manifest must fit the OpenAI plugin directory listing rules", ()
   expectError(codex(iface({ defaultPrompt: ["@Cuddler make a clip"] })), /may not @-mention/);
   expectError(codex(iface({ supportURL: undefined })), /interface\.supportURL is required/);
   expectError(codex(iface({ privacyPolicyURL: "http://cuddler.ai/privacy" })), /interface\.privacyPolicyURL must be an https URL/);
-  expectError(codex(iface({ longDescription: "Upgrade your membership for more videos." })), /may not advertise prices, subscriptions, upgrades or promotions/);
+  expectError(codex(iface({ longDescription: "Upgrade your membership for more videos." })), /may not advertise prices, subscriptions, trials, upgrades or promotions/);
+  expectError(codex(iface({ longDescription: "Free plans and trials can't connect." })), /longDescription mentions "Free plans"/);
+  expectError(codex(iface({ longDescription: "Needs a Pro or Ultra account." })), /longDescription names the plan "Pro"/);
   expectError(codex((j) => ({ ...j, description: "Make videos with your Cuddler membership." })), /description mentions "membership"/);
   expectError(codex(iface({ composerIcon: undefined })), /interface\.composerIcon is required/);
   expectError(codex(iface({ category: "Design" })), /interface\.category "Design" is not a directory category/);
   expectError(codex((j) => ({ ...j, description: "x".repeat(1100) })), /description is 1100 characters; the limit is 1024/);
   expectError(codex((j) => ({ ...j, mcpServers: undefined })), /mcpServers must be "\.\/\.mcp\.json"/);
   expectError(codex((j) => ({ ...j, apps: "./.app.json" })), /"apps" can't be in a package for the OpenAI plugin directory/);
+  const openai = (patch) => (j) => ({ ...j, extensions: { "com.openai": { ...j.extensions["com.openai"], ...patch(j.extensions["com.openai"]) } } });
+  const cases = (patch) => openai((o) => ({ review: { ...o.review, test_cases: { ...o.review.test_cases, ...patch(o.review.test_cases) } } }));
+  expectError(codex(openai((o) => ({ publication: { ...o.publication, release_notes: "Includes a free trial." } }))), /release_notes mentions "trial"/);
+  expectError(codex(openai((o) => ({ review: { ...o.review, demo_recording_url: "" } }))), /demo_recording_url must be an https URL/);
+  expectError(codex(cases((c) => ({ negative: c.negative.slice(0, 2) }))), /needs exactly 5 positive and 3 negative cases for the first review; found 5 and 2/);
+  expectError(codex(cases((c) => ({ positive: c.positive.map((t, i) => (i === 0 ? { ...t, tools_triggered: ["whoami"] } : t)) }))), /positive\[0\]\.tools_triggered must name the tools/);
+  expectError(codex(cases((c) => ({ positive: c.positive.map((t, i) => (i === 0 ? { ...t, tools_triggered: "whoami, list_plans" } : t)) }))), /positive\[0\]\.tools_triggered names "list_plans", which isn't a Cuddler MCP tool/);
   expectError(
     codex((j) => ({ ...j, extensions: { "com.openai": { onboardingSkill: "./skills/cuddler-onboarding/SKILL.md" } } })),
     /onboardingSkill .* must be \.\/skills\/<skill>\/SKILL\.md of a skill/,
@@ -205,9 +214,15 @@ test("pack-openai builds the directory package: plugin files only, reproducible,
     }
     for (const name of names) assert.doesNotMatch(name, /^(?:\.claude-plugin|\.cursor-plugin|\.agents|\.github|evals|scripts)\/|^README\.md$/);
     for (const entry of entries) {
-      const source = readFileSync(join(ROOT, entry.name));
+      // The package's .mcp.json is written without request headers; every other file is the repository's.
+      const source = entry.name === ".mcp.json" ? directoryMcpConfig(ROOT) : readFileSync(join(ROOT, entry.name));
       assert.ok(entry.data.equals(source), `${entry.name} differs after unzipping`);
       assert.equal(entry.crc, crc32(source), `${entry.name} has a wrong CRC`);
+    }
+    const mcp = JSON.parse(entries.find((e) => e.name === ".mcp.json").data);
+    assert.equal(mcp.mcpServers.cuddler.url, "https://mcp.cuddler.ai/mcp");
+    for (const [name, server] of Object.entries(mcp.mcpServers)) {
+      assert.ok(!("headers" in server) && !("http_headers" in server), `${name} keeps request headers, which the directory rejects`);
     }
     assert.equal(entries.find((e) => e.name.endsWith("/contact-sheet.sh"))?.mode, 0o100755);
     if (spawnSync("unzip", ["-v"], { stdio: "ignore" }).status === 0) {

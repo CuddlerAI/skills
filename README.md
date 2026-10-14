@@ -98,7 +98,7 @@ Connecting needs a paid Cuddler plan (Lite, Pro or Ultra) or a place in Cuddler'
 
 - You sign in on cuddler.ai in your own browser. Your agent never sees your password, and you can disconnect it any time in Settings → Developer API tokens.
 - Everything you make stays private in your Cuddler account until you publish it in the Cuddler app.
-- The plugin adds one fixed header, `X-Cuddler-Source: plugin`, to its requests to the Cuddler MCP server, so Cuddler can count the connections that come from the plugin. It says nothing about you or your machine.
+- The plugin adds one fixed header, `X-Cuddler-Source: plugin`, to its requests to the Cuddler MCP server, so Cuddler can count the connections that come from the plugin. It says nothing about you or your machine. The package for the ChatGPT and Codex plugin directory leaves it out, because the directory doesn't take request headers.
 - The skills refuse content with minors, school settings, real people, and other people's characters or brands.
 - Found a security problem? Report it privately: [SECURITY.md](SECURITY.md).
 

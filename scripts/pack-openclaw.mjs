@@ -3,12 +3,13 @@
 //
 //   node scripts/pack-openclaw.mjs [--out <dir>]    (default: dist/openclaw)
 //
-// OpenClaw reads openclaw.plugin.json first and loads the skills and the Cuddler MCP server from it, signed in with OAuth.
-// The Claude manifest goes along because ClawHub files a package that carries one as a bundle plugin; without it ClawHub
-// takes the package for a code plugin and asks for its source code. The package's .mcp.json is the OpenClaw form of the
-// server, written from openclaw.plugin.json; the repository's .mcp.json stays the way Claude Code, Codex and Cursor read it.
-// README.md comes from clawhub/README.md and the icon from assets/logo.png, at the path where OpenClaw looks for one. The
-// build stops when validate.mjs reports an error, and the same files always give the same package.
+// openclaw.plugin.json describes the plugin: the skills and the Cuddler MCP server, signed in with OAuth. The package also
+// carries a short Claude manifest written from it. ClawHub files a package with one as a bundle plugin (without it ClawHub
+// takes the package for a code plugin and asks for its source code), and OpenClaw 2026.10.3 loads the package through it:
+// skills/ and .mcp.json, with that manifest's description on the plugin page. So the package's .mcp.json is the OpenClaw
+// form of the server, written from openclaw.plugin.json; the repository's .mcp.json stays the way Claude Code, Codex and
+// Cursor read it. README.md comes from clawhub/README.md and the icon from assets/logo.png, at the path where OpenClaw looks
+// for one. The build stops when validate.mjs reports an error, and the same files always give the same package.
 
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
@@ -19,7 +20,6 @@ import { CLAWHUB_PACKAGE, validate } from "./validate.mjs";
 /** Files and folders copied from the repository: path in the package → path in the repository. */
 export const COPIED = Object.freeze({
   "openclaw.plugin.json": "openclaw.plugin.json",
-  ".claude-plugin/plugin.json": ".claude-plugin/plugin.json",
   "README.md": "clawhub/README.md",
   "assets/icon.png": "assets/logo.png",
   LICENSE: "LICENSE",
@@ -36,7 +36,8 @@ const json = (value) => Buffer.from(`${JSON.stringify(value, null, 2)}\n`, "utf8
 
 /**
  * The package as sorted [path, { data, executable }] entries: the copied files, plus package.json (the name and version
- * ClawHub publishes) and .mcp.json (the server exactly as openclaw.plugin.json declares it).
+ * ClawHub publishes), .mcp.json (the server exactly as openclaw.plugin.json declares it) and the Claude manifest that
+ * OpenClaw and ClawHub read (the OpenClaw description, not the one written for the other hosts).
  */
 export function openclawPackage(root) {
   const entries = new Map();
@@ -65,6 +66,18 @@ export function openclawPackage(root) {
     executable: false,
   });
   entries.set(".mcp.json", { data: json({ mcpServers: manifest.mcpServers }), executable: false });
+  entries.set(".claude-plugin/plugin.json", {
+    data: json({
+      name: manifest.id,
+      version: manifest.version,
+      description: manifest.description,
+      author: { name: "Cuddler", url: "https://cuddler.ai" },
+      homepage: HOMEPAGE,
+      repository: REPOSITORY,
+      license: "MIT",
+    }),
+    executable: false,
+  });
   return [...entries].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
 }
 

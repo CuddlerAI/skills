@@ -291,7 +291,11 @@ test("pack-openclaw builds the ClawHub package: OpenClaw manifest, skills, the O
     assert.ok(!("openclaw" in pkg), "package.json must not declare code: ClawHub would take the package for a code plugin");
     assert.ok(read("README.md").equals(readFileSync(join(ROOT, "clawhub/README.md"))));
     assert.ok(read("assets/icon.png").equals(readFileSync(join(ROOT, "assets/logo.png"))));
-    assert.ok(read(".claude-plugin/plugin.json").equals(readFileSync(join(ROOT, ".claude-plugin/plugin.json"))));
+    const claude = readJson(".claude-plugin/plugin.json");
+    assert.equal(claude.name, manifest.id);
+    assert.equal(claude.version, version);
+    assert.equal(claude.description, manifest.description, "OpenClaw shows the Claude manifest's description on the plugin page");
+    assert.ok(!("mcpServers" in claude) && !("skills" in claude), "the bundle reads the default skills/ and .mcp.json");
     for (const skill of SKILLS) {
       assert.ok(read(`skills/${skill}/SKILL.md`).equals(readFileSync(join(ROOT, `skills/${skill}/SKILL.md`))), `${skill} differs in the package`);
     }

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// claims.mjs — renders claims.json into the README blocks marked <!-- claims:<key> --> … <!-- /claims:<key> -->.
-// No dependencies; Node.js 20+.
+// claims.mjs — renders claims.json into the README blocks marked <!-- claims:<key> --> … <!-- /claims:<key> -->,
+// in the repository README and in the README of the ClawHub package (clawhub/README.md). No dependencies; Node.js 20+.
 //
 //   node scripts/claims.mjs           rewrite the README blocks from claims.json
 //   node scripts/claims.mjs --check   exit 1 if a block differs (validate.mjs runs the same check)
@@ -8,7 +8,7 @@
 // A key is a dotted path into claims.json. A string renders as itself; a list of strings renders as a
 // bash code block, one command per line; an object of { label, url } entries renders as links joined by " · ".
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -19,6 +19,7 @@ export const REQUIRED_CLAIMS = [
   "mcp.url",
   "install.claude_code",
   "install.codex",
+  "install.openclaw",
   "install.other",
   "credits",
   "limits",
@@ -32,12 +33,19 @@ export const REQUIRED_README_BLOCKS = [
   "beta",
   "install.claude_code",
   "install.codex",
+  "install.openclaw",
   "install.other",
   "credits",
   "limits",
   "plans",
   "links",
 ];
+
+/** Blocks the README of the ClawHub package must carry: how to install and sign in, and what renders cost. */
+export const REQUIRED_CLAWHUB_BLOCKS = ["install.openclaw", "credits", "limits", "plans"];
+
+/** The files whose blocks this script writes: the repository README and the README of the ClawHub package. */
+export const CLAIMS_FILES = ["README.md", "clawhub/README.md"];
 
 /** Every link we publish carries the same attribution; channels change only utm_source. */
 export const README_UTM = "utm_source=github&utm_medium=readme&utm_campaign=agent_skills";
@@ -85,19 +93,22 @@ const invokedDirectly = process.argv[1] && pathToFileURL(resolve(process.argv[1]
 if (invokedDirectly) {
   const root = join(dirname(fileURLToPath(import.meta.url)), "..");
   const claims = JSON.parse(readFileSync(join(root, "claims.json"), "utf8"));
-  const readmePath = join(root, "README.md");
-  const before = readFileSync(readmePath, "utf8");
-  const after = syncReadme(before, claims);
-  if (process.argv.includes("--check")) {
-    if (before !== after) {
-      console.error("README.md is out of date with claims.json: run `node scripts/claims.mjs`");
-      process.exit(1);
+  const check = process.argv.includes("--check");
+  let stale = false;
+  for (const rel of CLAIMS_FILES) {
+    const path = join(root, rel);
+    if (!existsSync(path)) continue;
+    const before = readFileSync(path, "utf8");
+    const after = syncReadme(before, claims);
+    if (before === after) {
+      console.log(check ? `${rel} matches claims.json` : `${rel} already matches claims.json`);
+    } else if (check) {
+      console.error(`${rel} is out of date with claims.json: run \`node scripts/claims.mjs\``);
+      stale = true;
+    } else {
+      writeFileSync(path, after);
+      console.log(`${rel} updated from claims.json`);
     }
-    console.log("README.md matches claims.json");
-  } else if (before !== after) {
-    writeFileSync(readmePath, after);
-    console.log("README.md updated from claims.json");
-  } else {
-    console.log("README.md already matches claims.json");
   }
+  if (stale) process.exit(1);
 }

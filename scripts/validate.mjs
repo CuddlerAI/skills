@@ -7,8 +7,9 @@
 // SKILL.md ≤ 300 lines, identical "Hard rules" blocks, references and scripts resolve with no orphans and no ../ paths,
 // skills name only real Cuddler MCP tools, no command-line instructions, no third-party keys and no fixed prices in public
 // text, every skill listed in the marketplace, plugin manifests, README and INSTALL (and nothing extra), VERSION in sync with
-// every manifest and CHANGELOG, .mcp.json and the README in sync with claims.json, the plugin source header in .mcp.json for
-// every host, the Codex manifest and marketplace within the OpenAI plugin directory's listing rules, an eval case for every
+// every manifest and CHANGELOG, .mcp.json and both READMEs (this repository's and the ClawHub package's) in sync with
+// claims.json, the plugin source header in .mcp.json for every host, openclaw.plugin.json loading the skills and the
+// Cuddler server with OAuth, the Codex manifest and marketplace within the OpenAI plugin directory's listing rules, an eval case for every
 // skill, eval mocks that carry the server's tool list and answer in its formats, actions pinned to a commit, and safety lints
 // (no direct API calls, no admin routes or internal addresses, no secrets or emails).
 //
@@ -17,7 +18,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { README_UTM, REQUIRED_CLAIMS, REQUIRED_README_BLOCKS, lookup, readmeBlocks, render, withoutBlocks } from "./claims.mjs";
+import { README_UTM, REQUIRED_CLAIMS, REQUIRED_CLAWHUB_BLOCKS, REQUIRED_README_BLOCKS, lookup, readmeBlocks, render, withoutBlocks } from "./claims.mjs";
 
 export const LIMITS = Object.freeze({ nameMax: 64, descriptionMax: 1024, skillLinesMax: 300 });
 
@@ -51,6 +52,12 @@ export const MCP_SERVER = "cuddler";
  * `headers`, Codex sends `http_headers` (it ignores `headers`), so .mcp.json carries both with the same value.
  */
 export const SOURCE_HEADER = Object.freeze({ name: "X-Cuddler-Source", value: "plugin" });
+/** The package name on ClawHub, which OpenClaw users install as `clawhub:cuddler`. */
+export const CLAWHUB_PACKAGE = "cuddler";
+/** Links in the ClawHub package's README carry the same attribution as the repository's, with ClawHub as the source. */
+const CLAWHUB_UTM = README_UTM.replace("utm_source=github", "utm_source=clawhub");
+/** The README of the ClawHub package; its claims blocks come from claims.json like the repository README's. */
+const CLAWHUB_README = "clawhub/README.md";
 const EVAL_TOOL_PREFIX = "mcp__plugin_cuddler_cuddler__";
 /** The tools whose results the server returns inside an <untrusted-user-content> block (they carry text a user wrote). */
 export const FENCED_RESULTS = Object.freeze([
@@ -105,6 +112,8 @@ const REQUIRED_FILES = [
   ".claude-plugin/plugin.json",
   ".codex-plugin/plugin.json",
   ".cursor-plugin/plugin.json",
+  "openclaw.plugin.json",
+  CLAWHUB_README,
   ".agents/plugins/marketplace.json",
   "evals/README.md",
   ".github/workflows/validate.yml",
@@ -552,9 +561,9 @@ export function validate(root) {
   });
 
   group("public text and skill scripts: no command-line tool, no third-party keys, no fixed prices", () => {
-    const publicDocs = ["README.md", "INSTALL.md", "INSTALL_FOR_AGENTS.md"].filter(exists);
+    const publicDocs = ["README.md", "INSTALL.md", "INSTALL_FOR_AGENTS.md", CLAWHUB_README].filter(exists);
     for (const rel of [...skillText, ...publicDocs]) {
-      const text = rel === "README.md" ? withoutBlocks(read(rel)) : read(rel);
+      const text = rel === "README.md" || rel === CLAWHUB_README ? withoutBlocks(read(rel)) : read(rel);
       // Prices only in prose: in a script, $1 is an argument.
       const prose = rel.endsWith(".md");
       text.split(/\r?\n/).forEach((line, i) => {
@@ -565,9 +574,9 @@ export function validate(root) {
     }
   });
 
-  group("skills don't sell credits, plans or upgrades", () => {
-    for (const rel of skillText) {
-      read(rel).split(/\r?\n/).forEach((line, i) => {
+  group("skills and the ClawHub README don't sell credits, plans or upgrades", () => {
+    for (const rel of [...skillText, CLAWHUB_README].filter(exists)) {
+      (rel === CLAWHUB_README ? withoutBlocks(read(rel)) : read(rel)).split(/\r?\n/).forEach((line, i) => {
         const match = UPSELL.exec(line);
         if (match) err(rel, `line ${i + 1}: "${match[0]}" sells credits or plans; a skill may say what the plan doesn't include, but may not sell credits or plans, promote upgrades or link to a page that takes payment (OpenAI plugin directory rules)`);
       });
@@ -579,6 +588,7 @@ export function validate(root) {
   const claudePlugin = readJson(".claude-plugin/plugin.json");
   const codexPlugin = readJson(".codex-plugin/plugin.json");
   const cursorPlugin = readJson(".cursor-plugin/plugin.json");
+  const openclawPlugin = readJson("openclaw.plugin.json");
   const agentsMarketplace = readJson(".agents/plugins/marketplace.json");
   const mcpConfig = readJson(".mcp.json");
   const claims = readJson("claims.json");
@@ -776,6 +786,7 @@ export function validate(root) {
     if (claudePlugin) check(".claude-plugin/plugin.json", "version", claudePlugin.version);
     if (codexPlugin) check(".codex-plugin/plugin.json", "version", codexPlugin.version);
     if (cursorPlugin) check(".cursor-plugin/plugin.json", "version", cursorPlugin.version);
+    if (openclawPlugin) check("openclaw.plugin.json", "version", openclawPlugin.version);
     if (exists("CHANGELOG.md")) {
       const first = /^## \[?(\d+\.\d+\.\d+)\]?/m.exec(read("CHANGELOG.md"));
       if (!first) err("CHANGELOG.md", "no version heading such as ## [x.y.z]");
@@ -799,6 +810,58 @@ export function validate(root) {
     }
     if (JSON.stringify(server.headers ?? {}) !== JSON.stringify(server.http_headers ?? {})) {
       err(rel, `${MCP_SERVER}.headers and ${MCP_SERVER}.http_headers must be identical, so every host sends the same headers`);
+    }
+  });
+
+  group("openclaw.plugin.json loads the skills and the cuddler server, signed in with OAuth", () => {
+    const rel = "openclaw.plugin.json";
+    if (!openclawPlugin) return;
+    const pluginName = marketplace?.plugins?.[0]?.name;
+    if (pluginName && openclawPlugin.id !== pluginName) err(rel, `id "${openclawPlugin.id ?? ""}" differs from the plugin "${pluginName}"`);
+    const displayName = codexPlugin?.interface?.displayName;
+    if (displayName && openclawPlugin.name !== displayName) err(rel, `name "${openclawPlugin.name ?? ""}" differs from the display name "${displayName}"`);
+    if (typeof openclawPlugin.description !== "string" || !openclawPlugin.description.trim()) err(rel, "description is required: OpenClaw and ClawHub show it");
+    else if (openclawPlugin.description.length > PACKAGE_DESCRIPTION_MAX) err(rel, `description is ${openclawPlugin.description.length} characters; the limit is ${PACKAGE_DESCRIPTION_MAX}`);
+    if (JSON.stringify(openclawPlugin.skills) !== JSON.stringify(["./skills"])) err(rel, 'skills must be ["./skills"]');
+    const schema = openclawPlugin.configSchema;
+    if (!schema || typeof schema !== "object" || schema.type !== "object") err(rel, 'configSchema is required by OpenClaw: { "type": "object", ... }');
+    for (const key of ["extensions", "providers", "channels", "contracts"]) {
+      if (key in openclawPlugin) err(rel, `"${key}" declares code; this plugin is skills and an MCP server only`);
+    }
+    const servers = openclawPlugin.mcpServers && typeof openclawPlugin.mcpServers === "object" ? Object.keys(openclawPlugin.mcpServers) : [];
+    if (servers.length !== 1 || servers[0] !== MCP_SERVER) err(rel, `mcpServers must declare exactly one server, "${MCP_SERVER}"; found ${servers.join(", ") || "none"}`);
+    const server = openclawPlugin.mcpServers?.[MCP_SERVER] ?? {};
+    const url = claims ? lookup(claims, "mcp.url") : undefined;
+    if (url && server.url !== url) err(rel, `${MCP_SERVER}.url is "${server.url ?? "missing"}"; claims.json mcp.url is "${url}"`);
+    if (server.transport !== "streamable-http") err(rel, `${MCP_SERVER}.transport must be "streamable-http"; OpenClaw falls back to SSE without it`);
+    if (server.auth !== "oauth") err(rel, `${MCP_SERVER}.auth must be "oauth"; OpenClaw signs in only to servers marked that way`);
+    if (server.headers?.[SOURCE_HEADER.name] !== SOURCE_HEADER.value || Object.keys(server.headers ?? {}).length !== 1) {
+      err(rel, `${MCP_SERVER}.headers must hold only ${SOURCE_HEADER.name}: ${SOURCE_HEADER.value}, like .mcp.json`);
+    }
+    if (!Number.isInteger(server.requestTimeoutMs) || server.requestTimeoutMs < 60000) {
+      err(rel, `${MCP_SERVER}.requestTimeoutMs must be a whole number of milliseconds, at least 60000: create_image answers when the image is done`);
+    }
+    for (const key of ["command", "args", "env", "cwd"]) if (key in server) err(rel, `${MCP_SERVER}.${key}: the Cuddler server is remote, not a local process`);
+
+    const commands = claims ? lookup(claims, "install.openclaw") : undefined;
+    if (!Array.isArray(commands)) return; // reported with the other claims
+    const want = (line, why) => {
+      if (!commands.includes(line)) err("claims.json", `install.openclaw must include \`${line}\` (${why})`);
+    };
+    want(`openclaw plugins install clawhub:${CLAWHUB_PACKAGE}`, "the package on ClawHub");
+    want(`openclaw mcp login ${MCP_SERVER}`, "the terminal sign-in");
+    const add = commands.find((line) => line.startsWith(`openclaw mcp add ${MCP_SERVER} `));
+    if (!add) {
+      err("claims.json", `install.openclaw must add the server for a terminal sign-in: \`openclaw mcp add ${MCP_SERVER} --url … --auth oauth\``);
+    } else {
+      const flags = [
+        `--url ${url}`,
+        "--transport streamable-http",
+        "--auth oauth",
+        `--header ${SOURCE_HEADER.name}=${SOURCE_HEADER.value}`,
+        `--timeout ${Math.round((server.requestTimeoutMs ?? 0) / 1000)}`,
+      ];
+      for (const flag of flags) if (!` ${add} `.includes(` ${flag} `)) err("claims.json", `install.openclaw: \`openclaw mcp add\` must carry ${flag}, as openclaw.plugin.json declares the server`);
     }
   });
 
@@ -844,6 +907,24 @@ export function validate(root) {
     for (const match of withoutBlocks(read("README.md")).matchAll(/https?:\/\/(?:www\.)?cuddler\.ai[^\s)>"]*/g)) {
       if (!match[0].includes("utm_source=github")) err("README.md", `${match[0]} needs the GitHub attribution (${README_UTM}); put it in claims.json links`);
     }
+    if (!exists(CLAWHUB_README)) return;
+    const clawhub = read(CLAWHUB_README);
+    const clawhubBlocks = readmeBlocks(clawhub);
+    for (const key of REQUIRED_CLAWHUB_BLOCKS) if (!clawhubBlocks.has(key)) err(CLAWHUB_README, `missing the generated block <!-- claims:${key} -->`);
+    for (const [key, content] of clawhubBlocks) {
+      const value = lookup(claims, key);
+      let expected;
+      try {
+        expected = value === undefined ? undefined : render(value);
+      } catch {
+        expected = undefined;
+      }
+      if (expected === undefined) err(CLAWHUB_README, `block "${key}" has no renderable value in claims.json`);
+      else if (content !== expected) err(CLAWHUB_README, `block "${key}" differs from claims.json; run \`node scripts/claims.mjs\``);
+    }
+    for (const match of withoutBlocks(clawhub).matchAll(/https?:\/\/(?:www\.)?cuddler\.ai[^\s)>"]*/g)) {
+      if (!match[0].includes(CLAWHUB_UTM)) err(CLAWHUB_README, `${match[0]} needs the ClawHub attribution (${CLAWHUB_UTM})`);
+    }
   });
 
   group("README and INSTALL list exactly the skills", () => {
@@ -854,6 +935,10 @@ export function validate(root) {
       for (const match of text.matchAll(/\bskills\/([a-z0-9-]+)\//g)) {
         if (!skills.includes(match[1])) err("README.md", `mentions skills/${match[1]}/, which does not exist`);
       }
+    }
+    if (exists(CLAWHUB_README)) {
+      const rows = [...read(CLAWHUB_README).matchAll(/^\| `([a-z0-9-]+)` \|/gm)].map((m) => m[1]);
+      compareSets(err, CLAWHUB_README, "the skills table", rows, skills);
     }
     if (exists("INSTALL.md")) {
       const named = [...read("INSTALL.md").matchAll(/\/cuddler:([a-z0-9-]+)/g)].map((m) => m[1]);
@@ -947,7 +1032,7 @@ export function validate(root) {
   });
 
   group("links in the top-level docs resolve", () => {
-    for (const rel of ["README.md", "INSTALL.md", "INSTALL_FOR_AGENTS.md", "CHANGELOG.md", "SECURITY.md", "CONTRIBUTING.md", "CODE_OF_CONDUCT.md", "evals/README.md"]) {
+    for (const rel of ["README.md", "INSTALL.md", "INSTALL_FOR_AGENTS.md", "CHANGELOG.md", "SECURITY.md", "CONTRIBUTING.md", "CODE_OF_CONDUCT.md", "evals/README.md", CLAWHUB_README]) {
       if (exists(rel)) checkLinks(root, rel, read(rel), ".", err);
     }
   });

@@ -87,4 +87,4 @@ Run the `cuddler-review` skill on the file, or apply its checklist yourself. Mus
 
 ## Deliver
 
-The file path, duration, credits charged, the spoken lines, the staging used, and the review verdict with timestamps. Publishing or posting the clip is the user's decision in the Cuddler app; this skill never does it.
+The file path, duration, credits charged, the spoken lines, the staging used, and the review verdict with timestamps. In a chat app, where the user can't open a path on your machine, also send the clip into the chat the way your host attaches files (OpenClaw: a line of its own, `MEDIA:./cc/<id>/take<n>.mp4` for the take you deliver). Publishing or posting the clip is the user's decision in the Cuddler app; this skill never does it.

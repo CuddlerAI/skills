@@ -1,0 +1,23 @@
+{
+  "id": "cuddler",
+  "name": "Cuddler",
+  "version": "0.3.7",
+  "description": "Make AI videos and images on your own Cuddler account from OpenClaw: sign in once in your browser, see the price before every render, and get the finished file in your chat.",
+  "skills": ["./skills"],
+  "configSchema": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  },
+  "mcpServers": {
+    "cuddler": {
+      "url": "https://mcp.cuddler.ai/mcp",
+      "transport": "streamable-http",
+      "auth": "oauth",
+      "headers": {
+        "X-Cuddler-Source": "plugin"
+      },
+      "requestTimeoutMs": 240000
+    }
+  }
+}

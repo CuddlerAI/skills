@@ -87,7 +87,7 @@ After "proceed" (with `confirmation: "host"`, right after the price line): `crea
 
 ### 7. Deliver
 
-`get_download_link` → download the `video` file (and the `poster` if useful) into `./out/` with a plain GET (`curl -fL --proto =https --proto-redir =https -o ./out/<filename> "<url>"`); the links last about 10 minutes. Reply in one line: local path, model, seconds, `creditsCharged`. Offer the `cuddler-review` skill before the clip is shown to anyone.
+`get_download_link` → download the `video` file (and the `poster` if useful) into `./out/` with a plain GET (`curl -fL --proto =https --proto-redir =https -o ./out/<filename> "<url>"`); the links last about 10 minutes. Reply in one line: local path, model, seconds, `creditsCharged`. In a chat app, where the user can't open a path on your machine (OpenClaw on Telegram, WhatsApp or Discord, for example), also send the file into the chat the way your host attaches files (OpenClaw: a line of its own, `MEDIA:./out/<filename>`); if the chat refuses a file that large, send the download link instead. Offer the `cuddler-review` skill before the clip is shown to anyone.
 
 ## When things go wrong
 
@@ -113,7 +113,7 @@ Every refusal, with what to change, is in [references/model-routing.md](referenc
 
 ## Images
 
-`quote_image` (`prompt`, `aspectRatio`, `resolution`, `modelId`, `references`) → gate → `create_image` with `maxCredits` and its own `idempotencyKey`. Several images: price them in one gate, then one `create_image` per image, each with its own key (with `confirmation: "host"`, the host asks once per image; say so with the price). Save each image into `./out/` with a plain GET (`curl -fL -o ./out/<last part of image.url> "<image.url>"`) and reply with the local path and `creditsCharged`: some hosts, such as the Codex app, don't show pictures from web addresses but do show a local file. A created image can be the reference for a video: `{ "url": image.url }`.
+`quote_image` (`prompt`, `aspectRatio`, `resolution`, `modelId`, `references`) → gate → `create_image` with `maxCredits` and its own `idempotencyKey`. Several images: price them in one gate, then one `create_image` per image, each with its own key (with `confirmation: "host"`, the host asks once per image; say so with the price). Save each image into `./out/` with a plain GET (`curl -fL -o ./out/<last part of image.url> "<image.url>"`) and reply with the local path and `creditsCharged`: some hosts, such as the Codex app, don't show pictures from web addresses but do show a local file. In a chat app, send the saved image into the chat as step 7 does for a video. A created image can be the reference for a video: `{ "url": image.url }`.
 
 ## References
 

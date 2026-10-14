@@ -62,7 +62,7 @@ Then add the Cuddler MCP server to your agent; the Cuddler assistants page below
 ## Credits and limits
 
 <!-- claims:credits -->
-Renders spend credits from your own Cuddler account, at the same price as in the Cuddler app. Your agent shows the price first and waits for your OK.
+Renders spend credits from your own Cuddler account: the quote is the price. Your agent shows the price first and waits for your OK.
 <!-- /claims:credits -->
 
 <!-- claims:limits -->

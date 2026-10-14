@@ -72,7 +72,7 @@ Re-shoots regress: a re-shoot prompt fixed for one defect often breaks something
 
 ## 7. Red lines, written into the prompt
 
-- Adults only, stated plainly: "a woman in her late twenties". Never school, campus, students, school uniforms, or family-role romance.
+- Adult characters only, stated plainly: "a woman in her late twenties". Never school, campus, students, school uniforms, or family-role romance.
 - No real people, public figures or lookalikes; for a realistic face add "an original face that does not resemble any real person".
 - No IP, franchise, character or brand names — describe the look instead ("a silver-haired swordswoman in a long dark coat").
 - Tension through gaze, distance, timing, props and sound — never body parts, undressing, wet or see-through clothing. "Fully dressed; the outfit stays in place" is enough; don't list what must not be shown.

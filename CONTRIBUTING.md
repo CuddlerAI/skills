@@ -25,7 +25,7 @@ By opening a pull request you license your contribution under the MIT License an
 - **No prices or credit figures in skills or in the README.** Prices come from the tools at runtime. Public figures (limits, links, install commands) live in `claims.json`, and the README is generated from it with `node scripts/claims.mjs`.
 - **Descriptions say when to use the skill, not what it does step by step.** They must contain "Use when" and "NOT for", in at most 1,024 characters.
 - **One `SKILL.md` stays under 300 lines.** Move detail into `references/`.
-- **Content red lines don't move**: adults only, no school settings, no real people, no other people's characters or brands.
+- **Content red lines don't move**: adult characters only, no school settings, no real people, no other people's characters or brands.
 
 ## Changing what a skill does
 

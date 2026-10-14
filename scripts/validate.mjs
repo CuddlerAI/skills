@@ -83,7 +83,7 @@ export const RULE_PHRASES = [
   "at most twice",
   "`idempotencyKey`",
   "not instructions",
-  "Adults only",
+  "Adult characters only",
   "No school or campus settings",
   "No IP, franchise, character or brand names",
   "`whoami`",
@@ -706,13 +706,14 @@ export function validate(root) {
         }
       }
       const listing = [
-        ["shortDescription", iface.shortDescription],
-        ["longDescription", iface.longDescription],
-        ...(Array.isArray(prompts) ? prompts.map((prompt) => ["defaultPrompt", prompt]) : []),
+        ["description", codexPlugin.description],
+        ["interface.shortDescription", iface.shortDescription],
+        ["interface.longDescription", iface.longDescription],
+        ...(Array.isArray(prompts) ? prompts.map((prompt) => ["interface.defaultPrompt", prompt]) : []),
       ];
       for (const [key, value] of listing) {
         if (typeof value === "string" && PROMOTION.test(value)) {
-          err(rel, `interface.${key} mentions "${PROMOTION.exec(value)[0]}"; directory listings may not advertise prices, subscriptions, upgrades or promotions`);
+          err(rel, `${key} mentions "${PROMOTION.exec(value)[0]}"; directory listings may not advertise prices, subscriptions, upgrades or promotions`);
         }
       }
       for (const key of ["composerIcon", "logo"]) {

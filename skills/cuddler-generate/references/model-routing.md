@@ -71,4 +71,4 @@ A refused call comes back as an error whose text starts with a code, followed by
 | `member_cost_breaker` (a `CREDIT_INSUFFICIENT` refusal) | This billing period's plan credits can no longer be spent through agents; `purchasedAvailable` is what the user bought | Stop and say so: until the date in `resetsAt` (until the plan renews when there is none), nothing was charged, the Cuddler app is not affected. Don't suggest buying credits or a plan |
 | `NOT_FOUND` | Wrong id, or not this account's | Check the id |
 | `status: failed` | The render failed | `retry_video` (the first retry is free) |
-| `provider_rejected`, `reference_face_rejected` | The model refused it; no retry | Change the prompt or the images and quote a new video |
+| `provider_rejected`, `reference_face_rejected`, `reference_not_registered` | The model refused it; no retry | Change the prompt or the images and quote a new video |

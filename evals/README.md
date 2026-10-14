@@ -35,6 +35,8 @@ A prompt that says the user already replied "proceed" tests what happens after t
 
 > Earlier in this conversation you quoted my clip — a street musician playing violin in the rain, 15 seconds, 9:16, model seedance-2.0, 240 credits — and I replied "proceed". Go ahead and make it now.
 
+Cuddler asks for approval in the browser only when it has set a threshold; this case covers that.
+
 ### host-confirmation
 
 **Skills:** cuddler-generate
@@ -122,6 +124,8 @@ The quote says `confirmation: "host"` and the user declines in the host's dialog
 **Skills:** cuddler-generate
 
 > Make a 10-second vertical clip of a fox running through snow.
+
+Cuddler sets no daily limit by default (`budgetRemaining` is null); this case covers a connection that has one.
 
 ### plan-credits-capped
 

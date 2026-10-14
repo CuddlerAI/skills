@@ -38,11 +38,11 @@ Renders spend credits from your own Cuddler account: the quote is the price. You
 <!-- /claims:credits -->
 
 <!-- claims:limits -->
-A render above 200 credits (500 on the Ultra plan) also needs one click on an approval link in your browser, and each connection (one per agent you connect) can spend up to 3,000 credits a day.
+Cuddler's server charges at most the quoted price for each render, and in agents that support it, it also asks you in the agent's own dialog before each paid call. There is no separate daily cap unless Cuddler sets one: your credit balance is the limit.
 <!-- /claims:limits -->
 
 <!-- claims:plans -->
-Videos need a Cuddler plan that includes video. The setup skill tells you what your account can make.
+Connecting needs a paid Cuddler plan (Lite, Pro or Ultra); free plans, trials and gifted plans can't connect. Videos need a plan that includes video. The setup skill tells you what your account can make.
 <!-- /claims:plans -->
 
 OpenClaw runs Cuddler's tools without stopping to ask, so the price question in your chat is the go-ahead: the skill makes nothing until you reply proceed. Anyone who can message your OpenClaw can ask for a render and reply too, so connect Cuddler to an OpenClaw that only you talk to, or limit who can use it.

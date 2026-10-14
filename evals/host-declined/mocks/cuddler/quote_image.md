@@ -10,6 +10,6 @@
     "styleId": null,
     "credits": 14
   },
-  "budgetRemaining": 3000,
+  "budgetRemaining": null,
   "confirmation": "host"
 }

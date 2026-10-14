@@ -4,6 +4,14 @@ All notable changes to the Cuddler skills. The version here, `VERSION` and every
 
 Versions stay at 0.x while the skills are in beta: a minor version may change the hard rules or what the skills expect from the tools, only the latest version gets fixes, and every change that reaches `main` bumps the version. Each version is tagged `v<version>` and published as a GitHub Release with its entry below.
 
+## [0.3.13] — 2026-10-14
+
+The ClawHub step of the release now works with trusted publishing. Nothing changes in what the skills do.
+
+### Fixed
+
+- **ClawHub publish.** 0.3.12's run reached ClawHub and was refused, because a trusted publish may not name the owner and must report the source its GitHub token vouches for. `release.yml` now starts `clawhub-publish.yml` on the new tag instead of on `main`. The ClawHub workflow drops `--owner` and reports the run's own repository, commit and ref. To publish a tag again, run it from the Actions tab on that tag.
+
 ## [0.3.12] — 2026-10-14
 
 Releases run on their own after a merge. Nothing changes in what the skills do.

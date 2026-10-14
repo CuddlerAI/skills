@@ -1,7 +1,8 @@
 name: release
 
 # After a merge that changes VERSION: tag v<version>, publish the GitHub Release with the CHANGELOG entry and both
-# packages, then start clawhub-publish.yml. A push that keeps the version (its Release already exists) does nothing.
+# packages, then start clawhub-publish.yml on the new tag. A push that keeps the version (its Release already exists)
+# does nothing.
 
 on:
   push:
@@ -74,4 +75,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
-        run: gh workflow run clawhub-publish.yml --repo "$GITHUB_REPOSITORY" --ref main -f tag="v$VERSION"
+        run: gh workflow run clawhub-publish.yml --repo "$GITHUB_REPOSITORY" --ref "v$VERSION"

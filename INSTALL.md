@@ -19,7 +19,7 @@ The skills are then available as:
 
 You rarely need to type them: ask for what you want ("make a 10-second clip of …") and Claude picks the right skill.
 
-Update: `/plugin marketplace update cuddler`. Remove: `/plugin uninstall cuddler@cuddler`.
+Update: in `/plugin`, open the Cuddler marketplace and choose **Enable auto-update**, and Claude Code keeps the marketplace and the plugin up to date. By hand: `/plugin marketplace update cuddler`. Remove: `/plugin uninstall cuddler@cuddler`.
 
 ## Codex app
 
@@ -92,7 +92,7 @@ npx skills add CuddlerAI/skills -a gemini-cli
 gemini mcp add --transport http cuddler https://mcp.cuddler.ai/mcp
 ```
 
-Then, inside Gemini CLI: `/mcp auth cuddler`.
+Then, inside Gemini CLI: `/mcp auth cuddler`. Update the skills with `npx skills update`.
 
 ## Cursor and other agents
 
@@ -101,6 +101,8 @@ The repository carries a Cursor plugin manifest, but Cuddler isn't listed in Cur
 1. Install the skills: `npx skills add CuddlerAI/skills` (it asks which agent; `-a <agent>` picks one).
 2. Add the MCP server `https://mcp.cuddler.ai/mcp` (Streamable HTTP). For Cursor, the Cuddler assistants page at https://cuddler.ai/mcp has a one-click link.
 3. Sign in when your agent asks, in the browser.
+
+Update the skills with `npx skills update`.
 
 ## Check that it works
 

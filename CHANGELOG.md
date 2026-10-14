@@ -4,13 +4,29 @@ All notable changes to the Cuddler skills. The version here, `VERSION` and every
 
 Versions stay at 0.x while the skills are in beta: a minor version may change the hard rules or what the skills expect from the tools, only the latest version gets fixes, and every change that reaches `main` bumps the version. Each version is tagged `v<version>` and published as a GitHub Release with its entry below.
 
-## [0.3.12] — 2026-10-14
+## [0.3.13] — 2026-10-14
 
 Listing details for Anthropic's plugin directory. Nothing changes in what the skills do.
 
 ### Changed
 
 - **The Claude Code manifest carries its listing details.** `.claude-plugin/plugin.json` now names the icon (`assets/logo.png`), the install guide as its documentation, Cuddler's support page, privacy policy and terms, and the support address, so a directory listing can show them. The Codex manifest already had them.
+
+## [0.3.12] — 2026-10-14
+
+Releases run on their own after a merge. Nothing changes in what the skills do.
+
+### Added
+
+- **`node scripts/bump.mjs <x.y.z>`** moves the version in `VERSION`, the four plugin manifests and the marketplace entry, and opens the new CHANGELOG entry. CI fails while that entry is empty.
+- **Release workflow.** After a merge that changes the version, `.github/workflows/release.yml` tags `v<version>` and publishes the GitHub Release with the CHANGELOG entry. The Release carries the OpenClaw and OpenAI packages as ZIPs, with `SHA256SUMS`.
+- **ClawHub workflow.** `.github/workflows/clawhub-publish.yml` builds the OpenClaw package from the tag, when the tag's commit is on `main`, and publishes it to ClawHub. It signs in through trusted publishing (the job's GitHub OIDC token, no stored token) and waits for ClawHub's security checks. The release workflow starts it, and it can be run again from the Actions tab.
+- `scripts/release.mjs` holds the release steps, and `scripts/release.test.mjs` tests them and the version bump.
+
+### Changed
+
+- **Updates.** The README says how each host keeps the skills up to date, including Claude Code's auto-update for the marketplace. INSTALL adds the same for Claude Code, Gemini CLI and the other agents.
+- CONTRIBUTING describes the release workflows instead of the manual tag, Release and ClawHub steps.
 
 ## [0.3.11] — 2026-10-14
 

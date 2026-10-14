@@ -1,0 +1,77 @@
+name: release
+
+# After a merge that changes VERSION: tag v<version>, publish the GitHub Release with the CHANGELOG entry and both
+# packages, then start clawhub-publish.yml. A push that keeps the version (its Release already exists) does nothing.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Tag, GitHub Release and ClawHub
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # the tag and the GitHub Release
+      actions: write # starting clawhub-publish.yml
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: Look for this version's Release
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="$(tr -d '[:space:]' < VERSION)"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::VERSION holds \"$version\", not x.y.z"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if gh release view "v$version" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "v$version is already released; nothing to do."
+            echo "new=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "new=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Check the repository
+        if: steps.version.outputs.new == 'true'
+        run: |
+          node scripts/validate.mjs
+          node scripts/release.mjs check
+      - name: Build the notes and the packages
+        if: steps.version.outputs.new == 'true'
+        run: |
+          node scripts/release.mjs notes > "$RUNNER_TEMP/notes.md"
+          node scripts/release.mjs assets --out "$RUNNER_TEMP/assets"
+      - name: Tag and publish the GitHub Release
+        if: steps.version.outputs.new == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release create "v$VERSION" "$RUNNER_TEMP"/assets/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "$VERSION" \
+            --notes-file "$RUNNER_TEMP/notes.md" \
+            --latest
+      - name: Start the ClawHub publish
+        if: steps.version.outputs.new == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: gh workflow run clawhub-publish.yml --repo "$GITHUB_REPOSITORY" --ref main -f tag="v$VERSION"

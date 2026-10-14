@@ -29,8 +29,12 @@ jobs:
         run: node scripts/validate.mjs
       - name: README matches claims.json
         run: node scripts/claims.mjs --check
+      - name: The CHANGELOG entry for VERSION has text
+        run: node scripts/release.mjs check
       - name: Validator tests
         run: node --test scripts/validate.test.mjs
+      - name: Release script tests
+        run: node --test scripts/release.test.mjs
 
   review-script:
     name: cuddler-review/scripts/contact-sheet.sh on Linux

@@ -12,7 +12,7 @@ Releases run on their own after a merge. Nothing changes in what the skills do.
 
 - **`node scripts/bump.mjs <x.y.z>`** moves the version in `VERSION`, the four plugin manifests and the marketplace entry, and opens the new CHANGELOG entry. CI fails while that entry is empty.
 - **Release workflow.** After a merge that changes the version, `.github/workflows/release.yml` tags `v<version>` and publishes the GitHub Release with the CHANGELOG entry. The Release carries the OpenClaw and OpenAI packages as ZIPs, with `SHA256SUMS`.
-- **ClawHub workflow.** `.github/workflows/clawhub-publish.yml` builds the OpenClaw package from the tag and publishes it to ClawHub. It signs in through trusted publishing (the job's GitHub OIDC token, no stored token) and waits for ClawHub's security checks. The release workflow starts it, and it can be run again from the Actions tab.
+- **ClawHub workflow.** `.github/workflows/clawhub-publish.yml` builds the OpenClaw package from the tag, when the tag's commit is on `main`, and publishes it to ClawHub. It signs in through trusted publishing (the job's GitHub OIDC token, no stored token) and waits for ClawHub's security checks. The release workflow starts it, and it can be run again from the Actions tab.
 - `scripts/release.mjs` holds the release steps, and `scripts/release.test.mjs` tests them and the version bump.
 
 ### Changed

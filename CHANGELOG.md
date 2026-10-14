@@ -4,6 +4,14 @@ All notable changes to the Cuddler skills. The version here, `VERSION` and every
 
 Versions stay at 0.x while the skills are in beta: a minor version may change the hard rules or what the skills expect from the tools, only the latest version gets fixes, and every change that reaches `main` bumps the version. Each version is tagged `v<version>` and published as a GitHub Release with its entry below.
 
+## [0.3.14] — 2026-10-14
+
+Listing details for Anthropic's plugin directory. Nothing changes in what the skills do.
+
+### Changed
+
+- **The Claude Code manifest carries its listing details.** `.claude-plugin/plugin.json` now names the icon (`assets/logo.png`), the install guide as its documentation, Cuddler's support page, privacy policy and terms, and the support address, so a directory listing can show them. The Codex manifest already had them.
+
 ## [0.3.13] — 2026-10-14
 
 The ClawHub step of the release now works with trusted publishing. Nothing changes in what the skills do.

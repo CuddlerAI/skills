@@ -4,6 +4,21 @@ All notable changes to the Cuddler skills. The version here, `VERSION` and every
 
 Versions stay at 0.x while the skills are in beta: a minor version may change the hard rules or what the skills expect from the tools, only the latest version gets fixes, and every change that reaches `main` bumps the version. Each version is tagged `v<version>` and published as a GitHub Release with its entry below.
 
+## [0.3.17] — 2026-10-14
+
+A new skill puts the Cuddler.ai watermark on a video, and downloads can come already marked.
+
+### Added
+
+- `cuddler-watermark`: stamps the corner mark the Cuddler app puts on its downloads (the bear and "Cuddler.ai", same size, place and opacity) onto a local video with ffmpeg, picking white or dark ink from the corner. For cuts edited together from Cuddler clips, or a saved video that came out without the mark. Nothing leaves the machine.
+- `get_download_link` takes `watermark: true` and then returns the video already marked, the same file the app's Save to device makes. `cuddler-generate` asks for it when the user is going to post the clip.
+- Two eval cases: `watermark-local-file` and `watermark-cuddler-video`. The tool mocks follow the server's new `get_download_link` description and `watermark` argument.
+- CI runs `watermark.sh` on synthetic clips on Linux, next to `contact-sheet.sh`.
+
+### Changed
+
+- TRADEMARKS.md names the watermark artwork: it is a Cuddler trademark, outside the MIT License, for marking videos made with Cuddler only.
+
 ## [0.3.16] — 2026-10-14
 
 Wording. Nothing changes in what the skills do.

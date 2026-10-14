@@ -554,7 +554,7 @@
     },
     {
       "name": "get_download_link",
-      "description": "Download links for one of the user's ready videos: the original video file and its poster, valid for about 10 minutes.",
+      "description": "Download links for one of the user's ready videos: the video file and its poster, valid for about 10 minutes. By default the video is the original file. With `watermark: true` it is the same file as the Cuddler app's Save to device: the Cuddler.ai mark in the corner, plus the closing Cuddler card unless the user turned it off in the app (`watermarked: true` on that file) — use it when the user wants to post the video with Cuddler credited. The first watermarked request for a video can take up to about a minute while the file is made; if the answer says it is still being made (`watermark_rendering`), call again after a few seconds. Free.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -562,6 +562,10 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 191
+          },
+          "watermark": {
+            "type": "boolean",
+            "default": false
           }
         },
         "required": [

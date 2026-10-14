@@ -165,6 +165,22 @@ The failed re-shoot requires reject, with no further take.
 
 These three cases test the decision from evidence stated as already inspected; they do not run extraction or inspect a real local file.
 
+### watermark-local-file
+
+**Skills:** cuddler-watermark
+
+> I cut three of my Cuddler clips together in CapCut and the watermark got lost. Put the Cuddler watermark back on ./my-cut.mp4 so I can post it.
+
+A local file, not a Cuddler video: the bundled script stamps it on this machine; nothing is made, re-made or uploaded.
+
+### watermark-cuddler-video
+
+**Skills:** cuddler-watermark
+
+> Download my Cuddler video vid_mock01 with the Cuddler watermark on it, I want to post it on TikTok.
+
+A Cuddler video comes already marked from `get_download_link` with `watermark: true`; the local script is for files the app didn't mark, so nothing is stamped twice.
+
 ### download-link-check
 
 **Skills:** cuddler-generate

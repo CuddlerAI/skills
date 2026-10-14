@@ -37,7 +37,7 @@ jobs:
         run: node --test scripts/release.test.mjs
 
   review-script:
-    name: cuddler-review/scripts/contact-sheet.sh on Linux
+    name: the skills' ffmpeg scripts on Linux
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -53,6 +53,10 @@ jobs:
         env:
           REQUIRE_FFMPEG: "1"
         run: node --test --test-name-pattern "contact-sheet" scripts/validate.test.mjs
+      - name: Watermark synthetic clips
+        env:
+          REQUIRE_FFMPEG: "1"
+        run: node --test --test-name-pattern "watermark.sh" scripts/validate.test.mjs
 
   public-wording:
     name: The description and the commit messages name nothing internal

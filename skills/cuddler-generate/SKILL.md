@@ -87,7 +87,7 @@ After "proceed" (with `confirmation: "host"`, right after the price line): `crea
 
 ### 7. Deliver
 
-`get_download_link` → download the `video` file (and the `poster` if useful) into `./out/` with a plain GET (`curl -fL --proto =https --proto-redir =https -o ./out/<filename> "<url>"`); the links last about 10 minutes. Reply in one line: local path, model, seconds, `creditsCharged`. In a chat app, where the user can't open a path on your machine (OpenClaw on Telegram, WhatsApp or Discord, for example), send the file into the chat the way your host attaches files: OpenClaw takes a line of its own, `MEDIA:` followed by the download link, and fetches the file itself, so send it while the link is fresh. Offer the `cuddler-review` skill before the clip is shown to anyone.
+`get_download_link` → download the `video` file (and the `poster` if useful) into `./out/`. If the user is going to post the clip, ask with `watermark: true`: the file then carries the Cuddler.ai corner mark, as the app's downloads do. It is a plain GET (`curl -fL --proto =https --proto-redir =https -o ./out/<filename> "<url>"`); the links last about 10 minutes. Reply in one line: local path, model, seconds, `creditsCharged`. In a chat app, where the user can't open a path on your machine (OpenClaw on Telegram, WhatsApp or Discord, for example), send the file into the chat the way your host attaches files: OpenClaw takes a line of its own, `MEDIA:` followed by the download link, and fetches the file itself, so send it while the link is fresh. Offer the `cuddler-review` skill before the clip is shown to anyone.
 
 ## When things go wrong
 

@@ -18,11 +18,12 @@ Skills and a plugin for coding agents and for OpenClaw. Install them, connect yo
 | [`cuddler-generate`](skills/cuddler-generate/SKILL.md) | "Make a 10-second vertical clip of a paper boat in the rain" — videos and images, priced before anything is spent |
 | [`cuddler-character-clip`](skills/cuddler-character-clip/SKILL.md) | "Turn my character into a 15-second clip" — one of your own Cuddler characters talking to the viewer |
 | [`cuddler-review`](skills/cuddler-review/SKILL.md) | "Review ./clip.mp4 before I post it" — a local ffmpeg check with a pass, fix or reject verdict |
+| [`cuddler-watermark`](skills/cuddler-watermark/SKILL.md) | "Add the Cuddler watermark to ./my-cut.mp4" — the app's corner mark, stamped locally with ffmpeg |
 
 ## What you need
 
 - A Cuddler account on a paid plan (Lite, Pro or Ultra), or in Cuddler's Creator Partnership Program. You sign in once in your browser, and the setup skill tells you what your plan can make.
-- `curl`, which the skills use to save finished files; `ffmpeg` and `ffprobe` only for `cuddler-review`.
+- `curl`, which the skills use to save finished files; `ffmpeg` and `ffprobe` only for `cuddler-review` and `cuddler-watermark`.
 - Room in your project: finished files go to `./out/` (character clips to `./cc/`, reviewed clips to `./clips/` and `<clip>.review/`). Add those folders to your `.gitignore` if the project is a repository.
 
 ## Install

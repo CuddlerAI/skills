@@ -2,11 +2,13 @@
 
 Score every clip against all three parts. Anchor each finding to a timestamp or frame file, and give the fix, not just the flaw.
 
+Apply visual and sound requirements to the user's brief; character, dialogue and eye-contact checks are not requirements for an object or abstract clip. Machine PASS / WARN / FAIL labels are measurements, not final verdicts: use Step 4 of the skill to choose pass / fix / reject. First-take duration, aspect and missing-sound failures are fixable even when several checks fail; reject needs an observed red line or evidence that the one re-shoot already failed.
+
 ## A. Machine checks (`summary.txt`)
 
 | Check | PASS | WARN | FAIL | Read it with |
 |---|---|---|---|---|
-| Duration | within 0.6 s of the expected length | — | otherwise | Seedance renders whole seconds; a short file means a cut-off render |
+| Duration | within 0.6 s of the expected length | — | otherwise | A short file can indicate a cut-off render; it does not establish that a re-shoot has already failed |
 | Aspect | matches the expected ratio (±2%) | — | otherwise | A first-frame clip takes its image's shape |
 | Audio stream | present | — | missing | Cuddler and Seedance clips carry audio unless silence was requested |
 | First sound onset (voice band) | ≤ 2.0 s | 2.0–3.0 s | > 3.0 s | Approximate; confirm the mouth starts moving in the frames |
@@ -63,6 +65,7 @@ A re-shoot keeps every defensive line the previous prompt had and adds the new f
 ```text
 Clip: <path> (<duration> s, <W>×<H>)
 Verdict: pass | fix | reject
+Reject basis (reject only): <observed red line + timestamp/frame, or failed re-shoot history + remaining defect>
 Machine: duration ✓ · aspect ✓ · audio ✓ · onset 1.1 s ✓ · end hold 0.9 s △ · cuts 0 ✓ · −15.8 LUFS
 Issues, most serious first:
   1. [P0] 7.5–8.0 s — a hand covers the lens → add "both hands stay busy …"

@@ -285,7 +285,7 @@ test("the README and .mcp.json must follow claims.json", () => {
 test("eval cases must cover every skill and name only real tools", () => {
   expectError(withCopy((d) => edit(d, "evals/README.md", (t) => t.replace("### review-existing-video", "### review-existing-clip"))), /the case "review-existing-video" has no/);
   expectError(
-    withCopy((d) => edit(d, "evals/README.md", (t) => t.replace("**Skills:** cuddler-review", "**Skills:** cuddler-generate"))),
+    withCopy((d) => edit(d, "evals/README.md", (t) => t.replaceAll("**Skills:** cuddler-review", "**Skills:** cuddler-generate"))),
     /no eval case covers the skill "cuddler-review"/,
   );
   expectError(withCopy((d) => edit(d, "evals/quote-gate/graders/quoted.md", (t) => t.replace("__quote_video", "__price_video"))), /must be Skill or mcp__plugin_cuddler_cuddler__/);

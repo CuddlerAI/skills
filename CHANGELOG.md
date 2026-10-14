@@ -4,6 +4,82 @@ All notable changes to the Cuddler skills. The version here, `VERSION` and every
 
 Versions stay at 0.x while the skills are in beta: a minor version may change the hard rules or what the skills expect from the tools, only the latest version gets fixes, and every change that reaches `main` bumps the version. Each version is tagged `v<version>` and published as a GitHub Release with its entry below.
 
+## [0.3.14] — 2026-10-14
+
+Listing details for Anthropic's plugin directory. Nothing changes in what the skills do.
+
+### Changed
+
+- **The Claude Code manifest carries its listing details.** `.claude-plugin/plugin.json` now names the icon (`assets/logo.png`), the install guide as its documentation, Cuddler's support page, privacy policy and terms, and the support address, so a directory listing can show them. The Codex manifest already had them.
+
+## [0.3.13] — 2026-10-14
+
+The ClawHub step of the release now works with trusted publishing. Nothing changes in what the skills do.
+
+### Fixed
+
+- **ClawHub publish.** 0.3.12's run reached ClawHub and was refused, because a trusted publish may not name the owner and must report the source its GitHub token vouches for. `release.yml` now starts `clawhub-publish.yml` on the new tag instead of on `main`. The ClawHub workflow drops `--owner` and reports the run's own repository, commit and ref. To publish a tag again, run it from the Actions tab on that tag.
+
+## [0.3.12] — 2026-10-14
+
+Releases run on their own after a merge. Nothing changes in what the skills do.
+
+### Added
+
+- **`node scripts/bump.mjs <x.y.z>`** moves the version in `VERSION`, the four plugin manifests and the marketplace entry, and opens the new CHANGELOG entry. CI fails while that entry is empty.
+- **Release workflow.** After a merge that changes the version, `.github/workflows/release.yml` tags `v<version>` and publishes the GitHub Release with the CHANGELOG entry. The Release carries the OpenClaw and OpenAI packages as ZIPs, with `SHA256SUMS`.
+- **ClawHub workflow.** `.github/workflows/clawhub-publish.yml` builds the OpenClaw package from the tag, when the tag's commit is on `main`, and publishes it to ClawHub. It signs in through trusted publishing (the job's GitHub OIDC token, no stored token) and waits for ClawHub's security checks. The release workflow starts it, and it can be run again from the Actions tab.
+- `scripts/release.mjs` holds the release steps, and `scripts/release.test.mjs` tests them and the version bump.
+
+### Changed
+
+- **Updates.** The README says how each host keeps the skills up to date, including Claude Code's auto-update for the marketplace. INSTALL adds the same for Claude Code, Gemini CLI and the other agents.
+- CONTRIBUTING describes the release workflows instead of the manual tag, Release and ClawHub steps.
+
+## [0.3.11] — 2026-10-14
+
+Wording. Nothing changes in what the skills do.
+
+### Changed
+
+- **OpenClaw at the top of the README.** The tagline names OpenClaw next to Claude Code, Codex and Cursor, the introduction says OpenClaw sends the finished file into your chat, and the OpenClaw install section links the package on ClawHub.
+- **Creator partners can connect too.** The plans line, the README and ClawHub README requirements and both install guides say that a place in Cuddler's Creator Partnership Program also lets an account connect, as the skills and the server already do. The ClawHub README's requirements now name the paid plan as well.
+
+## [0.3.10] — 2026-10-14
+
+Cuddler now leaves spending to the account's balance: no approval threshold and no daily limit unless Cuddler sets one, and connecting is for paid plans. The skills and the docs say what the server does.
+
+### Changed
+
+- **Connecting needs a paid plan.** The README, the install guides and the Codex listing say that connecting is for paid Cuddler plans (Lite, Pro or Ultra); free plans, trials and gifted plans can't connect. `cuddler-setup` and `cuddler-generate` recognise the refusal (`account_not_eligible`), say so and stop.
+- **No numbers for limits.** The README's limits line, SECURITY.md and the install guides no longer name an approval threshold or a daily budget: Cuddler's server charges at most the quoted `maxCredits`, spends nothing unless spending was allowed at sign-in, and, in agents that support it, asks in the agent's own dialog before each paid call. The Claude Code guide says how to answer that dialog (Space ticks the box, then Accept; Decline or Esc charges nothing; after ten minutes Cuddler asks again).
+- **`budget` may be null.** `cuddler-setup` reports what is left today only when `whoami` says a daily limit is set, and `cuddler-generate` compares the price with `budgetRemaining` only when it is a number. The approval link and the daily-limit refusal stay handled for the case that Cuddler turns them on.
+- The saved tool list and the mocks in `evals/` follow the server's new wording and shapes; `setup-account` no longer expects a daily figure.
+
+## [0.3.9] — 2026-10-14
+
+Cuddler for OpenClaw, packaged for ClawHub.
+
+### Added
+
+- **OpenClaw plugin.** `openclaw.plugin.json` loads the four skills and the Cuddler MCP server (Streamable HTTP, signed in with OAuth in the browser). Install with `openclaw plugins install clawhub:cuddler`; the README, INSTALL and INSTALL_FOR_AGENTS show how to install it and sign in, including `--code` for a browser on another machine. `cuddler-setup` covers OpenClaw in its install and sign-in tables and knows tool names such as `cuddler__whoami`.
+- **The ClawHub package.** `node scripts/pack-openclaw.mjs` builds `dist/openclaw/`: the listing README from `clawhub/README.md`, the manifests ClawHub and OpenClaw read, the icon, the license and trademark files, and the skills. It refuses to build while validation fails.
+- The validator checks the OpenClaw manifest (version, skills, server and sign-in, no code to run) and the ClawHub README like the main README (claims blocks, links, skills table, wording).
+
+### Changed
+
+- **Files in chat apps.** Where the user can't open a path on the agent's machine, `cuddler-generate` and `cuddler-character-clip` also send the finished file into the chat (OpenClaw: a `MEDIA:` line with a fresh download link, or `image.url` for an image).
+
+## [0.3.8] — 2026-10-14
+
+### Fixed
+
+- **Repairable first takes stay fix.** `cuddler-review` separates machine FAIL checks from the final verdict. Reject requires an observed content red line or evidence that the one re-shoot still failed. Technical defects alone do not imply a failed re-shoot, and character-only checks apply only to the relevant brief.
+
+### Added
+
+- Review decision evals for a repairable first take, a content red line despite passing technical checks, and a failed re-shoot. They use evidence stated as already inspected; real-file extraction is a separate integration check.
+
 ## [0.3.7] — 2026-10-14
 
 Wording. Nothing changes in what the skills do.

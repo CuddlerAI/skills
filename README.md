@@ -1,27 +1,27 @@
 # Cuddler skills
 
 <!-- claims:tagline -->
-Make AI videos and images from Claude Code, Codex or Cursor, with the Cuddler membership you already have.
+Make AI videos and images from Claude Code, Codex, Cursor or OpenClaw, with the Cuddler membership you already have.
 <!-- /claims:tagline -->
 
 <!-- claims:beta -->
 **Beta.** The skills are new and still changing. Tell us what breaks in the issues.
 <!-- /claims:beta -->
 
-Skills and a plugin for coding agents. Install them, connect your Cuddler account once in the browser, and ask your agent for a video. It shows the price, waits for your OK, renders on Cuddler and saves the file next to your project.
+Skills and a plugin for coding agents and for OpenClaw. Install them, connect your Cuddler account once in the browser, and ask your agent for a video. It shows the price, waits for your OK, renders on Cuddler and saves the file next to your project; in OpenClaw it sends the file into your chat.
 
 ## What you can do
 
 | Skill | Ask your agent |
 |---|---|
-| [`cuddler-setup`](skills/cuddler-setup/SKILL.md) | "Connect my Cuddler account" — install, sign in, see your plan, credits and today's budget |
+| [`cuddler-setup`](skills/cuddler-setup/SKILL.md) | "Connect my Cuddler account" — install, sign in, see your plan, credits and what your account can make |
 | [`cuddler-generate`](skills/cuddler-generate/SKILL.md) | "Make a 10-second vertical clip of a paper boat in the rain" — videos and images, priced before anything is spent |
 | [`cuddler-character-clip`](skills/cuddler-character-clip/SKILL.md) | "Turn my character into a 15-second clip" — one of your own Cuddler characters talking to the viewer |
 | [`cuddler-review`](skills/cuddler-review/SKILL.md) | "Review ./clip.mp4 before I post it" — a local ffmpeg check with a pass, fix or reject verdict |
 
 ## What you need
 
-- A Cuddler account. You sign in once in your browser, and the setup skill tells you what your plan can make.
+- A Cuddler account on a paid plan (Lite, Pro or Ultra), or in Cuddler's Creator Partnership Program. You sign in once in your browser, and the setup skill tells you what your plan can make.
 - `curl`, which the skills use to save finished files; `ffmpeg` and `ffprobe` only for `cuddler-review`.
 - Room in your project: finished files go to `./out/` (character clips to `./cc/`, reviewed clips to `./clips/` and `<clip>.review/`). Add those folders to your `.gitignore` if the project is a repository.
 
@@ -49,6 +49,18 @@ codex mcp login cuddler
 
 In the Codex app: **Plugins → Add → Add a marketplace**, enter `CuddlerAI/skills`, then install Cuddler from the **Personal** tab. Step by step for the [Codex app](INSTALL.md#codex-app) and the [Codex CLI](INSTALL.md#codex-cli).
 
+### OpenClaw
+
+<!-- claims:install.openclaw -->
+```bash
+openclaw plugins install clawhub:cuddler
+openclaw mcp add cuddler --url https://mcp.cuddler.ai/mcp --transport streamable-http --auth oauth --header X-Cuddler-Source=plugin --timeout 240
+openclaw mcp login cuddler
+```
+<!-- /claims:install.openclaw -->
+
+Cuddler is on ClawHub as [`cuddler`](https://clawhub.ai/cuddler/plugins/cuddler). The plugin brings the skills and the Cuddler MCP server; the other two commands sign you in. In the Control UI: **Plugins → Cuddler → Accounts → Connect** instead. Finished files come back in your chat. Step by step: [INSTALL.md](INSTALL.md#openclaw).
+
 ### Cursor, Gemini CLI and other agents
 
 <!-- claims:install.other -->
@@ -59,6 +71,15 @@ npx skills add CuddlerAI/skills
 
 Then add the Cuddler MCP server to your agent; the Cuddler assistants page below has one-click links. Step by step: [INSTALL.md](INSTALL.md). Or paste [INSTALL_FOR_AGENTS.md](INSTALL_FOR_AGENTS.md) to your agent and let it do the install.
 
+## Updates
+
+Each change to the skills ships as a new version, with its notes on the Releases page. The Cuddler MCP server updates on its own; the skills update like this:
+
+- **Claude Code**: in `/plugin`, open the Cuddler marketplace and choose **Enable auto-update**. By hand: `/plugin marketplace update cuddler`.
+- **Codex**: **Upgrade marketplace** next to Cuddler in the app, or `codex plugin marketplace upgrade cuddler`.
+- **OpenClaw**: `openclaw plugins update cuddler`.
+- **Cursor, Gemini CLI and other agents**: `npx skills update`.
+
 ## Credits and limits
 
 <!-- claims:credits -->
@@ -66,11 +87,11 @@ Renders spend credits from your own Cuddler account: the quote is the price. You
 <!-- /claims:credits -->
 
 <!-- claims:limits -->
-A render above 200 credits (500 on the Ultra plan) also needs one click on an approval link in your browser, and each connection (one per agent you connect) can spend up to 3,000 credits a day.
+Cuddler's server charges at most the quoted price for each render, and in agents that support it, it also asks you in the agent's own dialog before each paid call. There is no separate daily cap unless Cuddler sets one: your credit balance is the limit.
 <!-- /claims:limits -->
 
 <!-- claims:plans -->
-Videos need a Cuddler plan that includes video. The setup skill tells you what your account can make.
+Connecting needs a paid Cuddler plan (Lite, Pro or Ultra) or a place in Cuddler's Creator Partnership Program; free plans, trials and gifted plans can't connect. Videos need a plan that includes video. The setup skill tells you what your account can make.
 <!-- /claims:plans -->
 
 ## Privacy and safety

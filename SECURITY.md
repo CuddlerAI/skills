@@ -22,6 +22,6 @@ If you think an agent, a token or a session connected to your Cuddler account wa
 
 - They reach Cuddler only through the Cuddler MCP tools and the links those tools return, over https only.
 - They never ask for, print or read your credentials; signing in happens in your browser.
-- Every paid render is priced first and runs only after you say so; larger renders also need your approval in the browser.
+- Every paid render is priced first and runs only after you say so.
 
-These are instructions to an AI model and to the host that runs it, and a model or a host can stray from them. Independently of the skills, Cuddler's server caps every paid call at the `maxCredits` the skill sends (never above the quote), asks you in your browser above your plan's approval threshold, stops at each connection's daily budget, and spends nothing unless you allowed spending credits when you signed in. Those limits hold even when a host runs tools without asking.
+These are instructions to an AI model and to the host that runs it, and a model or a host can stray from them. Independently of the skills, Cuddler's server caps every paid call at the `maxCredits` the skill sends (never above the quote), spends nothing unless you allowed spending credits when you signed in, and, in agents that support it, asks you in the agent's own dialog before each paid call. The cap and the sign-in permission hold even when a host runs tools without asking.

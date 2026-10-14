@@ -41,7 +41,15 @@ By opening a pull request you license your contribution under the MIT License an
 
 ## Releasing
 
-Every change that reaches `main` bumps `VERSION` (a patch bump is enough for wording), together with the three plugin manifests, the marketplace entry and `CHANGELOG.md` (CI checks they match). After the merge, tag `v<version>` on `main` and create a GitHub Release from the tag with the CHANGELOG entry.
+Every change that reaches `main` is a new version. In the pull request, run
+
+```bash
+node scripts/bump.mjs <x.y.z>   # a patch bump is enough for wording
+```
+
+It moves the version in `VERSION`, the plugin manifests (Claude Code, Codex, Cursor and OpenClaw) and the marketplace entry, and opens an empty entry on top of `CHANGELOG.md`. Write that entry before you push: CI checks that every version matches and that the entry has text.
+
+The merge does the rest. `.github/workflows/release.yml` notices the new version, tags `v<version>`, and publishes a GitHub Release with the CHANGELOG entry and the packages attached: `cuddler-<version>-openclaw.zip`, `cuddler-<version>-openai.zip` and `SHA256SUMS`. Then it starts `.github/workflows/clawhub-publish.yml` on the new tag, which builds the OpenClaw package, publishes it to ClawHub and waits for ClawHub's security checks. That workflow runs in the `clawhub` environment, which only release tags can use, and publishes a tag only when its commit is on `main`. ClawHub accepts the workflow's GitHub OIDC token through trusted publishing, so the repository stores no ClawHub token. If a run fails, fix the cause and run it again from the Actions tab: `release` for the tag and the Release, `clawhub-publish` with **Use workflow from** set to the tag (`v<version>`) for ClawHub. `node scripts/release.mjs` runs the same steps locally (`notes`, `summary`, `assets`).
 
 ## The OpenAI plugin directory
 
@@ -51,7 +59,17 @@ ChatGPT and Codex share one plugin directory, and its listing is built from this
 node scripts/pack-openai.mjs   # dist/cuddler-<version>-openai.zip
 ```
 
-The ZIP holds the Codex manifest, `.mcp.json`, `skills/`, `assets/`, `LICENSE` and `TRADEMARKS.md`, and the script refuses to build while `validate.mjs` reports an error; the validator holds the Codex manifest to the directory's listing rules. The Cuddler team uploads it on the OpenAI Platform. Changes to skills, the listing text or the icons need a new upload; changes to the Cuddler MCP tools don't.
+The ZIP holds the Codex manifest, `.mcp.json`, `skills/`, `assets/`, `LICENSE` and `TRADEMARKS.md`, and the script refuses to build while `validate.mjs` reports an error; the validator holds the Codex manifest to the directory's listing rules. Each GitHub Release carries it as `cuddler-<version>-openai.zip`, and the Cuddler team uploads it on the OpenAI Platform. Changes to skills, the listing text or the icons need a new upload; changes to the Cuddler MCP tools don't.
+
+## ClawHub (OpenClaw)
+
+OpenClaw users install Cuddler from ClawHub, and that package is built from this repository too:
+
+```bash
+node scripts/pack-openclaw.mjs   # dist/openclaw/
+```
+
+The folder holds `openclaw.plugin.json` (the skills and the Cuddler MCP server, signed in with OAuth), a `package.json` with the name and version ClawHub publishes, the same server as an OpenClaw `.mcp.json`, a short Claude manifest with the OpenClaw description (ClawHub files the package as a bundle plugin because of it, and OpenClaw loads the package through it), `skills/`, `clawhub/README.md` as its README, the icon, `LICENSE` and `TRADEMARKS.md`. The script refuses to build while `validate.mjs` reports an error, and it only clears a folder that holds an earlier package. Every release publishes it to ClawHub on its own (see Releasing), and ClawHub shows the new version once its security checks pass. To look at a build first, run `clawhub package publish dist/openclaw --owner cuddler --dry-run`.
 
 ## Code owners
 

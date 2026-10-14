@@ -1,13 +1,13 @@
 ---
 name: cuddler-setup
-description: 'Use when someone wants to connect Cuddler to Claude Code, Codex, Cursor, Gemini CLI or another coding agent, sign in, check their Cuddler plan, credits or daily budget, or fix a Cuddler connection. Triggers: "set up Cuddler", "connect my Cuddler account", "the Cuddler tools are missing", "spending credits was not allowed", "how many credits do I have", "disconnect Cuddler". NOT for: making images or videos (use cuddler-generate or cuddler-character-clip), checking a finished clip (use cuddler-review), or the Cuddler web and mobile apps.'
+description: 'Use when someone wants to connect Cuddler to Claude Code, Codex, Cursor, Gemini CLI or another coding agent, sign in, check their Cuddler plan or credits, or fix a Cuddler connection. Triggers: "set up Cuddler", "connect my Cuddler account", "the Cuddler tools are missing", "spending credits was not allowed", "how many credits do I have", "disconnect Cuddler". NOT for: making images or videos (use cuddler-generate or cuddler-character-clip), checking a finished clip (use cuddler-review), or the Cuddler web and mobile apps.'
 argument-hint: '[claude-code|codex|cursor|gemini]'
 license: MIT
 ---
 
 # Connect Cuddler
 
-Goal: the `cuddler` MCP server is connected in this agent, the user is signed in with spending allowed, and they know their plan, credits and today's budget. Optional: one quoted test image.
+Goal: the `cuddler` MCP server is connected in this agent, the user is signed in with spending allowed, and they know their plan, their credits and what the account can make. Optional: one quoted test image.
 
 ## Hard rules
 
@@ -26,7 +26,7 @@ Identical in every Cuddler skill (CI checks that the copies match). They overrid
 
 ## Step 1 — Is Cuddler connected?
 
-Look for the Cuddler tools (`whoami`, `list_models`, `quote_video` …) in your tool list. Hosts may show them with a prefix, such as `mcp__cuddler__whoami`.
+Look for the Cuddler tools (`whoami`, `list_models`, `quote_video` …) in your tool list. Hosts may show them with a prefix, such as `mcp__cuddler__whoami` or `cuddler__whoami`; OpenClaw may list them only through its tool search, and only once the user is signed in.
 
 - The tools are there → call `whoami`. It answers → Step 3. It fails because nobody is signed in → Step 2.
 - No Cuddler tools → the user installs Cuddler for this agent, then restarts it or opens a new session so the tools load:
@@ -37,6 +37,7 @@ Look for the Cuddler tools (`whoami`, `list_models`, `quote_video` …) in your 
 | Codex app | Plugins → Add → Add a marketplace → Source `CuddlerAI/skills` → Add marketplace; then install Cuddler from the Personal tab |
 | Codex CLI | `codex plugin marketplace add CuddlerAI/skills`, then `codex plugin add cuddler@cuddler` (or `/plugins` inside Codex) |
 | Gemini CLI | `gemini mcp add --transport http cuddler https://mcp.cuddler.ai/mcp` |
+| OpenClaw | `openclaw plugins install clawhub:cuddler` (it brings the skills and the Cuddler MCP server; when the plugin is there but the tools aren't, the user still has to sign in: Step 2) |
 | Cursor and others | Add the MCP server `https://mcp.cuddler.ai/mcp` (Streamable HTTP); https://cuddler.ai/mcp has one-click links |
 
 You may run an install command for the user when they ask you to; never edit their agent's config files by hand.
@@ -50,12 +51,13 @@ You may run an install command for the user when they ask you to; never edit the
 | Codex CLI | `codex mcp login cuddler` (within five minutes; `--no-browser` on a remote machine), then check with `/mcp` |
 | Gemini CLI | `/mcp auth cuddler` |
 | Cursor | The MCP settings page → Connect |
+| OpenClaw | Control UI → Plugins → Cuddler → Accounts → Connect. From a terminal: `openclaw mcp add cuddler --url https://mcp.cuddler.ai/mcp --transport streamable-http --auth oauth --header X-Cuddler-Source=plugin --timeout 240`, then `openclaw mcp login cuddler` (within five minutes). When the browser runs on another machine, the page it lands on can't load: the user copies the `code` value from its address and runs `openclaw mcp login cuddler --code <code>` themselves; never ask for the code in the chat. The tools appear in the next session |
 
 A Cuddler page opens in the browser. The user signs in and allows the connection. To create images and videos they must allow **spending credits**; it is never pre-selected. If the browser doesn't open, give the user the link the agent printed. Ask them to open it right away: the agent waits for the browser only a few minutes (Codex: five). If the page the browser lands on can't reach `localhost`, that wait is over; start the sign-in again.
 
 ## Step 3 — Check the account
 
-Call `whoami` and tell the user, in one short paragraph: the account this connection uses (`account.name`), plan (`plan.tier`), credit balance (`credits.balance`), what this connection may still spend today (`budget.remaining` of `budget.limit`, resets at `budget.resetsAt`), and which generations are open (`features.images`, `features.videos`).
+Call `whoami` and tell the user, in one short paragraph: the account this connection uses (`account.name`), plan (`plan.tier`), credit balance (`credits.balance`), and which generations are open (`features.images`, `features.videos`). `budget` is null unless Cuddler has set a daily limit for this connection; when it is set, add what is left today (`budget.remaining` of `budget.limit`, resets at `budget.resetsAt`).
 
 | Result | Meaning | Do |
 |---|---|---|
@@ -64,6 +66,7 @@ Call `whoami` and tell the user, in one short paragraph: the account this connec
 | `features.videos` is false | Videos aren't open for this plan | Images only. If asked which plans include video, `list_models` shows `requiredPlan`; send no plan or purchase links and don't suggest an upgrade |
 | `features.images` and `features.videos` are false | Nothing to generate on this account | Say so and stop |
 | `permission_not_granted` from a tool | As the first row | Step 2 |
+| A 403 or `account_not_eligible` from any tool, or the sign-in page says the account can't be connected | Connecting is for paid Cuddler plans (Lite, Pro or Ultra) and creator partners; free plans, trials and gifted plans can't connect | Say so and stop; send no plan or purchase links and don't suggest an upgrade |
 | A sign-in error, or the tools disappear | The sign-in expired or was revoked | Step 2 |
 
 ## Step 4 — Optional: one quoted test image
@@ -77,7 +80,7 @@ Only when the user wants to try it.
 
 ## Done — what to report
 
-The connected agent · account name and plan · credits and today's budget for this connection · the test image's local path, or "skipped by the user".
+The connected agent · account name and plan · credits and what the account can make · the test image's local path, or "skipped by the user".
 
 Starter prompts to offer: "Make a 10-second vertical clip of …" · "Turn my character into a 15-second clip" · "Review ./clip.mp4".
 
@@ -90,9 +93,9 @@ Starter prompts to offer: "Make a 10-second vertical clip of …" · "Turn my ch
 | A tool says the feature isn't open | The account's plan doesn't include it yet |
 | The sign-in page shows another account | Sign out of cuddler.ai in that browser, then sign in again |
 | Connected to the wrong account | Sign out of cuddler.ai in the browser and sign in with the right account, then connect again: Claude Code `/mcp` → Cuddler → re-authenticate; Codex `codex mcp logout cuddler`, then `codex mcp login cuddler` (the app and the CLI share it) |
-| Codex asks to allow `create_image` or `create_video` | That is Codex's own approval, on top of the price question: choose Always allow so the price question is the only one; if Codex asks again later, allow it again; Cuddler's server keeps its own limits either way (`maxCredits`, the approval threshold, the daily budget) |
-| Claude Code asks to allow a Cuddler tool that spends credits | Its own permission prompt: choose the option that stops asking for that tool; the skills still show the price and wait for an OK, and Cuddler's server keeps its own limits either way |
-| The host opens a Cuddler dialog asking to confirm spending credits | Cuddler asks through the host when the quote said `confirmation: "host"`: tick the box and confirm to go ahead, or decline; nothing is charged without it. Above the account's approval threshold the dialog links to the approval page instead |
+| Codex asks to allow `create_image` or `create_video` | That is Codex's own approval, on top of the price question: choose Always allow so the price question is the only one; if Codex asks again later, allow it again; Cuddler's server never charges more than `maxCredits` either way |
+| Claude Code asks to allow a Cuddler tool that spends credits | Its own permission prompt: choose the option that stops asking for that tool; the skills still show the price, Cuddler confirms each paid call in Claude Code's own dialog, and the server never charges more than `maxCredits` |
+| The host opens a Cuddler dialog asking to confirm spending credits | Cuddler asks through the host when the quote said `confirmation: "host"`: tick the box (Space in Claude Code) and confirm to go ahead, or decline; nothing is charged without it, and after ten minutes without an answer Cuddler asks again. When Cuddler asks for approval in the browser instead, the dialog links to the approval page |
 | Codex asks to allow network access for a `curl` download | The skill is saving the finished file from Cuddler's storage into `./out/`, and Codex's sandbox has no network by default: allow it |
 | Codex refuses a paid tool in `codex exec` ("approval policy is never") | Non-interactive Codex never asks; allow the tool for that run, as the install guide shows |
 | Codex says the model is not supported | The Codex CLI is older than the Codex app; update the CLI |

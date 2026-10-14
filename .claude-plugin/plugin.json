@@ -1,14 +1,20 @@
 {
   "name": "cuddler",
-  "version": "0.3.7",
+  "version": "0.3.14",
   "description": "Make AI videos and images on your own Cuddler account from ChatGPT, Codex, Claude Code or Cursor: connect and sign in, quoted renders, character clips and local clip review.",
   "author": {
     "name": "Cuddler",
+    "email": "support@cuddler.ai",
     "url": "https://cuddler.ai"
   },
   "homepage": "https://cuddler.ai/mcp",
   "repository": "https://github.com/CuddlerAI/skills",
   "license": "MIT",
+  "icon": "./assets/logo.png",
+  "documentationUrl": "https://github.com/CuddlerAI/skills/blob/main/INSTALL.md",
+  "supportUrl": "https://cuddler.ai/support",
+  "privacyPolicyUrl": "https://cuddler.ai/privacy",
+  "termsOfServiceUrl": "https://cuddler.ai/terms",
   "keywords": [
     "cuddler",
     "video-generation",

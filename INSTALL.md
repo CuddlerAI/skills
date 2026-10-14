@@ -1,6 +1,6 @@
 # Install
 
-Two parts: the **skills** (instructions your agent reads) and the **Cuddler MCP server** (the tools that actually make images and videos). On Claude Code and Codex the plugin brings both. The Cursor plugin is ready but not listed in Cursor's marketplace yet, so on Cursor and other agents you add them one by one.
+Two parts: the **skills** (instructions your agent reads) and the **Cuddler MCP server** (the tools that actually make images and videos). Connecting needs a paid Cuddler plan (Lite, Pro or Ultra) or a place in Cuddler's Creator Partnership Program; free plans, trials and gifted plans can't connect. On Claude Code and Codex the plugin brings both. The Cursor plugin is ready but not listed in Cursor's marketplace yet, so on Cursor and other agents you add them one by one.
 
 ## Claude Code
 
@@ -8,7 +8,7 @@ Two parts: the **skills** (instructions your agent reads) and the **Cuddler MCP 
 claude plugin install cuddler --marketplace CuddlerAI/skills
 ```
 
-Inside Claude Code you can do the same with `/plugin marketplace add CuddlerAI/skills` and then `/plugin install cuddler@cuddler`. Restart Claude Code, then type `/mcp`, choose the Cuddler server and sign in. A Cuddler page opens in your browser: sign in and allow the connection, including **spending credits** if you want to make images and videos. When Claude Code asks to allow a Cuddler tool that spends credits, choose the option that stops asking for that tool: the skills still show the price first and wait for your OK, and Cuddler's server keeps its own limits either way (every paid call is capped at the quoted `maxCredits`, larger renders need your approval in the browser, and each connection has a daily budget).
+Inside Claude Code you can do the same with `/plugin marketplace add CuddlerAI/skills` and then `/plugin install cuddler@cuddler`. Restart Claude Code, then type `/mcp`, choose the Cuddler server and sign in. A Cuddler page opens in your browser: sign in and allow the connection, including **spending credits** if you want to make images and videos. When Claude Code asks to allow a Cuddler tool that spends credits, choose the option that stops asking for that tool: the skills still show the price first, Cuddler asks you to confirm each paid call in Claude Code's own dialog (tick its box with Space, then choose Accept; Decline or Esc charges nothing, and after ten minutes without an answer Cuddler simply asks again), and Cuddler's server never charges more than the quoted `maxCredits`.
 
 The skills are then available as:
 
@@ -19,7 +19,7 @@ The skills are then available as:
 
 You rarely need to type them: ask for what you want ("make a 10-second clip of …") and Claude picks the right skill.
 
-Update: `/plugin marketplace update cuddler`. Remove: `/plugin uninstall cuddler@cuddler`.
+Update: in `/plugin`, open the Cuddler marketplace and choose **Enable auto-update**, and Claude Code keeps the marketplace and the plugin up to date. By hand: `/plugin marketplace update cuddler`. Remove: `/plugin uninstall cuddler@cuddler`.
 
 ## Codex app
 
@@ -29,7 +29,7 @@ Cuddler isn't in the public plugin directory yet, so add its marketplace first. 
 2. Find **Cuddler** on the **Personal** tab, where added marketplaces show, and install it. The four Cuddler skills come with it; there is nothing to add under **Skills**.
 3. Installing opens a Cuddler sign-in page in your browser: sign in, tick **Spend credits** if you want images and videos, and allow it within five minutes. The page may say Cuddler hasn't reviewed the app; that's expected for Codex. Missed it? Settings → MCP servers → Cuddler → Authenticate.
 4. Start a new chat and mention the plugin: `@Cuddler make a 10-second vertical clip of a paper boat in the rain`.
-5. Keep the permission mode on **Ask for approval**. Before a paid render Codex asks to allow `create_image` or `create_video`: choose **Always allow**, so the skill's price question is the only one next time; if Codex asks again later, allow it again. The skills always show the price first and wait for your OK, and Cuddler's server keeps its own limits either way (the quoted `maxCredits`, the approval page for larger renders, the daily budget). With **Full access**, Codex doesn't ask at all, so the price question and those server limits are the only checks. When an image or clip is ready, the skill saves it into `./out/`; Codex's sandbox has no network by default, so Codex also asks to allow that download.
+5. Keep the permission mode on **Ask for approval**. Before a paid render Codex asks to allow `create_image` or `create_video`: choose **Always allow**, so the skill's price question is the only one next time; if Codex asks again later, allow it again. The skills always show the price first and wait for your OK, and Cuddler's server never charges more than the quoted `maxCredits`. With **Full access**, Codex doesn't ask at all, so the price question and that cap are the only checks. When an image or clip is ready, the skill saves it into `./out/`; Codex's sandbox has no network by default, so Codex also asks to allow that download.
 
 ## Codex CLI
 
@@ -61,6 +61,30 @@ The skills still quote every render first and wait for you: answer with `codex e
 
 Update (app and CLI): **Upgrade marketplace** next to Cuddler in the app's marketplace list, or `codex plugin marketplace upgrade`. Remove: `codex plugin remove cuddler@cuddler`.
 
+## OpenClaw
+
+Needs OpenClaw 2026.9.9 or newer.
+
+1. Install the plugin. It brings the four skills and the Cuddler MCP server, and OpenClaw lists both and asks before it installs:
+
+   ```bash
+   openclaw plugins install clawhub:cuddler
+   ```
+
+   From this repository instead of ClawHub: `openclaw plugins install cuddler --marketplace CuddlerAI/skills`, then sign in from a terminal as step 2 shows.
+2. Sign in. In the Control UI, open **Plugins → Cuddler → Accounts** and choose **Connect**. From a terminal:
+
+   ```bash
+   openclaw mcp add cuddler --url https://mcp.cuddler.ai/mcp --transport streamable-http --auth oauth --header X-Cuddler-Source=plugin --timeout 240
+   openclaw mcp login cuddler
+   ```
+
+   A Cuddler page opens in your browser: sign in, tick **Spend credits** if you want images and videos, and allow it within five minutes. If the browser runs on another machine than OpenClaw (a server, for example), the page it lands on can't load; copy the `code` value from its address and run `openclaw mcp login cuddler --code <code>`. Check with `openclaw mcp status --verbose`.
+3. Start a new session and ask for what you want, in any chat your OpenClaw answers. Before a paid render the skill posts the price and waits for you to reply proceed. OpenClaw runs Cuddler's tools without asking on its own, so that reply is the go-ahead, and anyone who can message your OpenClaw can ask for a render too: connect Cuddler to an OpenClaw only you talk to, or limit who can use it.
+4. Finished images and clips come back in your chat as attachments. To save files on the machine OpenClaw runs on, that machine needs `curl`, and `ffmpeg` and `ffprobe` for `cuddler-review`; with OpenClaw's sandbox on, the sandbox needs network access and those tools too.
+
+Update: `openclaw plugins update cuddler`. Remove: `openclaw plugins uninstall cuddler`.
+
 ## Gemini CLI
 
 ```bash
@@ -68,7 +92,7 @@ npx skills add CuddlerAI/skills -a gemini-cli
 gemini mcp add --transport http cuddler https://mcp.cuddler.ai/mcp
 ```
 
-Then, inside Gemini CLI: `/mcp auth cuddler`.
+Then, inside Gemini CLI: `/mcp auth cuddler`. Update the skills with `npx skills update`.
 
 ## Cursor and other agents
 
@@ -78,9 +102,11 @@ The repository carries a Cursor plugin manifest, but Cuddler isn't listed in Cur
 2. Add the MCP server `https://mcp.cuddler.ai/mcp` (Streamable HTTP). For Cursor, the Cuddler assistants page at https://cuddler.ai/mcp has a one-click link.
 3. Sign in when your agent asks, in the browser.
 
+Update the skills with `npx skills update`.
+
 ## Check that it works
 
-Ask your agent: "Connect my Cuddler account". The `cuddler-setup` skill checks the connection and tells you your plan, your credits and what this agent may still spend today.
+Ask your agent: "Connect my Cuddler account". The `cuddler-setup` skill checks the connection and tells you your plan, your credits and what your account can make.
 
 ## Disconnect
 

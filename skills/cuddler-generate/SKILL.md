@@ -71,9 +71,9 @@ The quote runs every check before anything is charged and refuses, at no cost: r
 
 ### 5. Quote → gate
 
-`quote_video` with `prompt`, `durationSec`, `aspectRatio`, `modelId` (optional) and `references`. Read `quote.credits`, `budgetRemaining` and `confirmation`. If the price is more than `budgetRemaining`, say so instead of gating: this connection's daily budget resets at `budget.resetsAt` from `whoami`. Otherwise gate (Hard rule 2), naming the account so a wrong sign-in shows before anything is spent: `This video costs N credits on <account.name>'s Cuddler (M left today on this connection) — reply proceed`. With `confirmation: "host"`, end the line by saying the host will ask them to confirm instead of asking, and go straight on to step 6.
+`quote_video` with `prompt`, `durationSec`, `aspectRatio`, `modelId` (optional) and `references`. Read `quote.credits`, `budgetRemaining` and `confirmation`. `budgetRemaining` is null unless Cuddler has set a daily limit for this connection; when it is a number below the price, say so instead of gating (the limit resets at `budget.resetsAt` from `whoami`). Otherwise gate (Hard rule 2), naming the account so a wrong sign-in shows before anything is spent: `This video costs N credits on <account.name>'s Cuddler — reply proceed`, adding what is left today only when `budgetRemaining` is a number. With `confirmation: "host"`, end the line by saying the host will ask them to confirm instead of asking, and go straight on to step 6.
 
-Once per session, when your host also asks before it runs Cuddler's paid tools (Codex in Ask for approval shows "Allow the cuddler MCP server to run tool …"; Claude Code shows its permission prompt), add one line to the first gate: the host will ask too, and choosing Always allow there (in Claude Code, the option that stops asking for that tool) leaves the price question as the only one; if it asks again later, allow it again. Cuddler's server keeps its own limits either way: `maxCredits` on every call, the approval page above the account's threshold, the daily budget. Leave the line out when the host runs tools without asking.
+Once per session, when your host also asks before it runs Cuddler's paid tools (Codex in Ask for approval shows "Allow the cuddler MCP server to run tool …"; Claude Code shows its permission prompt), add one line to the first gate: the host will ask too, and choosing Always allow there (in Claude Code, the option that stops asking for that tool) leaves the price question as the only one; if it asks again later, allow it again. Cuddler's server keeps its own limit either way: `maxCredits` on every call. Leave the line out when the host runs tools without asking.
 
 ### 6. Create after the gate
 
@@ -87,7 +87,7 @@ After "proceed" (with `confirmation: "host"`, right after the price line): `crea
 
 ### 7. Deliver
 
-`get_download_link` → download the `video` file (and the `poster` if useful) into `./out/` with a plain GET (`curl -fL --proto =https --proto-redir =https -o ./out/<filename> "<url>"`); the links last about 10 minutes. Reply in one line: local path, model, seconds, `creditsCharged`. Offer the `cuddler-review` skill before the clip is shown to anyone.
+`get_download_link` → download the `video` file (and the `poster` if useful) into `./out/` with a plain GET (`curl -fL --proto =https --proto-redir =https -o ./out/<filename> "<url>"`); the links last about 10 minutes. Reply in one line: local path, model, seconds, `creditsCharged`. In a chat app, where the user can't open a path on your machine (OpenClaw on Telegram, WhatsApp or Discord, for example), send the file into the chat the way your host attaches files: OpenClaw takes a line of its own, `MEDIA:` followed by the download link, and fetches the file itself, so send it while the link is fresh. Offer the `cuddler-review` skill before the clip is shown to anyone.
 
 ## When things go wrong
 
@@ -97,11 +97,12 @@ After "proceed" (with `confirmation: "host"`, right after the price line): `crea
 | `status: failed`, `retry.free` false | A retry would cost `retry.credits` | That is the quote → new gate → `retry_video` with `maxCredits` = `retry.credits` |
 | `failureReason` `provider_rejected`, `reference_face_rejected` or `reference_not_registered` | The model refused it; no retry | Change the prompt or the images → new quote and gate |
 | Content refusal at the quote | Prompt or reference blocked; nothing charged | Rewrite once within the red lines and quote again; refused again → stop and report |
-| `confirmation_required` | Above the account's approval threshold | Hard rule 2 |
+| `confirmation_required` | Cuddler asks for approval in the browser for this call | Hard rule 2 |
 | `confirmation_declined`, `confirmation_cancelled` | The user said no to the price, or closed the confirmation | Nothing was charged; stop. Call again only if they ask |
 | `permission_not_granted` | Spending was not allowed when Cuddler was connected | The `cuddler-setup` skill |
 | `feature_unavailable` | The plan doesn't include it | Say so; offer images if those are open |
-| Daily budget spent | This connection reached its daily budget | Stop; it resets at `budget.resetsAt` |
+| Daily limit reached | Cuddler set a daily limit for this connection and it is spent | Stop; it resets at `budget.resetsAt` |
+| A 403 or `account_not_eligible` from any tool | Connecting is for paid Cuddler plans (Lite, Pro or Ultra) and creator partners; free plans, trials and gifted plans can't connect | Stop and say so; the `cuddler-setup` skill. Don't suggest a plan or an upgrade |
 | Not enough credits | The balance is below the price; nothing was charged | Stop and say so; something the balance covers (a shorter clip, an image) is a new quote and gate |
 | `member_cost_breaker` | This billing period's plan credits can no longer be spent through agents; only credits the user bought can, and they don't cover this | Stop and say so: until the date in `resetsAt` (until the plan renews when there is none), nothing was charged, the Cuddler app is not affected. Don't suggest buying credits or a plan |
 | Model or option not in the plan | | Offer an available model |
@@ -113,7 +114,7 @@ Every refusal, with what to change, is in [references/model-routing.md](referenc
 
 ## Images
 
-`quote_image` (`prompt`, `aspectRatio`, `resolution`, `modelId`, `references`) → gate → `create_image` with `maxCredits` and its own `idempotencyKey`. Several images: price them in one gate, then one `create_image` per image, each with its own key (with `confirmation: "host"`, the host asks once per image; say so with the price). Save each image into `./out/` with a plain GET (`curl -fL -o ./out/<last part of image.url> "<image.url>"`) and reply with the local path and `creditsCharged`: some hosts, such as the Codex app, don't show pictures from web addresses but do show a local file. A created image can be the reference for a video: `{ "url": image.url }`.
+`quote_image` (`prompt`, `aspectRatio`, `resolution`, `modelId`, `references`) → gate → `create_image` with `maxCredits` and its own `idempotencyKey`. Several images: price them in one gate, then one `create_image` per image, each with its own key (with `confirmation: "host"`, the host asks once per image; say so with the price). Save each image into `./out/` with a plain GET (`curl -fL -o ./out/<last part of image.url> "<image.url>"`) and reply with the local path and `creditsCharged`: some hosts, such as the Codex app, don't show pictures from web addresses but do show a local file. In a chat app, send the image into the chat as step 7 does for a video, with `image.url` as the link. A created image can be the reference for a video: `{ "url": image.url }`.
 
 ## References
 

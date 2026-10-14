@@ -1,6 +1,6 @@
 {
   "$comment": "The one source of every public claim. README blocks between <!-- claims:<key> --> markers are generated from it by `node scripts/claims.mjs`, and CI checks they match. No prices here: quotes come from the Cuddler tools at runtime.",
-  "tagline": "Make AI videos and images from Claude Code, Codex or Cursor, with the Cuddler membership you already have.",
+  "tagline": "Make AI videos and images from Claude Code, Codex, Cursor or OpenClaw, with the Cuddler membership you already have.",
   "beta": "**Beta.** The skills are new and still changing. Tell us what breaks in the issues.",
   "mcp": {
     "url": "https://mcp.cuddler.ai/mcp"
@@ -14,13 +14,18 @@
       "codex plugin add cuddler@cuddler",
       "codex mcp login cuddler"
     ],
+    "openclaw": [
+      "openclaw plugins install clawhub:cuddler",
+      "openclaw mcp add cuddler --url https://mcp.cuddler.ai/mcp --transport streamable-http --auth oauth --header X-Cuddler-Source=plugin --timeout 240",
+      "openclaw mcp login cuddler"
+    ],
     "other": [
       "npx skills add CuddlerAI/skills"
     ]
   },
   "credits": "Renders spend credits from your own Cuddler account: the quote is the price. Your agent shows the price first and waits for your OK.",
-  "limits": "A render above 200 credits (500 on the Ultra plan) also needs one click on an approval link in your browser, and each connection (one per agent you connect) can spend up to 3,000 credits a day.",
-  "plans": "Videos need a Cuddler plan that includes video. The setup skill tells you what your account can make.",
+  "limits": "Cuddler's server charges at most the quoted price for each render, and in agents that support it, it also asks you in the agent's own dialog before each paid call. There is no separate daily cap unless Cuddler sets one: your credit balance is the limit.",
+  "plans": "Connecting needs a paid Cuddler plan (Lite, Pro or Ultra) or a place in Cuddler's Creator Partnership Program; free plans, trials and gifted plans can't connect. Videos need a plan that includes video. The setup skill tells you what your account can make.",
   "links": {
     "signup": {
       "label": "Cuddler",

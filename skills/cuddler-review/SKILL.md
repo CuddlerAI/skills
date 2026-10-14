@@ -58,11 +58,18 @@ It writes `summary.txt` and `summary.json` (measurements with PASS / WARN / FAIL
 
 Use [references/checklist.md](references/checklist.md): the machine checks, the visual list and the red lines. Be honest about sound: the numbers are measurements, not listening. Spoken lines are only verified if a transcription tool is installed and you ran it; otherwise write "lines not verified".
 
+Judge against the user's brief. Identity, dialogue, head-and-shoulders framing and eye contact apply only when the brief calls for them; a clip of objects or abstract shapes does not need a person or spoken lines. The content red lines always apply.
+
 ## Step 4 — Verdict
 
-- **pass** — ready to use; say in one line what works.
-- **fix** — one re-shoot can fix it. Give the timestamp, the defect and the exact prompt change, and keep every defensive line the prompt already had. A re-shoot is a new paid render: it goes back through the `cuddler-generate` or `cuddler-character-clip` skill and its gate.
-- **reject** — a red-line problem (someone who reads as under 18, a school setting, a real person's likeness, IP, nudity), or a second failed attempt. Don't re-shoot; tell the user and suggest deleting the file.
+A machine **FAIL**, a severe issue or several defects is not a **reject** verdict. Apply these decisions in order:
+
+1. **reject** — an observed content red line from checklist C. Cite the red line and its timestamp or frame. Stop; do not re-shoot.
+2. **reject** — the one re-shoot has already been used and still fails the brief. Cite that attempt history and the remaining defect. Stop; do not propose a third take. Do not infer a failed re-shoot from a short file, several FAIL checks, a file name or missing history.
+3. **fix** — otherwise, a first take has defects one re-shoot can correct: wrong duration or aspect, missing required sound, or repairable visual defects. This includes several machine FAIL checks at once. Give the timestamps, defects and exact prompt changes; keep every defensive line the prompt already had. Recommending a fix does not authorize it: any re-shoot returns to `cuddler-generate` or `cuddler-character-clip` for a new quote and gate. Do not discard a fixable first take.
+4. **pass** — the applicable checks are satisfactory; say in one line what works. Incomplete inspection is not a pass or a reason to reject: finish the checks or report the missing evidence.
+
+Only the first two decisions permit **reject** or a suggestion to discard. If you cannot cite either trigger, do not label the clip reject.
 
 Report with the template at the end of the checklist.
 

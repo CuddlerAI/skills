@@ -4,6 +4,16 @@ All notable changes to the Cuddler skills. The version here, `VERSION` and every
 
 Versions stay at 0.x while the skills are in beta: a minor version may change the hard rules or what the skills expect from the tools, only the latest version gets fixes, and every change that reaches `main` bumps the version. Each version is tagged `v<version>` and published as a GitHub Release with its entry below.
 
+## [0.3.8] — 2026-10-14
+
+### Fixed
+
+- **Repairable first takes stay fix.** `cuddler-review` separates machine FAIL checks from the final verdict. Reject requires an observed content red line or evidence that the one re-shoot still failed. Technical defects alone do not imply a failed re-shoot, and character-only checks apply only to the relevant brief.
+
+### Added
+
+- Review decision evals for a repairable first take, a content red line despite passing technical checks, and a failed re-shoot. They use evidence stated as already inspected; real-file extraction is a separate integration check.
+
 ## [0.3.7] — 2026-10-14
 
 Wording. Nothing changes in what the skills do.

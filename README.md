@@ -14,14 +14,14 @@ Skills and a plugin for coding agents. Install them, connect your Cuddler accoun
 
 | Skill | Ask your agent |
 |---|---|
-| [`cuddler-setup`](skills/cuddler-setup/SKILL.md) | "Connect my Cuddler account" — install, sign in, see your plan, credits and today's budget |
+| [`cuddler-setup`](skills/cuddler-setup/SKILL.md) | "Connect my Cuddler account" — install, sign in, see your plan, credits and what your account can make |
 | [`cuddler-generate`](skills/cuddler-generate/SKILL.md) | "Make a 10-second vertical clip of a paper boat in the rain" — videos and images, priced before anything is spent |
 | [`cuddler-character-clip`](skills/cuddler-character-clip/SKILL.md) | "Turn my character into a 15-second clip" — one of your own Cuddler characters talking to the viewer |
 | [`cuddler-review`](skills/cuddler-review/SKILL.md) | "Review ./clip.mp4 before I post it" — a local ffmpeg check with a pass, fix or reject verdict |
 
 ## What you need
 
-- A Cuddler account. You sign in once in your browser, and the setup skill tells you what your plan can make.
+- A Cuddler account on a paid plan (Lite, Pro or Ultra). You sign in once in your browser, and the setup skill tells you what your plan can make.
 - `curl`, which the skills use to save finished files; `ffmpeg` and `ffprobe` only for `cuddler-review`.
 - Room in your project: finished files go to `./out/` (character clips to `./cc/`, reviewed clips to `./clips/` and `<clip>.review/`). Add those folders to your `.gitignore` if the project is a repository.
 
@@ -78,11 +78,11 @@ Renders spend credits from your own Cuddler account: the quote is the price. You
 <!-- /claims:credits -->
 
 <!-- claims:limits -->
-A render above 200 credits (500 on the Ultra plan) also needs one click on an approval link in your browser, and each connection (one per agent you connect) can spend up to 3,000 credits a day.
+Cuddler's server charges at most the quoted price for each render, and in agents that support it, it also asks you in the agent's own dialog before each paid call. There is no separate daily cap unless Cuddler sets one: your credit balance is the limit.
 <!-- /claims:limits -->
 
 <!-- claims:plans -->
-Videos need a Cuddler plan that includes video. The setup skill tells you what your account can make.
+Connecting needs a paid Cuddler plan (Lite, Pro or Ultra); free plans, trials and gifted plans can't connect. Videos need a plan that includes video. The setup skill tells you what your account can make.
 <!-- /claims:plans -->
 
 ## Privacy and safety

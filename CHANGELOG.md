@@ -4,6 +4,17 @@ All notable changes to the Cuddler skills. The version here, `VERSION` and every
 
 Versions stay at 0.x while the skills are in beta: a minor version may change the hard rules or what the skills expect from the tools, only the latest version gets fixes, and every change that reaches `main` bumps the version. Each version is tagged `v<version>` and published as a GitHub Release with its entry below.
 
+## [0.3.10] — 2026-10-14
+
+Cuddler now leaves spending to the account's balance: no approval threshold and no daily limit unless Cuddler sets one, and connecting is for paid plans. The skills and the docs say what the server does.
+
+### Changed
+
+- **Connecting needs a paid plan.** The README, the install guides and the Codex listing say that connecting is for paid Cuddler plans (Lite, Pro or Ultra); free plans, trials and gifted plans can't connect. `cuddler-setup` and `cuddler-generate` recognise the refusal (`account_not_eligible`), say so and stop.
+- **No numbers for limits.** The README's limits line, SECURITY.md and the install guides no longer name an approval threshold or a daily budget: Cuddler's server charges at most the quoted `maxCredits`, spends nothing unless spending was allowed at sign-in, and, in agents that support it, asks in the agent's own dialog before each paid call. The Claude Code guide says how to answer that dialog (Space ticks the box, then Accept; Decline or Esc charges nothing; after ten minutes Cuddler asks again).
+- **`budget` may be null.** `cuddler-setup` reports what is left today only when `whoami` says a daily limit is set, and `cuddler-generate` compares the price with `budgetRemaining` only when it is a number. The approval link and the daily-limit refusal stay handled for the case that Cuddler turns them on.
+- The saved tool list and the mocks in `evals/` follow the server's new wording and shapes; `setup-account` no longer expects a daily figure.
+
 ## [0.3.9] — 2026-10-14
 
 Cuddler for OpenClaw, packaged for ClawHub.

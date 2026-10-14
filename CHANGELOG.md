@@ -4,6 +4,23 @@ All notable changes to the Cuddler skills. The version here, `VERSION` and every
 
 Versions stay at 0.x while the skills are in beta: a minor version may change the hard rules or what the skills expect from the tools, only the latest version gets fixes, and every change that reaches `main` bumps the version. Each version is tagged `v<version>` and published as a GitHub Release with its entry below.
 
+## [0.3.7] — 2026-10-14
+
+Cuddler's MCP server is now for paid plans and has no spending caps by default. The skills, the README, the install guides and the security notes say what it does now.
+
+### Changed
+
+- **No daily budget and no approval step by default: the credit balance is the limit.** `whoami` returns `budget: null` and quotes return `budgetRemaining: null` unless Cuddler turns a daily limit on for the connection. `cuddler-setup` then says there is no daily cap; `cuddler-generate` compares the price with `budgetRemaining` only when it is a number, and the price question leaves out "left today" otherwise. `confirmation_required`, `confirmation_pending` and the daily-limit refusal are still handled, as things that happen only when the account has them turned on.
+- **Agents need a paid plan.** Connecting is for paid Cuddler plans (Lite, Pro or Ultra) and the Creator Partnership Program. For any other account the sign-in page says it can't connect, and every call is refused with `membership_required`. `cuddler-setup`, `cuddler-generate` and `cuddler-character-clip` say so, say that nothing was charged and stop, with no link to a plan or purchase page. `claims.json` (`limits`, `plans`), the README, the install guides and the directory listing say the same.
+- **`SECURITY.md` lists what the server enforces**: spending only when it was allowed at sign-in, every call capped at the `maxCredits` the skill sends, never more than the balance, Cuddler's own confirmation in hosts that can show it (`confirmation: "host"`), and no run for an approval that was declined or expired. It no longer promises an approval page or a daily budget.
+- **The Always allow advice** no longer names the approval page or the daily budget: each call is still capped at the quoted `maxCredits`, and the balance is the limit.
+- `cuddler-generate`'s refusal table adds `approval_expired`: ask the user again before calling without `approvalId`.
+
+### Added
+
+- Eval `membership-required`: a free account is refused with `membership_required` on every call; nothing is priced or made, and the reply says what the account needs without selling a plan.
+- The eval mocks follow the server's defaults (`budget` and `budgetRemaining` are null). `budget-exhausted` carries its own `whoami` with a daily limit, `video-not-in-plan` is a Lite account, and `_tools.json` has the server's new descriptions of `whoami`, the quotes and the paid tools.
+
 ## [0.3.6] — 2026-10-13
 
 Listing copy for the OpenAI plugin directory, ahead of the submission.

@@ -20,7 +20,7 @@ How to turn "make me X" into a model and a request without guessing. The catalog
 | `pricing[]` | The price of every length at every resolution, in credits. The quote is still the price you gate on. |
 | image `creditsPerImage` | Price per image. |
 
-`whoami` adds the account view: `plan.tier`, `credits.balance` and `credits.dailyAllowance`, this connection's daily `budget` (`limit`, `spent`, `remaining`, `resetsAt`), `permissions` (`create`: reference images; `spend`: paid renders) and `features` (`images`, `videos`, `uploads`).
+`whoami` adds the account view: `plan.tier`, `credits.balance` and `credits.dailyAllowance`, this connection's daily `budget` (`limit`, `spent`, `remaining`, `resetsAt`; null when no daily limit is set, the default, and then the balance is the only limit), `permissions` (`create`: reference images; `spend`: paid renders) and `features` (`images`, `videos`, `uploads`).
 
 ## 2. Picking the model
 
@@ -55,18 +55,20 @@ A refused call comes back as an error whose text starts with a code, followed by
 | `reference_mentions_mismatch` | `@Image` tags don't match the references | Fix the tags; nothing was charged |
 | `photoreal_unavailable` | Realistic looks aren't enabled for the account | Use an illustrated or 2.5D look and say so |
 | `prompt_too_long`, bad duration or aspect | A request outside the model's limits | Fix the named problem; nothing was charged |
-| `confirmation_required` | Above the account's approval threshold | Give the user the `approvalUrl`; after they approve, repeat the identical call plus `approvalId` |
+| `confirmation_required` | Only if the account has an approval step turned on (off by default): the price is above its threshold | Give the user the `approvalUrl`; after they approve, repeat the identical call plus `approvalId` |
 | `confirmation_pending` | The approval page has not been approved yet | Give the user the `approvalUrl` again; after they approve, repeat the identical call plus `approvalId` |
-| `confirmation_declined`, `confirmation_cancelled` | The user said no to the price, or closed the confirmation (the host's dialog or the approval page) | Nothing was charged; stop. Call again only if they ask |
+| `confirmation_declined`, `confirmation_cancelled` | The user said no to the price, or closed the confirmation (the host's dialog or the approval page); a call that names a declined `approvalId` stays refused | Nothing was charged; stop. Call again only if they ask |
+| `approval_expired` | The approval wasn't used in time | Nothing was charged. Ask the user again (a new gate) before calling without `approvalId` |
 | `confirmation_mismatch` | The host answered a confirmation that belongs to other arguments | Nothing was charged; make the call you mean again and the host asks again |
 | `confirmation_used` | That confirmation already ran the call once | Nothing more was charged. If you have no result, repeat the identical call with the same `idempotencyKey`: the host asks once more and the key never charges twice |
 | `permission_not_granted` | Spending or uploads were not allowed when Cuddler was connected | The `cuddler-setup` skill: connect again and allow it |
+| `membership_required` (`FORBIDDEN`, reason `account_not_eligible`; every call, or the host shows the server as failed) | Agents need a paid Cuddler plan (Lite, Pro or Ultra) or the Creator Partnership Program; free plans, trials and gifted plans can't connect | Say so, and that nothing was charged; stop. No retries, no plan or purchase links |
 | `feature_unavailable` | Images, videos or uploads aren't open for this account | Say so |
 | `plan_required`, `model_not_in_plan` | The model or option isn't in the plan | Say so and offer an available model |
 | `price_above_consent` | The price moved above `maxCredits` | Quote again → new gate |
 | `idempotency_key_reused`, `idempotency_key_spent` | The key belongs to another request | A new key is a new charge → new gate |
 | `concurrency_limit` | Every render slot is busy | Wait for a running video, then repeat with the same key |
-| a budget reason | This connection's daily budget is spent | Stop; it resets at `budget.resetsAt` |
+| a daily-limit refusal (`RATE_LIMITED` with `budget`, `spent`, `requested`) | Only if the account has a daily limit for this connection turned on (off by default): it is spent | Stop; it resets at `budget.resetsAt` |
 | `CREDIT_INSUFFICIENT` | The balance is below the price; nothing was charged | Stop and say so; something the balance covers is a new quote and gate |
 | `member_cost_breaker` (a `CREDIT_INSUFFICIENT` refusal) | This billing period's plan credits can no longer be spent through agents; `purchasedAvailable` is what the user bought | Stop and say so: until the date in `resetsAt` (until the plan renews when there is none), nothing was charged, the Cuddler app is not affected. Don't suggest buying credits or a plan |
 | `NOT_FOUND` | Wrong id, or not this account's | Check the id |

@@ -10,12 +10,7 @@
     "balance": 2400,
     "dailyAllowance": 300
   },
-  "budget": {
-    "limit": 3000,
-    "spent": 0,
-    "remaining": 3000,
-    "resetsAt": "2026-10-11T00:00:00.000Z"
-  },
+  "budget": null,
   "permissions": {
     "create": true,
     "spend": true

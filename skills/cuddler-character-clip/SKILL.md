@@ -26,6 +26,7 @@ Identical in every Cuddler skill (CI checks that the copies match). They overrid
 
 ## Step 1 — Pull the character
 
+- A call refused with `membership_required` means this account can't use agents (a paid Cuddler plan or the Creator Partnership Program is needed): say so, that nothing was charged, and stop, as in the `cuddler-setup` skill.
 - `list_my_characters` lists the user's own characters, newest first (`limit` per page; pass `nextCursor` back as `cursor`). Only characters cleared for all ages appear; the rest stay in the Cuddler app. If the user named one, match it by name and confirm when two are close.
 - `get_character` with its `id` returns `name`, `appearance` (the sentences of its description about how it looks), `imageUrl` (the main picture) and `referenceImageUrls`.
 - Download the main picture and look at it: `curl -fsSL --proto =https --proto-redir =https -o ./cc/<id>/hero.jpg "<imageUrl>"`, then open the file.
@@ -73,7 +74,7 @@ Check the draft against the template's must-fix list before quoting. Two polishi
 
 ## Step 6 — Quote, gate, generate
 
-`quote_video` with the prompt, `durationSec: 15`, `aspectRatio: "9:16"`, the `modelId` from Step 3 and the references. Gate (Hard rule 2; with `confirmation: "host"` in the quote, the price line and then straight on); once per session, when the host also asks before running Cuddler's paid tools, add that choosing Always allow there leaves the price question as the only one, that if it asks again later they allow it again, and that Cuddler's server keeps its own limits either way (`maxCredits`, the approval threshold, the daily budget). One take by default; two takes only if the user asked, both priced in the same gate and each with a different staging.
+`quote_video` with the prompt, `durationSec: 15`, `aspectRatio: "9:16"`, the `modelId` from Step 3 and the references. Gate (Hard rule 2; with `confirmation: "host"` in the quote, the price line and then straight on); once per session, when the host also asks before running Cuddler's paid tools, add that choosing Always allow there leaves the price question as the only one, that if it asks again later they allow it again, and that Cuddler's server still caps every call at the quoted `maxCredits`, with the credit balance as the limit. One take by default; two takes only if the user asked, both priced in the same gate and each with a different staging.
 
 On "proceed" (with `confirmation: "host"`, right after the price line): `create_video` with the same arguments, `maxCredits` = the quote and an `idempotencyKey` you choose once per take (`cc-<first 8 characters of the id>-<yyyymmddhhmm>-t1`). Follow the approval link if one comes back, then `get_video` once every `pollAfterSeconds` until it is `ready` or `failed`, and `get_download_link` to save it as `./cc/<id>/take1.mp4`.
 

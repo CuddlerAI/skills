@@ -7,6 +7,7 @@ The mocks follow the live server:
 - `mocks/cuddler/_tools.json` is the server's `tools/list` (name, description and input schema of the 14 tools), so the agent sees the same tool descriptions and required arguments as in a real session.
 - Each `<tool>.md` holds a result in the server's own text format: pretty-printed JSON, and for the tools that return text a user wrote (`whoami`, `list_my_characters`, `get_character`, `create_image`, `get_image`, `create_video`, `get_video`, `retry_video`) the JSON sits inside an `<untrusted-user-content>` block. Refusals use the server's `CODE: message` line followed by the details as JSON.
 - The values are samples. The model list is the catalogue a Pro account saw on 2026-10-10, so its prices are a snapshot, not current prices.
+- The suite's mocks follow the server's defaults: no daily limit per connection (`whoami.budget` and `budgetRemaining` are null) and no approval step. The cases `approval-link` and `budget-exhausted` cover accounts where Cuddler has turned one on.
 
 When the server's tools change, regenerate `_tools.json` from its `tools/list` and check the mocks against the new results.
 
@@ -34,6 +35,8 @@ A prompt that says the user already replied "proceed" tests what happens after t
 **Skills:** cuddler-generate
 
 > Earlier in this conversation you quoted my clip — a street musician playing violin in the rain, 15 seconds, 9:16, model seedance-2.0, 240 credits — and I replied "proceed". Go ahead and make it now.
+
+The approval step is off by default; here the account has one turned on, so the create comes back with `confirmation_required` and an approval link.
 
 ### host-confirmation
 
@@ -122,6 +125,16 @@ The quote says `confirmation: "host"` and the user declines in the host's dialog
 **Skills:** cuddler-generate
 
 > Make a 10-second vertical clip of a fox running through snow.
+
+The daily limit is off by default; here the account has one turned on, and `whoami` and the quote show 100 credits left today against a 160-credit price.
+
+### membership-required
+
+**Skills:** cuddler-setup, cuddler-generate
+
+> Make me a square image of a paper boat on a rain puddle at dusk.
+
+The account is on a free plan, so Cuddler refuses every call with `membership_required`. In a real session the server answers this at the connection, so a host may show the Cuddler server as failed instead; the mocks give the same refusal as each tool's error. Nothing is priced or made, and the reply says what the account needs without selling a plan.
 
 ### plan-credits-capped
 

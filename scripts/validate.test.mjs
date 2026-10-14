@@ -4,7 +4,7 @@
 
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { appendFileSync, cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, sep } from "node:path";
 import { test } from "node:test";
@@ -12,6 +12,7 @@ import { fileURLToPath } from "node:url";
 import { inflateRawSync } from "node:zlib";
 import { render, syncReadme } from "./claims.mjs";
 import { crc32, packOpenai, packageFiles } from "./pack-openai.mjs";
+import { openclawPackage, packOpenclaw } from "./pack-openclaw.mjs";
 import { wordingProblems } from "./public-wording.mjs";
 import { githubSlug, parseFrontmatter, validate } from "./validate.mjs";
 
@@ -224,6 +225,99 @@ test("pack-openai refuses a repository that fails validation", () => {
     copyRepo(dir);
     editJson(dir, ".codex-plugin/plugin.json", (j) => ({ ...j, interface: { ...j.interface, category: "Design" } }));
     assert.throws(() => packOpenai(dir, join(dir, "dist", "x.zip")), /validate\.mjs reports \d+ error\(s\)/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("openclaw.plugin.json must load the skills and sign in to the cuddler server with OAuth", () => {
+  const manifest = (fn) => withCopy((d) => editJson(d, "openclaw.plugin.json", fn));
+  const server = (fn) => manifest((j) => ({ ...j, mcpServers: { cuddler: fn(j.mcpServers.cuddler) } }));
+  expectError(server(({ auth, ...rest }) => rest), /cuddler\.auth must be "oauth"/);
+  expectError(server(({ transport, ...rest }) => rest), /cuddler\.transport must be "streamable-http"/);
+  expectError(server((s) => ({ ...s, url: "https://mcp.example.com/mcp" })), /openclaw\.plugin\.json: cuddler\.url is .*claims\.json mcp\.url/);
+  expectError(server((s) => ({ ...s, headers: {} })), /cuddler\.headers must hold only X-Cuddler-Source: plugin/);
+  expectError(server((s) => ({ ...s, requestTimeoutMs: 30000 })), /requestTimeoutMs must be .* at least 60000/);
+  expectError(manifest((j) => ({ ...j, version: "0.0.1" })), /openclaw\.plugin\.json: version is "0\.0\.1"/);
+  expectError(manifest((j) => ({ ...j, skills: ["./skills/cuddler-setup"] })), /skills must be \["\.\/skills"\]/);
+  expectError(manifest(({ configSchema, ...rest }) => rest), /configSchema is required/);
+  expectError(manifest((j) => ({ ...j, extensions: ["./index.js"] })), /"extensions" declares code/);
+  expectError(manifest((j) => ({ ...j, id: "cuddler-skills" })), /id "cuddler-skills" differs from the plugin "cuddler"/);
+  expectError(
+    withCopy((d) => editJson(d, "claims.json", (j) => ({ ...j, install: { ...j.install, openclaw: j.install.openclaw.map((line) => line.replace(" --auth oauth", "")) } }))),
+    /install\.openclaw: `openclaw mcp add` must carry --auth oauth/,
+  );
+  expectError(withCopy((d) => rmSync(join(d, "openclaw.plugin.json"))), /openclaw\.plugin\.json: required file is missing/);
+});
+
+test("the ClawHub README follows claims.json, lists every skill and sells nothing", () => {
+  const readme = (fn) => withCopy((d) => edit(d, "clawhub/README.md", fn));
+  expectError(readme((t) => t.replace("the quote is the price", "the quote is a guide")), /clawhub\/README\.md: block "credits" differs from claims\.json/);
+  expectError(readme((t) => t.replace(/<!-- claims:plans -->[\s\S]*?<!-- \/claims:plans -->\n/, "")), /clawhub\/README\.md: missing the generated block <!-- claims:plans -->/);
+  expectError(readme((t) => t.replace("utm_source=clawhub", "utm_source=github")), /needs the ClawHub attribution/);
+  expectError(readme((t) => t.replace(/^\| `cuddler-review` \|.*\n/m, "")), /clawhub\/README\.md: the skills table does not list the skill "cuddler-review"/);
+  expectError(readme((t) => `${t}\nTop up your credits before a long clip.\n`), /clawhub\/README\.md: line \d+: "Top up" sells credits or plans/);
+  expectError(readme((t) => `${t}\nA clip costs 40 credits.\n`), /clawhub\/README\.md: line \d+: a fixed price/);
+  const claims = JSON.parse(readFileSync(join(ROOT, "claims.json"), "utf8"));
+  const text = readFileSync(join(ROOT, "clawhub/README.md"), "utf8");
+  assert.equal(syncReadme(text, claims), text, "clawhub/README.md must match claims.json as committed");
+});
+
+test("pack-openclaw builds the ClawHub package: OpenClaw manifest, skills, the OAuth server, reproducible", () => {
+  const dir = mkdtempSync(join(tmpdir(), "cuddler-pack-test-"));
+  try {
+    const first = packOpenclaw(ROOT, join(dir, "a"));
+    const second = packOpenclaw(ROOT, join(dir, "b"));
+    assert.equal(first.digest, second.digest, "two builds of the same files must be identical");
+    assert.equal(packOpenclaw(ROOT, join(dir, "a")).digest, first.digest, "packing over an earlier package must give the same package");
+    const files = first.files;
+    assert.deepEqual(files, openclawPackage(ROOT).map(([path]) => path));
+    for (const required of ["openclaw.plugin.json", "package.json", ".mcp.json", ".claude-plugin/plugin.json", "README.md", "assets/icon.png", "LICENSE", "TRADEMARKS.md", ...SKILLS.map((s) => `skills/${s}/SKILL.md`)]) {
+      assert.ok(files.includes(required), `${required} is missing from the package`);
+    }
+    for (const name of files) assert.doesNotMatch(name, /^(?:\.codex-plugin|\.cursor-plugin|\.agents|\.github|evals|scripts|clawhub)\/|^(?:claims\.json|VERSION|INSTALL\.md)$/);
+    const read = (rel) => readFileSync(join(first.out, rel));
+    const readJson = (rel) => JSON.parse(read(rel).toString("utf8"));
+    const manifest = JSON.parse(readFileSync(join(ROOT, "openclaw.plugin.json"), "utf8"));
+    const version = readFileSync(join(ROOT, "VERSION"), "utf8").trim();
+    assert.deepEqual(readJson("openclaw.plugin.json"), manifest);
+    assert.deepEqual(readJson(".mcp.json"), { mcpServers: manifest.mcpServers });
+    assert.equal(readJson(".mcp.json").mcpServers.cuddler.auth, "oauth");
+    const pkg = readJson("package.json");
+    assert.equal(pkg.name, "cuddler");
+    assert.equal(pkg.version, version);
+    assert.equal(pkg.license, "MIT");
+    assert.equal(pkg.repository, "https://github.com/CuddlerAI/skills");
+    assert.ok(!("openclaw" in pkg), "package.json must not declare code: ClawHub would take the package for a code plugin");
+    assert.ok(read("README.md").equals(readFileSync(join(ROOT, "clawhub/README.md"))));
+    assert.ok(read("assets/icon.png").equals(readFileSync(join(ROOT, "assets/logo.png"))));
+    const claude = readJson(".claude-plugin/plugin.json");
+    assert.equal(claude.name, manifest.id);
+    assert.equal(claude.version, version);
+    assert.equal(claude.description, manifest.description, "OpenClaw shows the Claude manifest's description on the plugin page");
+    assert.ok(!("mcpServers" in claude) && !("skills" in claude), "the bundle reads the default skills/ and .mcp.json");
+    for (const skill of SKILLS) {
+      assert.ok(read(`skills/${skill}/SKILL.md`).equals(readFileSync(join(ROOT, `skills/${skill}/SKILL.md`))), `${skill} differs in the package`);
+    }
+    assert.equal(statSync(join(first.out, "skills/cuddler-review/scripts/contact-sheet.sh")).mode & 0o777, 0o755);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("pack-openclaw refuses a repository that fails validation and a folder it didn't make", () => {
+  const dir = mkdtempSync(join(tmpdir(), "cuddler-pack-test-"));
+  try {
+    copyRepo(dir);
+    editJson(dir, "openclaw.plugin.json", (j) => ({ ...j, mcpServers: { cuddler: { ...j.mcpServers.cuddler, auth: "none" } } }));
+    assert.throws(() => packOpenclaw(dir, join(dir, "dist", "openclaw")), /validate\.mjs reports \d+ error\(s\)/);
+    const mine = join(dir, "notes");
+    mkdirSync(mine);
+    writeFileSync(join(mine, "keep.txt"), "mine\n");
+    assert.throws(() => packOpenclaw(ROOT, mine), /is not empty and is not an earlier package/);
+    assert.ok(existsSync(join(mine, "keep.txt")), "a folder the script didn't make must stay untouched");
+    assert.throws(() => packOpenclaw(ROOT, ROOT), /holds the repository/);
+    assert.throws(() => packOpenclaw(ROOT, dirname(ROOT)), /holds the repository/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

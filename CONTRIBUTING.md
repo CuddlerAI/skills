@@ -35,7 +35,7 @@ By opening a pull request you license your contribution under the MIT License an
 
 ## Releasing
 
-Every change that reaches `main` bumps `VERSION` (a patch bump is enough for wording), together with the three plugin manifests, the marketplace entry and `CHANGELOG.md` (CI checks they match). After the merge, tag `v<version>` on `main` and create a GitHub Release from the tag with the CHANGELOG entry.
+Every change that reaches `main` bumps `VERSION` (a patch bump is enough for wording), together with the plugin manifests (Claude Code, Codex, Cursor and OpenClaw), the marketplace entry and `CHANGELOG.md` (CI checks they match). After the merge, tag `v<version>` on `main` and create a GitHub Release from the tag with the CHANGELOG entry.
 
 ## The OpenAI plugin directory
 
@@ -46,6 +46,16 @@ node scripts/pack-openai.mjs   # dist/cuddler-<version>-openai.zip
 ```
 
 The ZIP holds the Codex manifest, `.mcp.json`, `skills/`, `assets/`, `LICENSE` and `TRADEMARKS.md`, and the script refuses to build while `validate.mjs` reports an error; the validator holds the Codex manifest to the directory's listing rules. The Cuddler team uploads it on the OpenAI Platform. Changes to skills, the listing text or the icons need a new upload; changes to the Cuddler MCP tools don't.
+
+## ClawHub (OpenClaw)
+
+OpenClaw users install Cuddler from ClawHub, and that package is built from this repository too:
+
+```bash
+node scripts/pack-openclaw.mjs   # dist/openclaw/
+```
+
+The folder holds `openclaw.plugin.json` (the skills and the Cuddler MCP server, signed in with OAuth), a `package.json` with the name and version ClawHub publishes, the same server as an OpenClaw `.mcp.json`, a short Claude manifest with the OpenClaw description (ClawHub files the package as a bundle plugin because of it, and OpenClaw loads the package through it), `skills/`, `clawhub/README.md` as its README, the icon, `LICENSE` and `TRADEMARKS.md`. The script refuses to build while `validate.mjs` reports an error, and it only clears a folder that holds an earlier package. The Cuddler team publishes it with `clawhub package publish dist/openclaw --owner cuddler`, after a run with `--dry-run`; ClawHub shows a new version once its security checks pass. Every release that changes the skills, the manifest or `clawhub/README.md` needs a new publish.
 
 ## Code owners
 

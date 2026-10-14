@@ -26,7 +26,7 @@ Identical in every Cuddler skill (CI checks that the copies match). They overrid
 
 ## Step 1 — Is Cuddler connected?
 
-Look for the Cuddler tools (`whoami`, `list_models`, `quote_video` …) in your tool list. Hosts may show them with a prefix, such as `mcp__cuddler__whoami`.
+Look for the Cuddler tools (`whoami`, `list_models`, `quote_video` …) in your tool list. Hosts may show them with a prefix, such as `mcp__cuddler__whoami` or `cuddler__whoami`; OpenClaw may list them only through its tool search, and only once the user is signed in.
 
 - The tools are there → call `whoami`. It answers → Step 3. It fails because nobody is signed in → Step 2.
 - No Cuddler tools → the user installs Cuddler for this agent, then restarts it or opens a new session so the tools load:
@@ -37,6 +37,7 @@ Look for the Cuddler tools (`whoami`, `list_models`, `quote_video` …) in your 
 | Codex app | Plugins → Add → Add a marketplace → Source `CuddlerAI/skills` → Add marketplace; then install Cuddler from the Personal tab |
 | Codex CLI | `codex plugin marketplace add CuddlerAI/skills`, then `codex plugin add cuddler@cuddler` (or `/plugins` inside Codex) |
 | Gemini CLI | `gemini mcp add --transport http cuddler https://mcp.cuddler.ai/mcp` |
+| OpenClaw | `openclaw plugins install clawhub:cuddler` (it brings the skills and the Cuddler MCP server; when the plugin is there but the tools aren't, the user still has to sign in: Step 2) |
 | Cursor and others | Add the MCP server `https://mcp.cuddler.ai/mcp` (Streamable HTTP); https://cuddler.ai/mcp has one-click links |
 
 You may run an install command for the user when they ask you to; never edit their agent's config files by hand.
@@ -50,6 +51,7 @@ You may run an install command for the user when they ask you to; never edit the
 | Codex CLI | `codex mcp login cuddler` (within five minutes; `--no-browser` on a remote machine), then check with `/mcp` |
 | Gemini CLI | `/mcp auth cuddler` |
 | Cursor | The MCP settings page → Connect |
+| OpenClaw | Control UI → Plugins → Cuddler → Accounts → Connect. From a terminal: `openclaw mcp add cuddler --url https://mcp.cuddler.ai/mcp --transport streamable-http --auth oauth --header X-Cuddler-Source=plugin --timeout 240`, then `openclaw mcp login cuddler` (within five minutes). When the browser runs on another machine, the page it lands on can't load: the user copies the `code` value from its address and runs `openclaw mcp login cuddler --code <code>` themselves; never ask for the code in the chat. The tools appear in the next session |
 
 A Cuddler page opens in the browser. The user signs in and allows the connection. To create images and videos they must allow **spending credits**; it is never pre-selected. If the browser doesn't open, give the user the link the agent printed. Ask them to open it right away: the agent waits for the browser only a few minutes (Codex: five). If the page the browser lands on can't reach `localhost`, that wait is over; start the sign-in again.
 

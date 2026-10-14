@@ -49,6 +49,18 @@ codex mcp login cuddler
 
 In the Codex app: **Plugins → Add → Add a marketplace**, enter `CuddlerAI/skills`, then install Cuddler from the **Personal** tab. Step by step for the [Codex app](INSTALL.md#codex-app) and the [Codex CLI](INSTALL.md#codex-cli).
 
+### OpenClaw
+
+<!-- claims:install.openclaw -->
+```bash
+openclaw plugins install clawhub:cuddler
+openclaw mcp add cuddler --url https://mcp.cuddler.ai/mcp --transport streamable-http --auth oauth --header X-Cuddler-Source=plugin --timeout 240
+openclaw mcp login cuddler
+```
+<!-- /claims:install.openclaw -->
+
+The plugin brings the skills and the Cuddler MCP server; the other two commands sign you in. In the Control UI: **Plugins → Cuddler → Accounts → Connect** instead. Finished files come back in your chat. Step by step: [INSTALL.md](INSTALL.md#openclaw).
+
 ### Cursor, Gemini CLI and other agents
 
 <!-- claims:install.other -->

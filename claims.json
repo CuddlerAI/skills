@@ -14,6 +14,11 @@
       "codex plugin add cuddler@cuddler",
       "codex mcp login cuddler"
     ],
+    "openclaw": [
+      "openclaw plugins install clawhub:cuddler",
+      "openclaw mcp add cuddler --url https://mcp.cuddler.ai/mcp --transport streamable-http --auth oauth --header X-Cuddler-Source=plugin --timeout 240",
+      "openclaw mcp login cuddler"
+    ],
     "other": [
       "npx skills add CuddlerAI/skills"
     ]

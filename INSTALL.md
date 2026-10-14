@@ -61,6 +61,30 @@ The skills still quote every render first and wait for you: answer with `codex e
 
 Update (app and CLI): **Upgrade marketplace** next to Cuddler in the app's marketplace list, or `codex plugin marketplace upgrade`. Remove: `codex plugin remove cuddler@cuddler`.
 
+## OpenClaw
+
+Needs OpenClaw 2026.9.9 or newer.
+
+1. Install the plugin. It brings the four skills and the Cuddler MCP server, and OpenClaw lists both and asks before it installs:
+
+   ```bash
+   openclaw plugins install clawhub:cuddler
+   ```
+
+   From this repository instead of ClawHub: `openclaw plugins install cuddler --marketplace CuddlerAI/skills`, then sign in from a terminal as step 2 shows.
+2. Sign in. In the Control UI, open **Plugins → Cuddler → Accounts** and choose **Connect**. From a terminal:
+
+   ```bash
+   openclaw mcp add cuddler --url https://mcp.cuddler.ai/mcp --transport streamable-http --auth oauth --header X-Cuddler-Source=plugin --timeout 240
+   openclaw mcp login cuddler
+   ```
+
+   A Cuddler page opens in your browser: sign in, tick **Spend credits** if you want images and videos, and allow it within five minutes. If the browser runs on another machine than OpenClaw (a server, for example), the page it lands on can't load; copy the `code` value from its address and run `openclaw mcp login cuddler --code <code>`. Check with `openclaw mcp status --verbose`.
+3. Start a new session and ask for what you want, in any chat your OpenClaw answers. Before a paid render the skill posts the price and waits for you to reply proceed. OpenClaw runs Cuddler's tools without asking on its own, so that reply is the go-ahead, and anyone who can message your OpenClaw can ask for a render too: connect Cuddler to an OpenClaw only you talk to, or limit who can use it.
+4. Finished images and clips come back in your chat as attachments. To save files on the machine OpenClaw runs on, that machine needs `curl`, and `ffmpeg` and `ffprobe` for `cuddler-review`; with OpenClaw's sandbox on, the sandbox needs network access and those tools too.
+
+Update: `openclaw plugins update cuddler`. Remove: `openclaw plugins uninstall cuddler`.
+
 ## Gemini CLI
 
 ```bash

@@ -13,7 +13,7 @@ A new skill puts the Cuddler.ai watermark on a video, and downloads can come alr
 - `cuddler-watermark`: stamps the corner mark the Cuddler app puts on its downloads (the bear and "Cuddler.ai", same size, place and opacity) onto a local video with ffmpeg, picking white or dark ink from the corner. For cuts edited together from Cuddler clips, or a saved video that came out without the mark. Nothing leaves the machine.
 - `get_download_link` takes `watermark: true` and then returns the video already marked, the same file the app's Save to device makes. `cuddler-generate` asks for it when the user is going to post the clip.
 - Two eval cases: `watermark-local-file` and `watermark-cuddler-video`. The tool mocks follow the server's new `get_download_link` description and `watermark` argument.
-- CI runs `watermark.sh` on synthetic clips on Linux, next to `contact-sheet.sh`.
+- CI runs `watermark.sh` on synthetic clips on Linux, in its own job next to the `contact-sheet.sh` one.
 
 ### Changed
 

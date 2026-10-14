@@ -71,7 +71,7 @@ Needs OpenClaw 2026.9.9 or newer.
    openclaw plugins install clawhub:cuddler
    ```
 
-   From this repository instead of ClawHub: `openclaw plugins install cuddler --marketplace CuddlerAI/skills`.
+   From this repository instead of ClawHub: `openclaw plugins install cuddler --marketplace CuddlerAI/skills`, then sign in from a terminal as step 2 shows.
 2. Sign in. In the Control UI, open **Plugins → Cuddler → Accounts** and choose **Connect**. From a terminal:
 
    ```bash

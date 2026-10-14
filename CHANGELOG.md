@@ -4,6 +4,20 @@ All notable changes to the Cuddler skills. The version here, `VERSION` and every
 
 Versions stay at 0.x while the skills are in beta: a minor version may change the hard rules or what the skills expect from the tools, only the latest version gets fixes, and every change that reaches `main` bumps the version. Each version is tagged `v<version>` and published as a GitHub Release with its entry below.
 
+## [0.3.9] — 2026-10-14
+
+Cuddler for OpenClaw, packaged for ClawHub.
+
+### Added
+
+- **OpenClaw plugin.** `openclaw.plugin.json` loads the four skills and the Cuddler MCP server (Streamable HTTP, signed in with OAuth in the browser). Install with `openclaw plugins install clawhub:cuddler`; the README, INSTALL and INSTALL_FOR_AGENTS show how to install it and sign in, including `--code` for a browser on another machine. `cuddler-setup` covers OpenClaw in its install and sign-in tables and knows tool names such as `cuddler__whoami`.
+- **The ClawHub package.** `node scripts/pack-openclaw.mjs` builds `dist/openclaw/`: the listing README from `clawhub/README.md`, the manifests ClawHub and OpenClaw read, the icon, the license and trademark files, and the skills. It refuses to build while validation fails.
+- The validator checks the OpenClaw manifest (version, skills, server and sign-in, no code to run) and the ClawHub README like the main README (claims blocks, links, skills table, wording).
+
+### Changed
+
+- **Files in chat apps.** Where the user can't open a path on the agent's machine, `cuddler-generate` and `cuddler-character-clip` also send the finished file into the chat (OpenClaw: a `MEDIA:` line with a fresh download link, or `image.url` for an image).
+
 ## [0.3.8] — 2026-10-14
 
 ### Fixed

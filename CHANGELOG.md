@@ -10,7 +10,7 @@ Listing details for Anthropic's plugin directory. Nothing changes in what the sk
 
 ### Changed
 
-- **The Claude Code manifest carries its listing details.** `.claude-plugin/plugin.json` now names the icon (`assets/logo.png`), the install guide as its documentation, Cuddler's privacy policy and terms, and the support address, so a directory listing can show them. The Codex manifest already had them.
+- **The Claude Code manifest carries its listing details.** `.claude-plugin/plugin.json` now names the icon (`assets/logo.png`), the install guide as its documentation, Cuddler's support page, privacy policy and terms, and the support address, so a directory listing can show them. The Codex manifest already had them.
 
 ## [0.3.11] — 2026-10-14
 

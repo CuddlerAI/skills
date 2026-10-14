@@ -12,6 +12,7 @@
   "license": "MIT",
   "icon": "./assets/logo.png",
   "documentationUrl": "https://github.com/CuddlerAI/skills/blob/main/INSTALL.md",
+  "supportUrl": "https://cuddler.ai/support",
   "privacyPolicyUrl": "https://cuddler.ai/privacy",
   "termsOfServiceUrl": "https://cuddler.ai/terms",
   "keywords": [

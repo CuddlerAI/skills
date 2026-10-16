@@ -108,6 +108,20 @@ gemini mcp add --transport http cuddler https://mcp.cuddler.ai/mcp
 
 Then, inside Gemini CLI: `/mcp auth cuddler`. Update the skills with `npx skills update`.
 
+## Antigravity
+
+The Antigravity app, IDE and CLI share their plugins, so install once, from a terminal:
+
+```bash
+agy plugin install https://github.com/CuddlerAI/skills
+```
+
+It brings the five skills and the Cuddler MCP server; `agy plugin list` shows them. Restart Antigravity, then sign in: open Agent settings (Cmd+, on macOS, Ctrl+, elsewhere), go to **Customizations** and choose **Authenticate** next to Cuddler. A Cuddler page opens in your browser: sign in, tick **Spend credits** if you want images and videos, and allow it. Antigravity then shows a code; paste it into the settings panel and submit. If you added a server named `cuddler` to your own `mcp_config.json` before, remove it: Antigravity keeps only one server per name.
+
+Antigravity asks before it runs a Cuddler tool unless you allowed it. The skills still show the price first and wait for your OK, and Cuddler's server never charges more than the quoted `maxCredits`.
+
+Update: run the same `agy plugin install` again. Remove: `agy plugin uninstall cuddler`.
+
 ## Cursor and other agents
 
 The repository carries a Cursor plugin manifest, but Cuddler isn't listed in Cursor's marketplace yet. Until it is:

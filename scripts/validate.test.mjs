@@ -345,6 +345,27 @@ test("pack-openclaw refuses a repository that fails validation and a folder it d
   }
 });
 
+test("the Antigravity manifest and mcp_config.json must load the skills and the cuddler server", () => {
+  const manifest = (fn) => withCopy((d) => editJson(d, ".antigravity-plugin/plugin.json", fn));
+  const server = (fn) => withCopy((d) => editJson(d, "mcp_config.json", (j) => ({ ...j, mcpServers: { cuddler: fn(j.mcpServers.cuddler) } })));
+  expectError(manifest((j) => ({ ...j, version: "0.0.1" })), /\.antigravity-plugin\/plugin\.json: version is "0\.0\.1"/);
+  expectError(manifest((j) => ({ ...j, name: "cuddler-skills" })), /name "cuddler-skills" differs from the plugin "cuddler"/);
+  expectError(manifest((j) => ({ ...j, displayName: "Cuddler AI" })), /displayName "Cuddler AI" differs from the display name "Cuddler"/);
+  expectError(manifest((j) => ({ ...j, category: "Creativity" })), /"category" is not a field this manifest uses/);
+  expectError(manifest((j) => ({ ...j, mcpServers: "./mcp_config.json" })), /"mcpServers" is not a field this manifest uses/);
+  expectError(manifest((j) => ({ ...j, logo: "./assets/logo.png" })), /logo must be a path from the plugin root/);
+  expectError(manifest((j) => ({ ...j, logo: "https://cuddler.ai/logo.png" })), /logo must be a path from the plugin root/);
+  expectError(manifest((j) => ({ ...j, logo: "assets/missing.png" })), /logo assets\/missing\.png does not exist/);
+  expectError(manifest((j) => ({ ...j, suggestedPrompts: ["a", "b", "c", "d"] })), /suggestedPrompts must list 1–3 prompts/);
+  expectError(manifest((j) => ({ ...j, license: "Apache-2.0" })), /\.antigravity-plugin\/plugin\.json: license must be "MIT"/);
+  expectError(server((s) => ({ ...s, serverUrl: "https://mcp.example.com/mcp" })), /mcp_config\.json: cuddler\.serverUrl is .*claims\.json mcp\.url/);
+  expectError(server(({ serverUrl, ...rest }) => ({ ...rest, url: serverUrl })), /mcp_config\.json: cuddler\.url: Antigravity takes a remote server as serverUrl and headers only/);
+  expectError(server((s) => ({ ...s, headers: {} })), /mcp_config\.json: cuddler\.headers must hold only X-Cuddler-Source: plugin/);
+  expectError(withCopy((d) => writeFileSync(join(d, ".antigravity-plugin/mcp_config.json"), "{}\n")), /only plugin\.json goes in \.antigravity-plugin\//);
+  expectError(withCopy((d) => rmSync(join(d, ".antigravity-plugin/plugin.json"))), /\.antigravity-plugin\/plugin\.json: required file is missing/);
+  expectError(withCopy((d) => rmSync(join(d, "mcp_config.json"))), /mcp_config\.json: required file is missing/);
+});
+
 test("orphan references, broken links and ../ paths fail", () => {
   expectError(withCopy((d) => writeFileSync(join(d, "skills/cuddler-generate/references/unused.md"), "# unused\n")), /orphan: .*references\/unused\.md/);
   expectError(withCopy((d) => edit(d, "skills/cuddler-generate/SKILL.md", (t) => t.replaceAll("(references/prompt-craft.md)", "(references/prompt-kraft.md)"))), /does not resolve|does not exist/);

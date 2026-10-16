@@ -47,7 +47,7 @@ Every change that reaches `main` is a new version. In the pull request, run
 node scripts/bump.mjs <x.y.z>   # a patch bump is enough for wording
 ```
 
-It moves the version in `VERSION`, the plugin manifests (Claude Code, Codex, Cursor and OpenClaw) and the marketplace entry, and opens an empty entry on top of `CHANGELOG.md`. Write that entry before you push: CI checks that every version matches and that the entry has text.
+It moves the version in `VERSION`, the plugin manifests (Claude Code, Codex, Cursor, OpenClaw and Antigravity) and the marketplace entry, and opens an empty entry on top of `CHANGELOG.md`. Write that entry before you push: CI checks that every version matches and that the entry has text.
 
 The merge does the rest. `.github/workflows/release.yml` notices the new version, tags `v<version>`, and publishes a GitHub Release with the CHANGELOG entry and the packages attached: `cuddler-<version>-openclaw.zip`, `cuddler-<version>-openai.zip` and `SHA256SUMS`. Then it starts `.github/workflows/clawhub-publish.yml` on the new tag, which builds the OpenClaw package, publishes it to ClawHub and waits for ClawHub's security checks. That workflow runs in the `clawhub` environment, which only release tags can use, and publishes a tag only when its commit is on `main`. ClawHub accepts the workflow's GitHub OIDC token through trusted publishing, so the repository stores no ClawHub token. If a run fails, fix the cause and run it again from the Actions tab: `release` for the tag and the Release, `clawhub-publish` with **Use workflow from** set to the tag (`v<version>`) for ClawHub. `node scripts/release.mjs` runs the same steps locally (`notes`, `summary`, `assets`).
 

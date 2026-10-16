@@ -963,6 +963,62 @@ export function validate(root) {
     }
   });
 
+  group("the Antigravity manifest and mcp_config.json load the skills and the cuddler server", () => {
+    // Antigravity reads its own manifest from .antigravity-plugin/ and the components from the plugin root: skills/ and
+    // mcp_config.json. Without them it converts the Claude Code manifest, and that conversion drops the remote server.
+    const rel = ".antigravity-plugin/plugin.json";
+    const mcpRel = "mcp_config.json";
+    if (!exists(rel)) err(rel, "required file is missing: Antigravity would convert the Claude Code plugin and lose the Cuddler server");
+    if (!exists(mcpRel)) err(mcpRel, "required file is missing: the Antigravity plugin brings the Cuddler server from it");
+    const manifest = readJson(rel);
+    if (manifest) {
+      const known = ["name", "displayName", "version", "description", "logo", "suggestedPrompts", "keywords", "author", "homepage", "repository", "license"];
+      for (const key of Object.keys(manifest)) {
+        if (!known.includes(key)) err(rel, `"${key}" is not a field this manifest uses; skills/ and mcp_config.json load from the plugin root on their own`);
+      }
+      const pluginName = marketplace?.plugins?.[0]?.name;
+      if (pluginName && manifest.name !== pluginName) err(rel, `name "${manifest.name ?? ""}" differs from the plugin "${pluginName}"`);
+      const displayName = codexPlugin?.interface?.displayName;
+      if (displayName && manifest.displayName !== displayName) err(rel, `displayName "${manifest.displayName ?? ""}" differs from the display name "${displayName}"`);
+      if (version && manifest.version !== version) err(rel, `version is "${manifest.version ?? "missing"}"; VERSION is ${version}`);
+      if (typeof manifest.description !== "string" || !manifest.description.trim()) err(rel, "description is required: Antigravity shows it and its marketplace search matches it");
+      else if (manifest.description.length > PACKAGE_DESCRIPTION_MAX) err(rel, `description is ${manifest.description.length} characters; the limit is ${PACKAGE_DESCRIPTION_MAX}`);
+      if (manifest.license !== "MIT") err(rel, `license must be "MIT", found "${manifest.license ?? "missing"}"`);
+      if (manifest.repository !== PUBLIC_REPOSITORY) err(rel, `repository must be ${PUBLIC_REPOSITORY}`);
+      // A path relative to the plugin root, without ./; Antigravity ignores URLs and absolute paths and shows no logo.
+      if (typeof manifest.logo !== "string" || !/^[\w-]+(?:\/[\w.-]+)*\.(?:png|svg|jpe?g|webp)$/i.test(manifest.logo)) {
+        err(rel, 'logo must be a path from the plugin root such as "assets/logo.png"');
+      } else if (!exists(manifest.logo)) {
+        err(rel, `logo ${manifest.logo} does not exist`);
+      }
+      const prompts = manifest.suggestedPrompts;
+      if (prompts !== undefined) {
+        if (!Array.isArray(prompts) || !prompts.length || prompts.length > 3) err(rel, "suggestedPrompts must list 1–3 prompts; Antigravity shows no more than 3");
+        for (const prompt of Array.isArray(prompts) ? prompts : []) {
+          if (typeof prompt !== "string" || !prompt.trim() || /[\r\n]/.test(prompt)) err(rel, `suggestedPrompts: "${prompt}" must be one line of text`);
+        }
+      }
+    }
+    if (exists(".antigravity-plugin")) {
+      for (const entry of readdirSync(join(root, ".antigravity-plugin"))) {
+        if (entry !== "plugin.json" && entry !== ".DS_Store") err(`.antigravity-plugin/${entry}`, "only plugin.json goes in .antigravity-plugin/; Antigravity loads components from the plugin root");
+      }
+    }
+    const config = readJson(mcpRel);
+    if (!config) return;
+    const servers = config.mcpServers && typeof config.mcpServers === "object" ? Object.keys(config.mcpServers) : [];
+    if (servers.length !== 1 || servers[0] !== MCP_SERVER) err(mcpRel, `mcpServers must declare exactly one server, "${MCP_SERVER}"; found ${servers.join(", ") || "none"}`);
+    const server = config.mcpServers?.[MCP_SERVER] ?? {};
+    const url = claims ? lookup(claims, "mcp.url") : undefined;
+    if (url && server.serverUrl !== url) err(mcpRel, `${MCP_SERVER}.serverUrl is "${server.serverUrl ?? "missing"}"; claims.json mcp.url is "${url}"`);
+    for (const key of Object.keys(server)) {
+      if (key !== "serverUrl" && key !== "headers") err(mcpRel, `${MCP_SERVER}.${key}: Antigravity takes a remote server as serverUrl and headers only (no url, httpUrl, type or command); it signs in with OAuth on its own`);
+    }
+    if (server.headers?.[SOURCE_HEADER.name] !== SOURCE_HEADER.value || Object.keys(server.headers ?? {}).length !== 1) {
+      err(mcpRel, `${MCP_SERVER}.headers must hold only ${SOURCE_HEADER.name}: ${SOURCE_HEADER.value}, like .mcp.json`);
+    }
+  });
+
   group("README and INSTALL list exactly the skills", () => {
     if (exists("README.md")) {
       const text = read("README.md");

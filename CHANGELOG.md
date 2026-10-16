@@ -11,7 +11,7 @@ The ChatGPT and Codex plugin directory package meets the directory's current rul
 ### Changed
 
 - **No request headers in the directory package.** `pack-openai.mjs` writes the package's `.mcp.json` without the `X-Cuddler-Source` header, because the directory rejects a server with request headers. The marketplace installs keep sending it.
-- **Listing text.** The Codex listing asks for a paid Cuddler account, or a place in Cuddler's Creator Partnership Program, instead of naming plans and trials. The release notes describe the current limits: every paid call is capped at the quote and waits for the user's OK. The empty demo video URL is gone until there is a video, because an empty value clears the one saved in the dashboard.
+- **Listing text.** The Codex listing asks for a paid Cuddler account, or a place in Cuddler's Creator Partnership Program, instead of naming plans and trials. The release notes name all five skills and describe the current limits: every paid call is capped at the quote and waits for the user's OK. The empty demo video URL is gone until there is a video, because an empty value clears the one saved in the dashboard.
 - **Validator.** It rejects plan names, trials and free plans in the listing text and the release notes. It checks the review cases: exactly five positive and three negative, and the tools they name are real Cuddler tools. It also requires the demo video URL to be an https link when it is set.
 
 ## [0.3.17] — 2026-10-14

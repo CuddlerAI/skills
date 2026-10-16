@@ -98,7 +98,7 @@
         "commerce_description": "The plugin sells nothing and opens no checkout. Renders spend credits the user already holds on their Cuddler account, at the price quoted before the call, and only after the price has been shown and the user has agreed. If a feature is not included in the user's plan, the plugin says so and stops; it never links to a purchase or upgrade page."
       },
       "publication": {
-        "release_notes": "First directory release. Four skills: cuddler-setup (connect the account and see what it can make), cuddler-generate (videos and images, priced before every render), cuddler-character-clip (a 15–30 second one-take clip of one of the user's own characters) and cuddler-review (a local ffmpeg check of a finished clip). MCP server: mcp.cuddler.ai with 14 tools and OAuth sign-in in the browser. Every paid call is capped at the quoted credits and waits for the user's OK, and nothing is spent unless spending was allowed at sign-in."
+        "release_notes": "First directory release. Five skills: cuddler-setup (connect the account and see what it can make), cuddler-generate (videos and images, priced before every render), cuddler-character-clip (a 15–30 second one-take clip of one of the user's own characters), cuddler-review (a local ffmpeg check of a finished clip) and cuddler-watermark (the Cuddler.ai corner mark on a local video, with ffmpeg). MCP server: mcp.cuddler.ai with 14 tools and OAuth sign-in in the browser. Every paid call is capped at the quoted credits and waits for the user's OK, and nothing is spent unless spending was allowed at sign-in."
       }
     }
   }

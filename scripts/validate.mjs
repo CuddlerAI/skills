@@ -14,8 +14,6 @@
 // skill, eval mocks that carry the server's tool list and answer in its formats, actions pinned to a commit, and safety lints
 // (no direct API calls, no admin routes or internal addresses, no secrets or emails, no invisible characters, and skills
 // link only to cuddler.ai over https).
-// server.json, the server's entry in the official MCP Registry, follows the registry's rules and names the same server
-// (scripts/mcp-registry.mjs).
 //
 // Exit 0 when every check passes, 1 otherwise. On GitHub Actions each failure is also an ::error annotation.
 

@@ -1,0 +1,29 @@
+{
+  "name": "cuddler",
+  "displayName": "Cuddler",
+  "version": "0.3.21",
+  "description": "Make AI videos and images on your own Cuddler account: connect and sign in, quoted renders, character clips, local clip review and the Cuddler.ai watermark.",
+  "logo": "assets/logo.png",
+  "suggestedPrompts": [
+    "Make a 10-second vertical clip of a paper boat in the rain",
+    "Turn my character into a 15-second clip",
+    "Make a square image of a paper boat on a puddle at dusk"
+  ],
+  "keywords": [
+    "cuddler",
+    "video-generation",
+    "image-generation",
+    "ai-video",
+    "character-video",
+    "mcp",
+    "agent-skills"
+  ],
+  "author": {
+    "name": "Cuddler",
+    "email": "support@cuddler.ai",
+    "url": "https://cuddler.ai"
+  },
+  "homepage": "https://cuddler.ai/mcp",
+  "repository": "https://github.com/CuddlerAI/skills",
+  "license": "MIT"
+}

@@ -3,7 +3,7 @@
 //
 //   node scripts/bump.mjs <x.y.z> [--date YYYY-MM-DD]    (default date: today, local time)
 //
-// It writes VERSION, the "version" of the four plugin manifests and both versions in the marketplace entry, and adds the
+// It writes VERSION, the "version" of every plugin manifest and both versions in the marketplace entry, and adds the
 // heading "## [x.y.z] — date" on top of the CHANGELOG entries. Only the version strings change, so every JSON file keeps its
 // layout. It refuses a version that isn't newer than VERSION and a file whose version doesn't read as VERSION. The new
 // CHANGELOG entry starts empty: write it before you push, because CI fails on an empty entry (release.mjs check).
@@ -16,6 +16,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 export const VERSIONED_FILES = Object.freeze([
   [".claude-plugin/plugin.json", 1],
   [".codex-plugin/plugin.json", 1],
+  [".antigravity-plugin/plugin.json", 1],
   [".cursor-plugin/plugin.json", 1],
   ["openclaw.plugin.json", 1],
   [".claude-plugin/marketplace.json", 2],

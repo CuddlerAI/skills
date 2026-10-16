@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "cuddler": {
+      "serverUrl": "https://mcp.cuddler.ai/mcp",
+      "headers": {
+        "X-Cuddler-Source": "plugin"
+      }
+    }
+  }
+}

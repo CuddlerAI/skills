@@ -1,7 +1,7 @@
 {
   "name": "cuddler",
-  "version": "0.3.20",
-  "description": "Make AI videos and images on your own Cuddler account from ChatGPT, Codex, Claude Code or Cursor: connect and sign in, quoted renders, character clips and local clip review.",
+  "version": "0.3.21",
+  "description": "Make AI videos and images on your own Cuddler account from ChatGPT, Codex, Claude Code or Cursor: connect and sign in, quoted renders, character clips, local clip review and the Cuddler.ai watermark.",
   "author": {
     "name": "Cuddler",
     "email": "support@cuddler.ai",

@@ -4,6 +4,14 @@ All notable changes to the Cuddler skills. The version here, `VERSION` and every
 
 Versions stay at 0.x while the skills are in beta: a minor version may change the hard rules or what the skills expect from the tools, only the latest version gets fixes, and every change that reaches `main` bumps the version. Each version is tagged `v<version>` and published as a GitHub Release with its entry below.
 
+## [0.3.21] — 2026-10-16
+
+Listing text. Nothing changes in what the skills do.
+
+### Changed
+
+- **The watermark is in the listings.** The plugin description in the Claude Code, Codex, Cursor and marketplace manifests now names the Cuddler.ai watermark. The ChatGPT and Codex listing's "What it does" gets a line for it: when a video is going to be posted, its download can come already watermarked, and in Codex the `cuddler-watermark` skill puts the same corner mark on a cut edited in another app.
+
 ## [0.3.20] — 2026-10-16
 
 How to add Cuddler to the Claude app, and the skill files to do it with. Nothing changes in what the skills do.

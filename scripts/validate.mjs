@@ -968,7 +968,8 @@ export function validate(root) {
       const text = read("README.md");
       const linked = [...text.matchAll(/\]\(\.?\/?skills\/([a-z0-9-]+)(?:\/[^)]*)?\)/g)].map((m) => m[1]);
       compareSets(err, "README.md", "the skills table (links to skills/<name>/)", [...new Set(linked)], skills);
-      for (const match of text.matchAll(/\bskills\/([a-z0-9-]+)\//g)) {
+      // The repository's own URLs (github.com/CuddlerAI/skills/releases/…) are not skill folders.
+      for (const match of text.matchAll(/(?<!CuddlerAI\/)\bskills\/([a-z0-9-]+)\//g)) {
         if (!skills.includes(match[1])) err("README.md", `mentions skills/${match[1]}/, which does not exist`);
       }
     }

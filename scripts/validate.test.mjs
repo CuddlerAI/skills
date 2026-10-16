@@ -136,6 +136,12 @@ test("a skill missing from the marketplace, README or INSTALL fails", () => {
   expectError(withCopy((d) => edit(d, "INSTALL.md", (t) => t.replaceAll("/cuddler:cuddler-review", "the cuddler-review skill"))), /INSTALL\.md: .*does not list the skill "cuddler-review"/);
 });
 
+test("the README may link the repository's releases, but not a skill folder that doesn't exist", () => {
+  expectError(withCopy((d) => appendFileSync(join(d, "README.md"), "\nSee skills/cuddler-missing/SKILL.md.\n")), /mentions skills\/cuddler-missing\/, which does not exist/);
+  const errors = withCopy((d) => appendFileSync(join(d, "README.md"), "\n[All files](https://github.com/CuddlerAI/skills/releases/latest)\n"));
+  assert.deepEqual(errors.filter((e) => /which does not exist/.test(e)), []);
+});
+
 test("a renamed skill directory is caught everywhere it is listed", () => {
   const errors = withCopy((d) => {
     cpSync(join(d, "skills/cuddler-review"), join(d, "skills/cuddler-clip-review"), { recursive: true });

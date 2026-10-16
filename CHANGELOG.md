@@ -4,6 +4,19 @@ All notable changes to the Cuddler skills. The version here, `VERSION` and every
 
 Versions stay at 0.x while the skills are in beta: a minor version may change the hard rules or what the skills expect from the tools, only the latest version gets fixes, and every change that reaches `main` bumps the version. Each version is tagged `v<version>` and published as a GitHub Release with its entry below.
 
+## [0.3.20] — 2026-10-16
+
+How to add Cuddler to the Claude app, and the skill files to do it with. Nothing changes in what the skills do.
+
+### Added
+
+- **Claude app install.** The README and INSTALL.md walk through adding Cuddler to the chat in the Claude app (claude.ai and the desktop app): turn on code execution, add the Cuddler connector, then upload the five skills. The README carries screenshots of each step.
+- **A ZIP per skill on every release.** Each GitHub Release now also carries `cuddler-setup.zip`, `cuddler-generate.zip`, `cuddler-character-clip.zip`, `cuddler-review.zip` and `cuddler-watermark.zip`, each holding one skill folder the way the Claude app's Upload skill takes it. Their names carry no version, so the README links straight to the latest release's files. `SHA256SUMS` covers them too.
+
+### Changed
+
+- `validate.mjs` no longer reads the repository's own URLs (`github.com/CuddlerAI/skills/releases/…`) as skill folders in the README; a skill folder that doesn't exist still fails.
+
 ## [0.3.19] — 2026-10-16
 
 The ChatGPT and Codex plugin directory package meets the directory's current rules. Nothing changes in what the skills do.

@@ -5,15 +5,16 @@
 //   node scripts/release.mjs check                       the CHANGELOG entry for VERSION has text (CI runs it on every change)
 //   node scripts/release.mjs notes [<x.y.z>]             prints that entry, for the GitHub Release
 //   node scripts/release.mjs summary [<x.y.z>]           prints its opening paragraph on one line, for ClawHub's changelog
-//   node scripts/release.mjs assets [--out <dir>]        writes the OpenClaw and OpenAI packages as ZIPs, plus SHA256SUMS
+//   node scripts/release.mjs assets [--out <dir>]        writes the OpenClaw and OpenAI packages and a ZIP per skill, plus SHA256SUMS
 //
-// The version defaults to VERSION. The assets are the same files pack-openclaw.mjs and pack-openai.mjs build, so what a
+// The version defaults to VERSION. The packages are the same files pack-openclaw.mjs and pack-openai.mjs build, so what a
 // GitHub Release carries is what ClawHub and the OpenAI directory get; like those scripts, `assets` stops when
-// validate.mjs reports an error.
+// validate.mjs reports an error. The skill ZIPs are for the Claude app's Customize → Skills → Upload; their names carry no
+// version, so the README can link releases/latest/download/<skill>.zip.
 
 import { createHash } from "node:crypto";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
+import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { packOpenai, zip } from "./pack-openai.mjs";
 import { openclawPackage } from "./pack-openclaw.mjs";
@@ -41,7 +42,33 @@ export function entrySummary(entry, version) {
   return `Release notes: ${REPOSITORY}/releases/tag/v${version}`;
 }
 
-/** Writes cuddler-<version>-openclaw.zip, cuddler-<version>-openai.zip and SHA256SUMS into `out`. */
+/**
+ * One ZIP per skill, as `<skill>.zip` with the skill's folder at the top of the archive: the Claude app looks for
+ * `<skill>/SKILL.md` in an uploaded ZIP. Same files, same bytes; scripts keep their executable bit.
+ */
+export function skillZips(root) {
+  const skills = join(root, "skills");
+  return readdirSync(skills)
+    .filter((name) => statSync(join(skills, name)).isDirectory())
+    .sort()
+    .map((skill) => {
+      const entries = [];
+      const walk = (rel) => {
+        const abs = join(skills, rel);
+        const stat = statSync(abs);
+        if (!stat.isDirectory()) {
+          entries.push({ name: rel.split(sep).join("/"), data: readFileSync(abs), executable: (stat.mode & 0o111) !== 0 });
+          return;
+        }
+        for (const name of readdirSync(abs)) if (name !== ".DS_Store" && !name.endsWith(".review")) walk(join(rel, name));
+      };
+      walk(skill);
+      entries.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+      return { name: `${skill}.zip`, data: zip(entries) };
+    });
+}
+
+/** Writes cuddler-<version>-openclaw.zip, cuddler-<version>-openai.zip, a <skill>.zip per skill and SHA256SUMS into `out`. */
 export function buildAssets(root, out) {
   const { errors, version } = validate(root);
   if (errors.length) {
@@ -52,12 +79,17 @@ export function buildAssets(root, out) {
   const openclaw = join(out, `cuddler-${version}-openclaw.zip`);
   writeFileSync(openclaw, zip(openclawPackage(root).map(([name, { data, executable }]) => ({ name, data, executable }))));
   const openai = packOpenai(root, join(out, `cuddler-${version}-openai.zip`)).out;
-  const sums = [openclaw, openai].map((file) => {
+  const skills = skillZips(root).map(({ name, data }) => {
+    const file = join(out, name);
+    writeFileSync(file, data);
+    return file;
+  });
+  const sums = [openclaw, openai, ...skills].map((file) => {
     const sha = createHash("sha256").update(readFileSync(file)).digest("hex");
     return `${sha}  ${relative(out, file)}`;
   });
   writeFileSync(join(out, "SHA256SUMS"), `${sums.join("\n")}\n`);
-  return { version, files: [openclaw, openai, join(out, "SHA256SUMS")] };
+  return { version, files: [openclaw, openai, ...skills, join(out, "SHA256SUMS")] };
 }
 
 function main() {

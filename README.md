@@ -38,6 +38,46 @@ claude plugin install cuddler --marketplace CuddlerAI/skills
 
 Restart Claude Code, then type `/mcp`, choose the Cuddler server and sign in.
 
+### Claude app
+
+In the Claude app's chat (claude.ai and the desktop app), Cuddler is a connector plus five skills you upload. Until Cuddler is listed in Claude's directory, add them by hand:
+
+1. **Turn on code execution**: Settings → Capabilities → **Code execution and file creation**. Skills need it.
+2. **Add the connector**: Customize → Connectors → **+ Add** → **Add custom connector**. Name it `Cuddler`, set the URL to `https://mcp.cuddler.ai/mcp`, choose **Continue**, keep the detected sign-in options and choose **Add**. Then choose **Connect**, sign in to Cuddler in your browser, tick **Spend credits to make images and videos** and choose **Allow**.
+3. **Download the five skills** from the latest release: [cuddler-setup](https://github.com/CuddlerAI/skills/releases/latest/download/cuddler-setup.zip), [cuddler-generate](https://github.com/CuddlerAI/skills/releases/latest/download/cuddler-generate.zip), [cuddler-character-clip](https://github.com/CuddlerAI/skills/releases/latest/download/cuddler-character-clip.zip), [cuddler-review](https://github.com/CuddlerAI/skills/releases/latest/download/cuddler-review.zip), [cuddler-watermark](https://github.com/CuddlerAI/skills/releases/latest/download/cuddler-watermark.zip).
+4. **Upload them**: Customize → Skills → **+ Add** → **Upload skill**, select all five ZIPs and choose **Upload 5 skills**. Each skill is on as soon as it's added.
+
+Then ask in a new chat: "Is my Cuddler account connected?"
+
+<details>
+<summary>Step by step, with screenshots</summary>
+
+**1. Code execution.** Settings → Capabilities:
+
+![The "Cloud code execution and file creation" switch, turned on](docs/images/claude-app/capabilities.png)
+
+**2. The connector.** Customize → Connectors → + Add → Add custom connector:
+
+![Add custom connector: the name Cuddler and the URL https://mcp.cuddler.ai/mcp](docs/images/claude-app/connector-add.png)
+
+Keep what Claude detects: **Sign in now** and **Use Claude's published identity**. No request headers are needed.
+
+![The connector's sign-in options, as detected](docs/images/claude-app/connector-sign-in.png)
+
+After **Connect**, the desktop app may first ask "Finish connecting a connector?": choose **Continue connecting**. Then Cuddler asks what Claude may do. Tick **Spend credits to make images and videos** if Claude should make things, and choose **Allow**:
+
+![Cuddler's page: connect Claude to your Cuddler account](docs/images/claude-app/cuddler-consent.png)
+
+**3 and 4. The skills.** Customize → Skills → + Add → Upload skill:
+
+![The Add menu on the Skills page, with Upload skill](docs/images/claude-app/skills-add-menu.png)
+
+Select all five ZIPs at once:
+
+![Upload skills with the five Cuddler ZIPs selected](docs/images/claude-app/skills-upload.png)
+
+</details>
+
 ### Codex
 
 <!-- claims:install.codex -->
@@ -77,6 +117,7 @@ Then add the Cuddler MCP server to your agent; the Cuddler assistants page below
 Each change to the skills ships as a new version, with its notes on the Releases page. The Cuddler MCP server updates on its own; the skills update like this:
 
 - **Claude Code**: in `/plugin`, open the Cuddler marketplace and choose **Enable auto-update**. By hand: `/plugin marketplace update cuddler`.
+- **Claude app**: download the five ZIPs again, upload them and choose **Replace** for each skill.
 - **Codex**: **Upgrade marketplace** next to Cuddler in the app, or `codex plugin marketplace upgrade cuddler`.
 - **OpenClaw**: `openclaw plugins update cuddler`.
 - **Cursor, Gemini CLI and other agents**: `npx skills update`.

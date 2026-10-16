@@ -18,7 +18,8 @@
         "./skills/cuddler-setup",
         "./skills/cuddler-generate",
         "./skills/cuddler-character-clip",
-        "./skills/cuddler-review"
+        "./skills/cuddler-review",
+        "./skills/cuddler-watermark"
       ]
     }
   ]

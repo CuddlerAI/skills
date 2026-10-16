@@ -54,6 +54,24 @@ jobs:
           REQUIRE_FFMPEG: "1"
         run: node --test --test-name-pattern "contact-sheet" scripts/validate.test.mjs
 
+  watermark-script:
+    name: cuddler-watermark/scripts/watermark.sh on Linux
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: Install ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - name: Watermark synthetic clips
+        env:
+          REQUIRE_FFMPEG: "1"
+        run: node --test --test-name-pattern "watermark.sh" scripts/validate.test.mjs
+
   public-wording:
     name: The description and the commit messages name nothing internal
     if: github.event_name == 'pull_request'

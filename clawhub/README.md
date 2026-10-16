@@ -10,6 +10,7 @@ Make AI videos and images on your own Cuddler account from OpenClaw. Ask in any 
 | `cuddler-generate` | "Make a 10-second vertical clip of a paper boat in the rain": videos and images, priced before anything is spent |
 | `cuddler-character-clip` | "Turn my character into a 15-second clip": one of your own Cuddler characters talking to the viewer |
 | `cuddler-review` | "Review this clip before I post it": a local ffmpeg check with a pass, fix or reject verdict |
+| `cuddler-watermark` | "Add the Cuddler watermark to this video": the app's corner mark, stamped locally with ffmpeg |
 
 ## Install and sign in
 
@@ -29,7 +30,7 @@ Either way a Cuddler page opens in your browser. Sign in, allow the connection a
 
 - OpenClaw 2026.9.9 or newer.
 - A Cuddler account on a paid plan (Lite, Pro or Ultra), or in Cuddler's Creator Partnership Program. The setup skill tells you what your plan can make.
-- For `cuddler-review`: `curl`, `ffmpeg` and `ffprobe` on the machine OpenClaw runs on (and network access in OpenClaw's sandbox, if you turn it on). Finished images and clips come back in your chat without them.
+- For `cuddler-review` and `cuddler-watermark`: `curl`, `ffmpeg` and `ffprobe` on the machine OpenClaw runs on (and network access in OpenClaw's sandbox, if you turn it on). Finished images and clips come back in your chat without them.
 
 ## Credits
 

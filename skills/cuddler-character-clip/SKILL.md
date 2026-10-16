@@ -1,6 +1,6 @@
 ---
 name: cuddler-character-clip
-description: 'Use when someone wants a short video starring one of their own Cuddler characters, usually talking to the viewer. Triggers: "make a clip of my character", "turn my character into a 15-second video", "an opening video for my character", "a POV clip where she talks to me", "a hook video for <character>". NOT for: videos without one of their characters (use cuddler-generate), judging a finished file (use cuddler-review), or characters that involve minors, school settings, real people or a franchise character named in the prompt.'
+description: 'Use when someone wants a short video starring one of their own Cuddler characters, usually talking to the viewer. Triggers: "make a clip of my character", "turn my character into a 15-second video", "an opening video for my character", "a POV clip where she talks to me", "a hook video starring my character". NOT for: videos without one of their characters (use cuddler-generate), judging a finished file (use cuddler-review), or characters that involve minors, school settings, real people or a franchise character named in the prompt.'
 argument-hint: '[character name or id] [15|30] [language]'
 license: MIT
 ---

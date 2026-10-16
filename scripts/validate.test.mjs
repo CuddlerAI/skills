@@ -109,9 +109,10 @@ test("a skill name without the cuddler- prefix fails", () => {
   expectError(errors, /directory name "review" must start with "cuddler-"/);
 });
 
-test("descriptions need Use when and NOT for, and at most 1024 characters", () => {
+test("descriptions need Use when and NOT for, no < or >, and at most 1024 characters", () => {
   expectError(withCopy((d) => edit(d, "skills/cuddler-generate/SKILL.md", (t) => t.replace("NOT for:", "Not for:"))), /must contain "NOT for"/);
   expectError(withCopy((d) => edit(d, "skills/cuddler-generate/SKILL.md", (t) => t.replace("Use when", "When"))), /must contain "Use when"/);
+  expectError(withCopy((d) => edit(d, "skills/cuddler-character-clip/SKILL.md", (t) => t.replace("starring my character", "for <character>"))), /contains < or >/);
   expectError(withCopy((d) => edit(d, "skills/cuddler-generate/SKILL.md", (t) => t.replace("description: '", `description: '${"x".repeat(1100)} `))), /limit is 1024/);
 });
 

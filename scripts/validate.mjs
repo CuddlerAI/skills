@@ -3,7 +3,8 @@
 //
 //   node scripts/validate.mjs [repo-root]      (default: the repository this script lives in)
 //
-// Checks: frontmatter (name = directory, starting with "cuddler-"; description ≤ 1024 characters with "Use when" and "NOT for"),
+// Checks: frontmatter (name = directory, starting with "cuddler-"; description ≤ 1024 characters with "Use when" and "NOT for",
+// and no < or >),
 // SKILL.md ≤ 300 lines, identical "Hard rules" blocks, references and scripts resolve with no orphans and no ../ paths,
 // skills name only real Cuddler MCP tools, no command-line instructions, no third-party keys and no fixed prices in public
 // text, every skill listed in the marketplace, plugin manifests, README and INSTALL (and nothing extra), VERSION in sync with
@@ -474,6 +475,8 @@ export function validate(root) {
         if (description.length > LIMITS.descriptionMax) err(rel, `description is ${description.length} characters; the limit is ${LIMITS.descriptionMax}`);
         if (!description.includes("Use when")) err(rel, 'description must contain "Use when"');
         if (!description.includes("NOT for")) err(rel, 'description must contain "NOT for"');
+        // Claude's skill upload refuses a description with XML tags, and a "<character>" placeholder counts as one.
+        if (/[<>]/.test(description)) err(rel, "description contains < or >: Claude refuses XML tags in a skill description, so write placeholders in words");
       }
       const rules = extractSection(text, HARD_RULES_HEADING);
       if (!rules) {

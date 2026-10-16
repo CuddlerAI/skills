@@ -1,0 +1,31 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "ai.cuddler/cuddler",
+  "title": "Cuddler",
+  "description": "Make AI videos and images with your own Cuddler account and characters, quoted before every render.",
+  "version": "1.0.0",
+  "websiteUrl": "https://cuddler.ai/mcp",
+  "repository": {
+    "url": "https://github.com/CuddlerAI/skills",
+    "source": "github",
+    "id": "1411825750"
+  },
+  "icons": [
+    {
+      "src": "https://cuddler.ai/icon-512.png",
+      "mimeType": "image/png",
+      "sizes": ["512x512"]
+    },
+    {
+      "src": "https://cuddler.ai/icon-192.png",
+      "mimeType": "image/png",
+      "sizes": ["192x192"]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.cuddler.ai/mcp"
+    }
+  ]
+}

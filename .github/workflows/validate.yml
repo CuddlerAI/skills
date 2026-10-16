@@ -35,6 +35,8 @@ jobs:
         run: node --test scripts/validate.test.mjs
       - name: Release script tests
         run: node --test scripts/release.test.mjs
+      - name: MCP Registry entry tests
+        run: node --test scripts/mcp-registry.test.mjs
 
   review-script:
     name: cuddler-review/scripts/contact-sheet.sh on Linux

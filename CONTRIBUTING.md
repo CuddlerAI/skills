@@ -59,7 +59,7 @@ ChatGPT and Codex share one plugin directory, and its listing is built from this
 node scripts/pack-openai.mjs   # dist/cuddler-<version>-openai.zip
 ```
 
-The ZIP holds the Codex manifest, `.mcp.json`, `skills/`, `assets/`, `LICENSE` and `TRADEMARKS.md`, and the script refuses to build while `validate.mjs` reports an error; the validator holds the Codex manifest to the directory's listing rules. Each GitHub Release carries it as `cuddler-<version>-openai.zip`, and the Cuddler team uploads it on the OpenAI Platform. Changes to skills, the listing text or the icons need a new upload; changes to the Cuddler MCP tools don't.
+The ZIP holds the Codex manifest, `.mcp.json`, `skills/`, `assets/`, `LICENSE` and `TRADEMARKS.md`, and the script refuses to build while `validate.mjs` reports an error. Its `.mcp.json` leaves out the source header, because the directory rejects a server with request headers; Cuddler tells directory connections apart by their OAuth client. The validator holds the Codex manifest to the directory's listing rules: no plan names, prices, trials or upgrades in the listing text or the release notes, exactly five positive and three negative review cases, and no `demo_recording_url` until the demo video exists (an empty value clears the one saved in the dashboard). Each GitHub Release carries it as `cuddler-<version>-openai.zip`, and the Cuddler team uploads it on the OpenAI Platform. Changes to skills, the listing text or the icons need a new upload; changes to the Cuddler MCP tools don't.
 
 ## ClawHub (OpenClaw)
 

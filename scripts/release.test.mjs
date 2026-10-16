@@ -128,13 +128,14 @@ test("the CHANGELOG entry for VERSION in this repository has text", () => {
   assert.ok(changelogEntry(read(ROOT, "CHANGELOG.md"), version), `no text for ${version}`);
 });
 
-test("buildAssets writes both packages and their checksums", () =>
+test("buildAssets writes both packages, a ZIP per skill and their checksums", () =>
   withCopy((dir) => {
     const out = join(dir, "dist", "release");
     const { version, files } = buildAssets(dir, out);
+    const skills = ["cuddler-character-clip", "cuddler-generate", "cuddler-review", "cuddler-setup", "cuddler-watermark"];
     assert.deepEqual(
       files.map((f) => f.slice(out.length + 1)),
-      [`cuddler-${version}-openclaw.zip`, `cuddler-${version}-openai.zip`, "SHA256SUMS"],
+      [`cuddler-${version}-openclaw.zip`, `cuddler-${version}-openai.zip`, ...skills.map((s) => `${s}.zip`), "SHA256SUMS"],
     );
     const openclaw = unzip(readFileSync(files[0]));
     assert.equal(JSON.parse(openclaw.get("package.json")).version, version);
@@ -142,8 +143,15 @@ test("buildAssets writes both packages and their checksums", () =>
     assert.ok(openclaw.has("skills/cuddler-generate/SKILL.md"));
     const openai = unzip(readFileSync(files[1]));
     assert.equal(JSON.parse(openai.get(".codex-plugin/plugin.json")).version, version);
+    for (const [i, skill] of skills.entries()) {
+      // The Claude app finds the skill at <skill>/SKILL.md, so every entry sits under the skill's folder.
+      const entries = unzip(readFileSync(files[2 + i]));
+      assert.equal(entries.get(`${skill}/SKILL.md`)?.toString(), read(dir, `skills/${skill}/SKILL.md`));
+      for (const name of entries.keys()) assert.ok(name.startsWith(`${skill}/`), `${name} is outside ${skill}/`);
+    }
+    assert.ok(unzip(readFileSync(files[2 + skills.indexOf("cuddler-watermark")])).has("cuddler-watermark/scripts/watermark.sh"));
     const sums = read(out, "SHA256SUMS").trim().split("\n");
-    assert.equal(sums.length, 2);
+    assert.equal(sums.length, 2 + skills.length);
     for (const [i, line] of sums.entries()) {
       const [sha, name] = line.split("  ");
       assert.equal(name, files[i].slice(out.length + 1));

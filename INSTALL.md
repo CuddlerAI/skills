@@ -22,6 +22,19 @@ You rarely need to type them: ask for what you want ("make a 10-second clip of �
 
 Update: in `/plugin`, open the Cuddler marketplace and choose **Enable auto-update**, and Claude Code keeps the marketplace and the plugin up to date. By hand: `/plugin marketplace update cuddler`. Remove: `/plugin uninstall cuddler@cuddler`.
 
+## Claude app
+
+The chat in the Claude app (claude.ai and the desktop app) takes Cuddler as a connector plus five uploaded skills. Until Cuddler is listed in Claude's directory, you add both by hand. The README has [the same steps with screenshots](README.md#claude-app).
+
+1. Settings → Capabilities: turn on **Code execution and file creation**. Skills need it.
+2. Customize → Connectors → **+ Add** → **Add custom connector**: name `Cuddler`, URL `https://mcp.cuddler.ai/mcp`, **Continue**, keep the detected options (**Sign in now**, **Use Claude's published identity**, no request headers) and **Add**. Choose **Connect**; in the desktop app, **Continue connecting** if it asks. On Cuddler's page, sign in, tick **Spend credits to make images and videos** if Claude should make things, and **Allow**.
+3. Download the five ZIPs from the [latest release](https://github.com/CuddlerAI/skills/releases/latest): `cuddler-setup.zip`, `cuddler-generate.zip`, `cuddler-character-clip.zip`, `cuddler-review.zip` and `cuddler-watermark.zip`. Each holds one skill folder, the way the Claude app takes it.
+4. Customize → Skills → **+ Add** → **Upload skill**, select all five and choose **Upload 5 skills**.
+
+The connector's tools ask for your approval before Claude uses them; you can change that per tool on the connector's page. Paid calls are confirmed in the chat: Claude shows the price and waits for your OK.
+
+Update: download the ZIPs from the newest release, upload them and choose **Replace** for each skill. Remove: delete the skills under Customize → Skills and disconnect Cuddler under Customize → Connectors.
+
 ## Codex app
 
 Cuddler isn't in the public plugin directory yet, so add its marketplace first. The Codex app (inside the ChatGPT desktop app) and the Codex CLI share it, so this is done once.
@@ -111,4 +124,4 @@ Ask your agent: "Connect my Cuddler account". The `cuddler-setup` skill checks t
 
 ## Disconnect
 
-Remove the plugin or the MCP server from your agent, and revoke the connection on cuddler.ai under Settings → Developer API tokens.
+Remove the plugin or the MCP server from your agent (in the Claude app: Customize → Connectors → Cuddler → **Disconnect**), and revoke the connection on cuddler.ai under Settings → Developer API tokens.

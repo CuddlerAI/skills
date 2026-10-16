@@ -21,6 +21,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { README_UTM, REQUIRED_CLAIMS, REQUIRED_CLAWHUB_BLOCKS, REQUIRED_README_BLOCKS, lookup, readmeBlocks, render, withoutBlocks } from "./claims.mjs";
+import { serverJsonProblems } from "./mcp-registry.mjs";
 
 export const LIMITS = Object.freeze({ nameMax: 64, descriptionMax: 1024, skillLinesMax: 300 });
 
@@ -1071,6 +1072,21 @@ export function validate(root) {
   group("links in the top-level docs resolve", () => {
     for (const rel of ["README.md", "INSTALL.md", "INSTALL_FOR_AGENTS.md", "CHANGELOG.md", "SECURITY.md", "CONTRIBUTING.md", "CODE_OF_CONDUCT.md", "evals/README.md", CLAWHUB_README]) {
       if (exists(rel)) checkLinks(root, rel, read(rel), ".", err);
+    }
+  });
+
+  group("server.json lists the Cuddler server in the MCP Registry: the registry's rules, the same server, no plans or prices", () => {
+    const rel = "server.json";
+    if (!exists(rel)) return err(rel, "required file is missing: the server's entry in the official MCP Registry");
+    const entry = readJson(rel);
+    if (!entry) return;
+    const mcpUrl = claims ? lookup(claims, "mcp.url") : undefined;
+    const displayName = codexPlugin?.interface?.displayName;
+    for (const message of serverJsonProblems(entry, { mcpUrl, repository: PUBLIC_REPOSITORY, displayName })) err(rel, message);
+    for (const key of ["title", "description"]) {
+      if (typeof entry[key] !== "string") continue;
+      const match = PROMOTION.exec(entry[key]) ?? PLAN_NAMES.exec(entry[key]);
+      if (match) err(rel, `${key}: "${match[0]}"; the entry names no plan, price, trial or upgrade, like the directory listings`);
     }
   });
 

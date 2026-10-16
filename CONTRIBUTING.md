@@ -71,6 +71,12 @@ node scripts/pack-openclaw.mjs   # dist/openclaw/
 
 The folder holds `openclaw.plugin.json` (the skills and the Cuddler MCP server, signed in with OAuth), a `package.json` with the name and version ClawHub publishes, the same server as an OpenClaw `.mcp.json`, a short Claude manifest with the OpenClaw description (ClawHub files the package as a bundle plugin because of it, and OpenClaw loads the package through it), `skills/`, `clawhub/README.md` as its README, the icon, `LICENSE` and `TRADEMARKS.md`. The script refuses to build while `validate.mjs` reports an error, and it only clears a folder that holds an earlier package. Every release publishes it to ClawHub on its own (see Releasing), and ClawHub shows the new version once its security checks pass. To look at a build first, run `clawhub package publish dist/openclaw --owner cuddler --dry-run`.
 
+## The MCP Registry
+
+The Cuddler MCP server is listed in the official MCP Registry as `ai.cuddler/cuddler`, and [`server.json`](server.json) is that entry; other directories and MCP clients copy it from there. The registry keeps every published version for good and takes each version once, and it accepts the name only from whoever holds the key behind the `v=MCPv1` TXT record on cuddler.ai.
+
+The entry changes only when what it says about the server changes: the address, the title, the description or the icons. A plugin release doesn't need one. To publish a change, raise `version` in `server.json` in the pull request (a plain `x.y.z` of its own, not `VERSION`), and after the merge run `mcp-registry-publish` from the Actions tab on `main`. The workflow runs in the `mcp-registry` environment, which only `main` can use and which holds the key as the secret `REGISTRY_PRIVATE_KEY`. It validates the repository and the entry, stops if the registry already has that version, signs in with the key and publishes. The validator holds `server.json` to the registry's rules (`scripts/mcp-registry.mjs`): the same address as `.mcp.json`, no request headers (the source header is only for this repository's packages), icons on cuddler.ai, and no plans or prices in the text.
+
 ## Code owners
 
 `.github/CODEOWNERS` names who reviews each change; today one maintainer owns the whole repository. Take the most care with `README.md`, `claims.json`, `scripts/` and `.github/`: those files change what we promise in public and how releases are checked.

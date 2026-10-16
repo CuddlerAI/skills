@@ -4,6 +4,18 @@ All notable changes to the Cuddler skills. The version here, `VERSION` and every
 
 Versions stay at 0.x while the skills are in beta: a minor version may change the hard rules or what the skills expect from the tools, only the latest version gets fixes, and every change that reaches `main` bumps the version. Each version is tagged `v<version>` and published as a GitHub Release with its entry below.
 
+## [0.3.18] — 2026-10-16
+
+`cuddler-character-clip` can now be uploaded to the Claude app.
+
+### Fixed
+
+- `cuddler-character-clip`: one trigger phrase in its description read `a hook video for <character>`. The Claude app refuses a skill whose description contains an XML tag, and it read the placeholder as one, so the skill could not be uploaded there. The phrase is now "a hook video starring my character". The other four skills uploaded as they were.
+
+### Changed
+
+- `validate.mjs` fails a skill description that contains `<` or `>`, so a placeholder like this can't come back.
+
 ## [0.3.17] — 2026-10-14
 
 A new skill puts the Cuddler.ai watermark on a video, and downloads can come already marked.

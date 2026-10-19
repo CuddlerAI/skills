@@ -10,7 +10,8 @@
 // text, every skill listed in the marketplace, plugin manifests, README and INSTALL (and nothing extra), VERSION in sync with
 // every manifest and CHANGELOG, .mcp.json and both READMEs (this repository's and the ClawHub package's) in sync with
 // claims.json, the plugin source header in .mcp.json for every host, openclaw.plugin.json loading the skills and the
-// Cuddler server with OAuth, the Codex manifest and marketplace within the OpenAI plugin directory's listing rules, an eval case for every
+// Cuddler server with OAuth, the Codex manifest and marketplace within the OpenAI plugin directory's listing rules, the
+// save-media hook (hooks/hooks.json: its matcher, its command, and how Claude Code and Codex find it), an eval case for every
 // skill, eval mocks that carry the server's tool list and answer in its formats, actions pinned to a commit, and safety lints
 // (no direct API calls, no admin routes or internal addresses, no secrets or emails, no invisible characters, and skills
 // link only to cuddler.ai over https).
@@ -72,6 +73,58 @@ export const FENCED_RESULTS = Object.freeze([
   "get_video",
   "retry_video",
 ]);
+/** The plugin's one hook file, and the script it runs. */
+export const HOOKS_FILE = "hooks/hooks.json";
+export const HOOK_SCRIPT = "hooks/save-media.mjs";
+/**
+ * The tools whose answers can hold a finished file, by server: the Cuddler MCP server, and the Cuddler Platform MCP
+ * server that a user may add next to it. The hook's matcher must catch exactly these (and the same names on both).
+ */
+export const HOOK_TOOLS = Object.freeze({
+  cuddler: Object.freeze(["get_video", "get_download_link", "create_image", "get_image"]),
+  platform: Object.freeze(["get_video", "download_video", "get_image", "create_image"]),
+});
+/** How hosts name a tool of a server: as a plugin's server in Claude Code, added by hand, and as a claude.ai connector. */
+const HOOK_TOOL_NAMES = (tool) => [`mcp__plugin_cuddler_cuddler__${tool}`, `mcp__cuddler__${tool}`, `mcp__claude_ai_Cuddler__${tool}`, `mcp__cuddler-platform__${tool}`];
+
+/** Why a parsed hooks/hooks.json is not the plugin's save-media hook, as a list of problems. */
+export function hookConfigProblems(config) {
+  const problems = [];
+  const events = config?.hooks && typeof config.hooks === "object" ? Object.keys(config.hooks) : [];
+  if (events.join() !== "PostToolUse") return [`must declare hooks for PostToolUse only (under a top-level "hooks" key); found ${events.join(", ") || "none"}`];
+  const entries = config.hooks.PostToolUse;
+  if (!Array.isArray(entries) || entries.length !== 1) return ["PostToolUse must hold exactly one matcher entry"];
+  const [entry] = entries;
+  let matcher = null;
+  try {
+    if (typeof entry.matcher !== "string" || /\(\?[a-z]/i.test(entry.matcher)) throw new Error();
+    matcher = new RegExp(entry.matcher);
+  } catch {
+    problems.push("the matcher must be a regular expression that JavaScript and Codex both read: no inline flags such as (?i)");
+  }
+  if (matcher) {
+    const wanted = new Set([...HOOK_TOOLS.cuddler, ...HOOK_TOOLS.platform]);
+    for (const tool of wanted) {
+      for (const name of [...HOOK_TOOL_NAMES(tool), ...HOOK_TOOL_NAMES(tool.toUpperCase())]) {
+        if (!matcher.test(name)) problems.push(`the matcher misses ${name}`);
+      }
+    }
+    for (const tool of MCP_TOOLS.filter((t) => !wanted.has(t))) {
+      for (const name of HOOK_TOOL_NAMES(tool)) if (matcher.test(name)) problems.push(`the matcher catches ${name}, which never holds a finished file`);
+    }
+    if (matcher.test("mcp__other__get_video")) problems.push("the matcher catches mcp__other__get_video: only servers whose name says Cuddler");
+  }
+  const hooks = Array.isArray(entry.hooks) ? entry.hooks : [];
+  if (hooks.length !== 1 || hooks[0]?.type !== "command") return [...problems, "the entry must run exactly one command"];
+  const { command, timeout } = hooks[0];
+  if (typeof command !== "string" || !command.startsWith(`node "\${CLAUDE_PLUGIN_ROOT}/${HOOK_SCRIPT}"`)) {
+    problems.push(`the command must start with node "\${CLAUDE_PLUGIN_ROOT}/${HOOK_SCRIPT}" (quoted, so a path with spaces stays one word)`);
+  }
+  if (typeof command === "string" && !/2>\/dev\/null \|\| true$/.test(command)) problems.push("the command must end with 2>/dev/null || true, so a missing or old Node never fails a tool call");
+  if (!Number.isInteger(timeout) || timeout < 60 || timeout > 600) problems.push("timeout must be a whole number of seconds, 60–600");
+  return problems;
+}
+
 /** Arguments the skills pass on every spending call; the server's tool list must require them. */
 const SPEND_ARGS = Object.freeze({
   create_video: ["maxCredits", "idempotencyKey"],
@@ -671,12 +724,13 @@ export function validate(root) {
         const identity = `${codexPlugin.name}:${skill}`;
         if (identity.length > SKILL_IDENTITY_MAX) err(rel, `"${identity}" is ${identity.length} characters; plugin and skill name together may have ${SKILL_IDENTITY_MAX}`);
       }
-      for (const key of ["apps", "hooks"]) {
-        if (key in codexPlugin || key in openai) err(rel, `"${key}" can't be in a package for the OpenAI plugin directory`);
+      // The directory takes no app references and no lifecycle hooks. The hook that GitHub installs carry is declared in
+      // extensions.com.openai.hooks only, and pack-openai.mjs leaves it and hooks/ out of the directory package.
+      if ("apps" in codexPlugin || "apps" in openai) err(rel, `"apps" can't be in a package for the OpenAI plugin directory`);
+      if ("hooks" in codexPlugin) {
+        err(rel, `"hooks" can't be in a package for the OpenAI plugin directory; declare the plugin's hooks in extensions.com.openai.hooks, which pack-openai.mjs leaves out`);
       }
-      for (const file of [".app.json", "hooks/hooks.json"]) {
-        if (exists(file)) err(file, "app references and lifecycle hooks can't be in a package for the OpenAI plugin directory");
-      }
+      if (exists(".app.json")) err(".app.json", "app references can't be in a package for the OpenAI plugin directory");
       const text = (key, max) => {
         const value = iface[key];
         if (typeof value !== "string" || !value.trim()) err(rel, `interface.${key} is required`);
@@ -808,6 +862,25 @@ export function validate(root) {
         err(marketRel, "plugins[0].category must match interface.category in .codex-plugin/plugin.json");
       }
     }
+  });
+
+  group("the save-media hook runs after Cuddler's media tools, in Claude Code and in Codex installs from GitHub", () => {
+    const rel = HOOKS_FILE;
+    if (!exists(rel)) {
+      err(rel, "missing: the hook that saves finished files into cuddler-out/");
+      return;
+    }
+    if (!exists(HOOK_SCRIPT)) err(HOOK_SCRIPT, "missing: hooks/hooks.json runs it");
+    const config = readJson(rel);
+    if (!config) return;
+    for (const problem of hookConfigProblems(config)) err(rel, problem);
+    // Claude Code loads hooks/hooks.json on its own and refuses a manifest entry that names it again ("Duplicate hooks file").
+    for (const [file, manifest] of [[".claude-plugin/plugin.json", claudePlugin], [".claude-plugin/marketplace.json", marketplace?.plugins?.[0]]]) {
+      if (manifest && "hooks" in manifest) err(file, "hooks must stay unset: Claude Code loads hooks/hooks.json itself and reports a second reference as a duplicate");
+    }
+    // Codex: an explicit value replaces its own look-up of hooks/hooks.json, so it must name that file.
+    const codexHooks = codexPlugin?.extensions?.["com.openai"]?.hooks;
+    if (codexPlugin && codexHooks !== `./${HOOKS_FILE}`) err(".codex-plugin/plugin.json", `extensions.com.openai.hooks must be "./${HOOKS_FILE}"`);
   });
 
   group("versions match VERSION everywhere", () => {

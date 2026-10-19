@@ -27,7 +27,7 @@ Identical in every Cuddler skill (CI checks that the copies match). They overrid
 ## Requirements
 
 - `ffmpeg` and `ffprobe` on PATH. If they are missing, ask before installing (`brew install ffmpeg` on macOS, `sudo apt-get install ffmpeg` on Debian or Ubuntu).
-- A local video file. A Cuddler video that isn't downloaded yet doesn't need this skill: `get_video` until it is `ready`, then `get_download_link` with `watermark: true` returns the file already marked, the same file the app saves. Save the `video` file with `curl -fL --proto =https --proto-redir =https -o ./clips/<filename> "<url>"` (the link lasts about 10 minutes). If the answer says the file is still being made, ask again after a few seconds.
+- A local video file. A Cuddler video that isn't downloaded yet doesn't need this skill: `get_video` until it is `ready`, then `get_download_link` with `watermark: true` returns the file already marked, the same file the app saves. Save the `video` file with `curl -fL --proto =https --proto-redir =https -o ./clips/<filename> "<url>"` (the link lasts about 10 minutes); when the plugin's hook already saved it (a `Cuddler plugin:` note naming a file in `cuddler-out/` with the Cuddler.ai mark), that file is the one. If the answer says the file is still being made, ask again after a few seconds.
 
 ## Step 1 — Stamp
 

@@ -1,6 +1,6 @@
 {
   "name": "cuddler",
-  "version": "0.3.21",
+  "version": "0.4.0",
   "description": "Make AI videos and images on your own Cuddler account from ChatGPT, Codex, Claude Code or Cursor: connect and sign in, quoted renders, character clips, local clip review and the Cuddler.ai watermark.",
   "author": {
     "name": "Cuddler",
@@ -45,6 +45,7 @@
   "extensions": {
     "com.openai": {
       "onboardingSkill": "./skills/cuddler-setup/SKILL.md",
+      "hooks": "./hooks/hooks.json",
       "review": {
         "test_cases": {
           "positive": [
@@ -64,7 +65,7 @@
               "description": "An image, quoted first",
               "prompt": "Make a square image of a paper boat on a rain puddle at dusk.",
               "tools_triggered": "list_models, quote_image, create_image, get_image",
-              "expected_behavior": "Writes a short prompt, quotes it and shows the price in credits, then waits for the user's OK (or lets the host's own confirmation dialog ask). After the OK it calls create_image with maxCredits equal to the quote and an idempotency key, and returns the image. In Codex the file is also saved to ./out/."
+              "expected_behavior": "Writes a short prompt, quotes it and shows the price in credits, then waits for the user's OK (or lets the host's own confirmation dialog ask). After the OK it calls create_image with maxCredits equal to the quote and an idempotency key, and returns the image. In Codex the file is also saved to cuddler-out/ in the project."
             },
             {
               "description": "A video, quoted first",

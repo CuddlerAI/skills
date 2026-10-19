@@ -87,7 +87,20 @@ After "proceed" (with `confirmation: "host"`, right after the price line): `crea
 
 ### 7. Deliver
 
-`get_download_link` → download the `video` file (and the `poster` if useful) into `./out/`. If the user is going to post the clip, ask with `watermark: true`: the file then carries the Cuddler.ai corner mark, as the app's downloads do. It is a plain GET (`curl -fL --proto =https --proto-redir =https -o ./out/<filename> "<url>"`); the links last about 10 minutes. Reply in one line: local path, model, seconds, `creditsCharged`. In a chat app, where the user can't open a path on your machine (OpenClaw on Telegram, WhatsApp or Discord, for example), send the file into the chat the way your host attaches files: OpenClaw takes a line of its own, `MEDIA:` followed by the download link, and fetches the file itself, so send it while the link is fresh. Offer the `cuddler-review` skill before the clip is shown to anyone.
+Files go into `cuddler-out/` in the project, or into `~/Downloads/Cuddler/` when there is no project folder (the working directory is the home folder or `/`).
+
+- **Already saved?** In Claude Code and Codex installs from GitHub, the plugin's hook saves a finished file as soon as a tool returns it, and the result then carries a note that starts `Cuddler plugin:` and names the file (`saved … to cuddler-out/…`, or `… is already saved as …`). Use that file and don't download it again.
+- **Otherwise, download it.** `get_download_link` → the `video` file (and the `poster` if useful), with a plain GET: `curl -fL --proto =https --proto-redir =https -o cuddler-out/<filename> "<url>"`; the links last about 10 minutes. When you make the folder, put a `.gitignore` holding `*` in it (`mkdir -p cuddler-out && printf '*\n' > cuddler-out/.gitignore`), so the files stay out of the repository.
+- If the user is going to post the clip, ask `get_download_link` with `watermark: true`: the file then carries the Cuddler.ai corner mark, as the app's downloads do.
+
+Reply in one line: the file, model, seconds, `creditsCharged`, and the clip's page on cuddler.ai (`pageUrl`, when the result has one; only the account's owner can open it). Show the file the way your host previews it:
+
+- **Claude desktop app, Code tab:** a Markdown link whose text and target are both the path relative to the project (`cuddler-out/<name>.mp4`); a click plays it in the app.
+- **Codex app:** `![<title>](<absolute path to the file>)` on a line of its own, then the path. The absolute path is the project folder plus the relative path (`~` spelled out).
+- **A terminal** (Claude Code or Codex in a terminal) **or an editor:** the path only.
+- **A chat app**, where the user can't open a path on your machine (OpenClaw on Telegram, WhatsApp or Discord, for example): send the file into the chat the way your host attaches files. OpenClaw takes a line of its own, `MEDIA:` followed by the download link, and fetches the file itself, so send it while the link is fresh.
+
+Offer the `cuddler-review` skill before the clip is shown to anyone.
 
 ## When things go wrong
 
@@ -114,7 +127,7 @@ Every refusal, with what to change, is in [references/model-routing.md](referenc
 
 ## Images
 
-`quote_image` (`prompt`, `aspectRatio`, `resolution`, `modelId`, `references`) → gate → `create_image` with `maxCredits` and its own `idempotencyKey`. Several images: price them in one gate, then one `create_image` per image, each with its own key (with `confirmation: "host"`, the host asks once per image; say so with the price). Save each image into `./out/` with a plain GET (`curl -fL -o ./out/<last part of image.url> "<image.url>"`) and reply with the local path and `creditsCharged`: some hosts, such as the Codex app, don't show pictures from web addresses but do show a local file. In a chat app, send the image into the chat as step 7 does for a video, with `image.url` as the link. A created image can be the reference for a video: `{ "url": image.url }`.
+`quote_image` (`prompt`, `aspectRatio`, `resolution`, `modelId`, `references`) → gate → `create_image` with `maxCredits` and its own `idempotencyKey`. Several images: price them in one gate, then one `create_image` per image, each with its own key (with `confirmation: "host"`, the host asks once per image; say so with the price). Each image goes into `cuddler-out/` as in step 7: use the file the plugin's hook names when its `Cuddler plugin:` note is there, otherwise save it with a plain GET (`curl -fL --proto =https --proto-redir =https -o cuddler-out/<last part of image.url> "<image.url>"`). Reply with the file and `creditsCharged`, shown the way step 7 shows a video: some hosts, such as the Codex app, don't show pictures from web addresses but do show a local file. In a chat app, send the image into the chat as step 7 does for a video, with `image.url` as the link. A created image can be the reference for a video: `{ "url": image.url }`.
 
 ## References
 

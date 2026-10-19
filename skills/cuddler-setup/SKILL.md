@@ -76,7 +76,7 @@ Only when the user wants to try it.
 1. `list_models` → among `image` entries with `available: true`, the one with the lowest `creditsPerImage`.
 2. `quote_image` with a simple prompt ("A paper boat on a rain puddle at dusk, soft light, no people") and `aspectRatio: "1:1"`.
 3. Gate (Hard rule 2). If the user declines, in chat or in the host's dialog, setup is still complete.
-4. On "proceed" (with `confirmation: "host"`, right after the price line): `create_image` with `maxCredits` = the quote and an `idempotencyKey` you choose once (`setup-test-<yyyymmddhhmm>`). Save the image into `./out/` as the `cuddler-generate` skill does, and report the local path and the credits charged.
+4. On "proceed" (with `confirmation: "host"`, right after the price line): `create_image` with `maxCredits` = the quote and an `idempotencyKey` you choose once (`setup-test-<yyyymmddhhmm>`). Save the image into `cuddler-out/` as the `cuddler-generate` skill does (the plugin's hook may already have saved it), and report the local path and the credits charged.
 
 ## Done — what to report
 
@@ -96,7 +96,8 @@ Starter prompts to offer: "Make a 10-second vertical clip of …" · "Turn my ch
 | Codex asks to allow `create_image` or `create_video` | That is Codex's own approval, on top of the price question: choose Always allow so the price question is the only one; if Codex asks again later, allow it again; Cuddler's server never charges more than `maxCredits` either way |
 | Claude Code asks to allow a Cuddler tool that spends credits | Its own permission prompt: choose the option that stops asking for that tool; the skills still show the price, Cuddler confirms each paid call in Claude Code's own dialog, and the server never charges more than `maxCredits` |
 | The host opens a Cuddler dialog asking to confirm spending credits | Cuddler asks through the host when the quote said `confirmation: "host"`: tick the box (Space in Claude Code) and confirm to go ahead, or decline; nothing is charged without it, and after ten minutes without an answer Cuddler asks again. When Cuddler asks for approval in the browser instead, the dialog links to the approval page |
-| Codex asks to allow network access for a `curl` download | The skill is saving the finished file from Cuddler's storage into `./out/`, and Codex's sandbox has no network by default: allow it |
+| Codex asks to allow network access for a `curl` download | The skill is saving the finished file from Cuddler's storage into `cuddler-out/`, and Codex's sandbox has no network by default: allow it |
+| Finished files aren't saved on their own | The plugin's hook saves them in Claude Code and in Codex installs from GitHub. Codex runs it only after you trust it (`/hooks` in the CLI); it needs Node.js 18 or later, and `CUDDLER_SAVE_MEDIA=0` turns it off. Without it, the skill downloads the file itself |
 | Codex refuses a paid tool in `codex exec` ("approval policy is never") | Non-interactive Codex never asks; allow the tool for that run, as the install guide shows |
 | Codex says the model is not supported | The Codex CLI is older than the Codex app; update the CLI |
 | Disconnect this agent | cuddler.ai → Settings → Developer API tokens → revoke the connection; then remove the plugin or server in the agent |

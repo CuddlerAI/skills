@@ -4,7 +4,7 @@
 
 ## Checklist
 
-- [ ] `node scripts/validate.mjs` and `node --test scripts/validate.test.mjs` pass.
+- [ ] `node scripts/validate.mjs`, `node --test scripts/validate.test.mjs` and `node --test scripts/save-media.test.mjs` pass.
 - [ ] A change to what a skill does: eval cases added or updated, and one `claude plugin eval` round run (paste the score below).
 - [ ] A change to a public claim: edited in `claims.json`, then `node scripts/claims.mjs` run. The Cuddler team updates the marketing copy that repeats it separately; don't link private repositories here.
 - [ ] `VERSION`, every plugin manifest and `CHANGELOG.md` bumped together (every change to `main` is a release).

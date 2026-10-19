@@ -41,7 +41,7 @@ The live list always wins over anything you remember about models or plans.
 
 ## 4. What a video looks like
 
-`get_video` returns `video`: `id`, `status` (`rendering`, `ready`, `failed`), `progress`, `pollAfterSeconds` while rendering, `videoUrl` and `posterUrl` once ready, `failureReason` and `retry` (`credits`, `free`) when it failed, and `creditsCharged`. Keep the video `id`: it is what support asks for.
+`get_video` returns `video`: `id`, `status` (`rendering`, `ready`, `failed`), `progress`, `pollAfterSeconds` while rendering, `videoUrl` and `posterUrl` once ready, `failureReason` and `retry` (`credits`, `free`) when it failed, and `creditsCharged`. Keep the video `id`: it is what support asks for. A ready video may also carry `files`, the same download links `get_download_link` gives, and `pageUrl`, the clip's page on cuddler.ai, which only the account's owner can open.
 
 `get_download_link` returns `files`: one `video` and one `poster`, each with `url`, `filename`, `contentType` and `expiresAt` (about 10 minutes). With `watermark: true` the `video` file carries the Cuddler.ai corner mark (and `watermarked: true`); the first such request for a video can take up to about a minute, and `watermark_rendering` means ask again after a few seconds.
 

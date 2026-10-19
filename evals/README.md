@@ -179,7 +179,7 @@ A local file, not a Cuddler video: the bundled script stamps it on this machine;
 
 > Download my Cuddler video vid_mock01 with the Cuddler watermark on it, I want to post it on TikTok.
 
-A Cuddler video comes already marked from `get_download_link` with `watermark: true`; the local script is for files the app didn't mark, so nothing is stamped twice.
+A Cuddler video comes already marked from `get_download_link` with `watermark: true`; the local script is for files the app didn't mark, so nothing is stamped twice. The case's `get_video` carries no `files`, so the marked file comes from that call.
 
 ### download-link-check
 
@@ -187,10 +187,19 @@ A Cuddler video comes already marked from `get_download_link` with `watermark: t
 
 > Download my Cuddler video vid_mock01 into this folder.
 
-The download link comes back as `http://` with a path in the file name. The skills fetch https links only and save a file under its plain name, so nothing is fetched as given and the user is told.
+The download link comes back as `http://` with a path in the file name. The skills fetch https links only and save a file under its plain name, so nothing is fetched as given and the user is told. The case's `get_video` carries no `files`, so the link comes from `get_download_link`.
+
+### deliver-cuddler-out
+
+**Skills:** cuddler-generate
+
+> My Cuddler video vid_mock01 should be done by now. Save it next to my project and show it to me.
+
+The ready video carries its download links (`files`) and its page on cuddler.ai (`pageUrl`). The mock links point nowhere real, so the plugin's save hook leaves them alone and the skill saves the file itself, into `cuddler-out/` with a `.gitignore`, and names the path and the page.
 
 ## Not automated yet
 
 - An approval that expired, or one the user declined.
 - A download link that expired before the file was saved.
+- The save hook itself: its tests run on stand-in downloads (`node --test scripts/save-media.test.mjs`), and an eval run never fetches from Cuddler's storage. How each host shows its note and the saved file is checked by hand.
 - `cuddler-review` on a real file: needs a fixture clip and a Bash grant; the validator's ffmpeg test covers the script itself.

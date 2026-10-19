@@ -23,6 +23,7 @@
       "npx skills add CuddlerAI/skills"
     ]
   },
+  "files": "In Claude Code, and in Codex once you trust the plugin's hook, a finished video or image is saved on its own into `cuddler-out/` in your project, or into `~/Downloads/Cuddler/` when there is no project folder. The hook fetches only from Cuddler's own storage, over https, and gives `cuddler-out/` a `.gitignore` so the files stay out of your repository. It needs Node.js 18 or later; `CUDDLER_SAVE_MEDIA=0` turns it off and `CUDDLER_OPEN_AFTER_SAVE=1` opens each file once it is saved. Elsewhere, the skills save the file themselves.",
   "credits": "Renders spend credits from your own Cuddler account: the quote is the price. Your agent shows the price first and waits for your OK.",
   "limits": "Cuddler's server charges at most the quoted price for each render, and in agents that support it, it also asks you in the agent's own dialog before each paid call. There is no separate daily cap unless Cuddler sets one: your credit balance is the limit.",
   "plans": "Connecting needs a paid Cuddler plan (Lite, Pro or Ultra) or a place in Cuddler's Creator Partnership Program; free plans, trials and gifted plans can't connect. Videos need a plan that includes video. The setup skill tells you what your account can make.",

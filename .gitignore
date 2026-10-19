@@ -3,6 +3,7 @@ node_modules/
 *.review/
 evals/results/
 out/
+cuddler-out/
 cc/
 clips/
 dist/

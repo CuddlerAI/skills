@@ -27,7 +27,7 @@ Identical in every Cuddler skill (CI checks that the copies match). They overrid
 ## Requirements
 
 - `ffmpeg` and `ffprobe` on PATH. If they are missing, ask before installing (`brew install ffmpeg` on macOS, `sudo apt-get install ffmpeg` on Debian or Ubuntu).
-- A local file. For a Cuddler video that isn't downloaded yet: `get_video` until it is `ready`, then `get_download_link` and save the `video` file with `curl -fL --proto =https --proto-redir =https -o ./clips/<filename> "<url>"` (the link lasts about 10 minutes).
+- A local file. For a Cuddler video that isn't downloaded yet: `get_video` until it is `ready`, then `get_download_link` and save the `video` file with `curl -fL --proto =https --proto-redir =https -o ./clips/<filename> "<url>"` (the link lasts about 10 minutes). When the plugin's hook already saved it (a `Cuddler plugin:` note naming a file in `cuddler-out/`), review that file instead.
 
 ## Step 1 — Extract
 

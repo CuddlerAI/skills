@@ -20,6 +20,8 @@ The skills are then available as:
 
 You rarely need to type them: ask for what you want ("make a 10-second clip of …") and Claude picks the right skill.
 
+The plugin also brings a hook that saves each finished video or image into `cuddler-out/` in your project (or `~/Downloads/Cuddler/` outside one). It needs Node.js 18 or later and fetches only from Cuddler's own storage; `CUDDLER_SAVE_MEDIA=0` turns it off, and `CUDDLER_OPEN_AFTER_SAVE=1` opens each file once it is saved. In the desktop app's Code tab, click the path in the reply to play the clip.
+
 Update: in `/plugin`, open the Cuddler marketplace and choose **Enable auto-update**, and Claude Code keeps the marketplace and the plugin up to date. By hand: `/plugin marketplace update cuddler`. Remove: `/plugin uninstall cuddler@cuddler`.
 
 ## Claude app
@@ -43,7 +45,8 @@ Cuddler isn't in the public plugin directory yet, so add its marketplace first. 
 2. Find **Cuddler** on the **Personal** tab, where added marketplaces show, and install it. The four Cuddler skills come with it; there is nothing to add under **Skills**.
 3. Installing opens a Cuddler sign-in page in your browser: sign in, tick **Spend credits** if you want images and videos, and allow it within five minutes. The page may say Cuddler hasn't reviewed the app; that's expected for Codex. Missed it? Settings → MCP servers → Cuddler → Authenticate.
 4. Start a new chat and mention the plugin: `@Cuddler make a 10-second vertical clip of a paper boat in the rain`.
-5. Keep the permission mode on **Ask for approval**. Before a paid render Codex asks to allow `create_image` or `create_video`: choose **Always allow**, so the skill's price question is the only one next time; if Codex asks again later, allow it again. The skills always show the price first and wait for your OK, and Cuddler's server never charges more than the quoted `maxCredits`. With **Full access**, Codex doesn't ask at all, so the price question and that cap are the only checks. When an image or clip is ready, the skill saves it into `./out/`; Codex's sandbox has no network by default, so Codex also asks to allow that download.
+5. Keep the permission mode on **Ask for approval**. Before a paid render Codex asks to allow `create_image` or `create_video`: choose **Always allow**, so the skill's price question is the only one next time; if Codex asks again later, allow it again. The skills always show the price first and wait for your OK, and Cuddler's server never charges more than the quoted `maxCredits`. With **Full access**, Codex doesn't ask at all, so the price question and that cap are the only checks.
+6. When an image or clip is ready, it is saved into `cuddler-out/` in your project. The plugin brings a hook that does this on its own (Node.js 18 or later), but Codex runs a plugin's hooks only after you review and trust them. Until then, the skill downloads the file itself; Codex's sandbox has no network by default, so Codex asks to allow that download.
 
 ## Codex CLI
 
@@ -58,7 +61,7 @@ Cuddler isn't in the public plugin directory yet, so add its marketplace first. 
 
    Inside Codex, `/plugins` does the first two steps. The login opens the Cuddler sign-in page: finish it within five minutes, and tick **Spend credits** if you want images and videos. On a remote machine add `--no-browser` and open the printed link yourself. Check the connection with `/mcp`.
 3. Start a new session and ask for what you want, or call a skill directly with `$cuddler-generate`.
-4. Before a paid render Codex asks to allow `create_image` or `create_video`: choose **Always allow** so only the skill's price question remains (**Allow** and **Allow for this session** work too); if it asks again later, allow it again. Saving the finished file into `./out/` asks for network access the same way.
+4. Before a paid render Codex asks to allow `create_image` or `create_video`: choose **Always allow** so only the skill's price question remains (**Allow** and **Allow for this session** work too); if it asks again later, allow it again. Saving the finished file into `cuddler-out/` asks for network access the same way, unless the plugin's save hook did it: trust the hook with `/hooks` (Codex skips a plugin's hooks until you do), and it saves each finished file on its own.
 
 ### Scripts and `codex exec`
 

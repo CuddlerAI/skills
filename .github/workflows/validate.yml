@@ -35,6 +35,8 @@ jobs:
         run: node --test scripts/validate.test.mjs
       - name: Release script tests
         run: node --test scripts/release.test.mjs
+      - name: Save hook tests
+        run: node --test scripts/save-media.test.mjs
 
   review-script:
     name: cuddler-review/scripts/contact-sheet.sh on Linux

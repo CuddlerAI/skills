@@ -209,6 +209,8 @@ test("the save-media hook: one PostToolUse matcher for Cuddler's media tools, fo
   expectError(hooks(entry(() => ({ matcher: "^mcp__.*cuddler.*__(get_video|get_image)$" }))), /the matcher misses mcp__plugin_cuddler_cuddler__get_download_link/);
   expectError(hooks(entry(() => ({ matcher: "^mcp__.*cuddler.*__(get_video|get_download_link|create_image|get_image|download_video)$" }))), /the matcher misses mcp__claude_ai_Cuddler__get_video/);
   expectError(hooks(entry(() => ({ matcher: "(?i)^mcp__.*cuddler.*__get_video$" }))), /no inline flags/);
+  expectError(hooks(entry(() => ({ matcher: "^mcp__(?!other).*__(get_video|get_image)$" }))), /no lookarounds or backreferences/);
+  expectError(hooks(entry(() => ({ matcher: "^(mcp)__\\1.*$" }))), /no lookarounds or backreferences/);
   expectError(hooks(entry(() => ({ matcher: "^mcp__.*__.*$" }))), /catches mcp__plugin_cuddler_cuddler__create_video/);
   expectError(hooks(command({ command: 'node "${CLAUDE_PLUGIN_ROOT}/hooks/save-media.mjs"' })), /must end with 2>\/dev\/null \|\| true/);
   expectError(hooks(command({ command: "node ${CLAUDE_PLUGIN_ROOT}/hooks/save-media.mjs 2>/dev/null || true" })), /the command must start with node/);

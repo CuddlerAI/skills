@@ -16,14 +16,16 @@
 //   complete; anything that fails is deleted.
 // - One file per id and variant: a file already saved is not fetched again.
 // - It prints no link and no prompt. When it can't save a file, it says nothing and the skill downloads the file itself.
-// - CUDDLER_SAVE_MEDIA=0 turns it off; CUDDLER_OPEN_AFTER_SAVE=1 opens a saved file in the system's default player.
+// - It goes through an http:// proxy that HTTPS_PROXY or ALL_PROXY names, as curl does. With any other proxy set, it
+//   fetches nothing, so the download never leaves the route the user chose.
+// - CUDDLER_SAVE_MEDIA=0 turns it off; CUDDLER_OPEN_AFTER_SAVE=1 opens the saved video or image in the system's default app.
 //
 // It exits 0 in every case, so a failure never blocks the agent.
 
 import { spawn } from "node:child_process";
-import { createWriteStream } from "node:fs";
+import { createWriteStream, unlinkSync } from "node:fs";
 import * as fsp from "node:fs/promises";
-import { lstat, mkdir, readdir, rename, stat, unlink, writeFile } from "node:fs/promises";
+import { lstat, mkdir, readdir, realpath, rename, stat, unlink, writeFile } from "node:fs/promises";
 import { request as httpRequest } from "node:http";
 import { request } from "node:https";
 import { homedir } from "node:os";
@@ -52,6 +54,8 @@ export const LIMITS = Object.freeze({
   inputBytes: 16 * 1024 * 1024,
   /** One whole run, under the 300-second timeout in hooks.json. */
   runMs: 240_000,
+  /** Reaching the storage host (name lookup, connection, TLS, the first answer) may take this long, once per run. */
+  connectMs: 10_000,
   /** A download that sends nothing for this long is dropped. */
   idleMs: 30_000,
   /** A .part file older than this is left over from a run that died, and is replaced. */
@@ -83,7 +87,7 @@ export function cuddlerTool(name) {
   return match[2].toLowerCase();
 }
 
-/** The JSON of one text block: plain, or inside the server's <untrusted-user-content> block. Null when it isn't JSON. */
+/** The JSON object or array in one text: plain, or inside the server's <untrusted-user-content> block. Null otherwise. */
 export function parseText(text) {
   if (typeof text !== "string") return null;
   let body = text.trim();
@@ -93,10 +97,10 @@ export function parseText(text) {
     if (open < 0 || close <= open) return null;
     body = body.slice(open + 1, close);
   }
-  if (!body.startsWith("{")) return null;
+  if (!body.startsWith("{") && !body.startsWith("[")) return null;
   try {
     const value = JSON.parse(body);
-    return value && typeof value === "object" && !Array.isArray(value) ? value : null;
+    return value && typeof value === "object" ? value : null;
   } catch {
     return null;
   }
@@ -112,7 +116,11 @@ const looksLikeAnswer = (value) =>
  */
 export function resultObjects(response, depth = 0) {
   if (response == null || depth > 4) return [];
-  if (typeof response === "string") return [parseText(response)].filter(Boolean);
+  if (typeof response === "string") {
+    const parsed = parseText(response);
+    if (!parsed) return [];
+    return !Array.isArray(parsed) && looksLikeAnswer(parsed) ? [parsed] : resultObjects(parsed, depth + 1);
+  }
   if (Array.isArray(response)) return response.flatMap((item) => resultObjects(item, depth + 1));
   if (typeof response !== "object" || response.isError === true) return [];
   if (response.type === "text" && typeof response.text === "string") return resultObjects(response.text, depth + 1);
@@ -300,13 +308,18 @@ export function destination(cwd, home, platform = process.platform) {
 
 /**
  * Makes the folder; in a project, also a .gitignore holding `*`, so the files stay out of the repository. A project's
- * cuddler-out/ that is a symbolic link is refused: a cloned repository could point it anywhere.
+ * cuddler-out/ that is a symbolic link is refused (a cloned repository could point it anywhere), and so is one that
+ * another user owns or that anyone may write to.
  */
 export async function prepare(dest) {
   await mkdir(dest.dir, { recursive: true });
   const info = await lstat(dest.dir);
   if (!info.isDirectory() && !(info.isSymbolicLink() && !dest.project && (await stat(dest.dir)).isDirectory())) {
     throw new Error("not a folder");
+  }
+  // In a project, also refuse a folder someone else made or anyone may write to (a shared /tmp, say).
+  if (dest.project && typeof process.getuid === "function" && (info.uid !== process.getuid() || (info.mode & 0o002) !== 0)) {
+    throw new Error("not the user's own folder");
   }
   if (dest.project) {
     try {
@@ -326,26 +339,53 @@ async function freeBytes(dir) {
 
 // ── fetching ────────────────────────────────────────────────────────────────
 
-/** GET over https without following redirects; resolves with the response. fetchTo takes another `get` in tests. */
+/** An error from reaching the storage host, not from the file: the run stops trying the other files. */
+const networkError = (message) => Object.assign(new Error(message), { network: true });
+
+/** .part files this run is writing, removed if the host stops the run (Esc, a timeout). */
+const activeParts = new Set();
+
+/**
+ * GET over https without following redirects; resolves with the response. Reaching the host and getting the first
+ * answer must take at most LIMITS.connectMs (a socket timeout starts only once connected), then the body may pause
+ * for LIMITS.idleMs at most. fetchTo takes another `get` in tests.
+ */
 async function httpsGet(url, { signal, env = process.env } = {}) {
   const proxy = proxyFor(url, env);
-  const socket = proxy ? await tunnel(proxy, url, signal) : null;
-  return new Promise((resolvePromise, reject) => {
-    const options = { method: "GET", headers: { accept: "*/*", "user-agent": "cuddler-plugin-save-media" }, signal };
-    // Through a proxy, TLS runs inside the tunnel and still checks the certificate of the storage host itself.
-    if (socket) options.createConnection = () => tlsConnect({ socket, servername: url.hostname });
-    const req = request(url, options);
-    req.on("response", resolvePromise);
-    req.on("error", reject);
-    req.setTimeout(LIMITS.idleMs, () => req.destroy(new Error("idle")));
-    req.end();
-  });
+  if (proxy === false) throw networkError("a proxy this script can't use");
+  let inFlight = null;
+  let late = false;
+  const timer = setTimeout(() => {
+    late = true;
+    inFlight?.destroy(networkError("connect timeout"));
+  }, LIMITS.connectMs);
+  try {
+    const socket = proxy ? await tunnel(proxy, url, signal, (req) => (inFlight = req)) : null;
+    if (late) {
+      socket?.destroy();
+      throw networkError("connect timeout");
+    }
+    return await new Promise((resolvePromise, reject) => {
+      const options = { method: "GET", headers: { accept: "*/*", "user-agent": "cuddler-plugin-save-media" }, signal };
+      // Through a proxy, TLS runs inside the tunnel and still checks the certificate of the storage host itself.
+      if (socket) options.createConnection = () => tlsConnect({ socket, servername: url.hostname });
+      const req = request(url, options);
+      inFlight = req;
+      req.on("response", resolvePromise);
+      req.on("error", (e) => reject(Object.assign(e, { network: true })));
+      req.setTimeout(LIMITS.idleMs, () => req.destroy(new Error("idle")));
+      req.end();
+    });
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /**
- * The http:// proxy that HTTPS_PROXY (or ALL_PROXY) names for this URL, or null: none set, NO_PROXY covers the host, or a
- * proxy this script can't use (only plain http:// proxies, which tunnel with CONNECT). Curl reads the same variables, so
- * the hook reaches storage the way the skill's own download would.
+ * How to reach this URL: null to go direct (no proxy set, or NO_PROXY covers the host), the http:// proxy that
+ * HTTPS_PROXY (or ALL_PROXY) names, or false when a proxy is set that this script can't use (socks, https://, a value
+ * that doesn't parse). Curl reads the same variables; with false, the hook leaves the download to the skill's curl, so
+ * a file never goes around the proxy the user chose.
  */
 export function proxyFor(url, env = process.env) {
   const raw = env.HTTPS_PROXY || env.https_proxy || env.ALL_PROXY || env.all_proxy;
@@ -362,13 +402,13 @@ export function proxyFor(url, env = process.env) {
   try {
     proxy = new URL(raw.includes("://") ? raw : `http://${raw}`);
   } catch {
-    return null;
+    return false;
   }
-  return proxy.protocol === "http:" ? proxy : null;
+  return proxy.protocol === "http:" ? proxy : false;
 }
 
-/** A CONNECT tunnel through `proxy` to port 443 of the URL's host. */
-function tunnel(proxy, url, signal) {
+/** A CONNECT tunnel through `proxy` to port 443 of the URL's host; `track` gets the request, so it can be cut short. */
+function tunnel(proxy, url, signal, track) {
   return new Promise((resolvePromise, reject) => {
     const headers = { host: `${url.hostname}:443` };
     if (proxy.username) {
@@ -376,13 +416,13 @@ function tunnel(proxy, url, signal) {
       headers["proxy-authorization"] = `Basic ${Buffer.from(credentials).toString("base64")}`;
     }
     const req = httpRequest({ host: proxy.hostname, port: proxy.port || 80, method: "CONNECT", path: `${url.hostname}:443`, headers, signal });
+    track(req);
     req.on("connect", (res, socket) => {
       if (res.statusCode === 200) return resolvePromise(socket);
       socket.destroy();
-      reject(new Error(`proxy ${res.statusCode}`));
+      reject(networkError(`proxy ${res.statusCode}`));
     });
-    req.on("error", reject);
-    req.setTimeout(LIMITS.idleMs, () => req.destroy(new Error("idle")));
+    req.on("error", (e) => reject(Object.assign(e, { network: true })));
     req.end();
   });
 }
@@ -392,7 +432,9 @@ function tunnel(proxy, url, signal) {
  * the disk and the first bytes. Resolves with { format, bytes }; on any failure `part` is deleted and it rejects.
  */
 export async function fetchTo(url, part, kind, { get = httpsGet, signal, env, free = freeBytes, cap = capFor(kind) } = {}) {
-  const res = await get(url, { signal, env });
+  const res = await get(url, { signal, env }).catch((e) => {
+    throw Object.assign(e instanceof Error ? e : new Error(String(e)), { network: e?.network ?? true });
+  });
   let created = false;
   try {
     if (res.statusCode !== 200) throw new Error(`status ${res.statusCode}`);
@@ -430,12 +472,14 @@ export async function fetchTo(url, part, kind, { get = httpsGet, signal, env, fr
     const out = createWriteStream(part, { flags: "wx" });
     out.on("open", () => {
       created = true;
+      activeParts.add(part);
     });
     await pipeline(res, guard, out, { signal });
     return { format, bytes };
   } catch (e) {
     res.destroy?.();
     if (created) await unlink(part).catch(() => {}); // never another run's .part
+    activeParts.delete(part);
     throw e;
   }
 }
@@ -463,15 +507,17 @@ export async function saveOne(target, dest, { get, signal, env, free, now = new 
   const { format, bytes } = await fetchTo(url, part, target.kind, { get, signal, env, free });
   const name = `${stem}.${format}`;
   const final = join(dest.dir, name);
-  if (await stat(final).then(() => true, () => false)) {
-    await unlink(part).catch(() => {}); // a run that finished first saved the same file
-    return { status: "exists", name };
-  }
   try {
+    if (await stat(final).then(() => true, () => false)) {
+      await unlink(part).catch(() => {}); // a run that finished first saved the same file
+      return { status: "exists", name };
+    }
     await rename(part, final);
   } catch (e) {
     await unlink(part).catch(() => {});
     throw e;
+  } finally {
+    activeParts.delete(part);
   }
   return { status: "saved", name, bytes };
 }
@@ -514,14 +560,27 @@ export async function run(input, options = {}) {
   const env = options.env ?? process.env;
   if (env.CUDDLER_SAVE_MEDIA === "0") return null;
   if (!cuddlerTool(input?.tool_name)) return null;
-  const targets = resultObjects(input.tool_response).flatMap(mediaTargets).filter((target) => allowedUrl(target.url));
+  // One file once, however many times the answer carries it (the text and structuredContent both do).
+  const seen = new Set();
+  const targets = resultObjects(input.tool_response)
+    .flatMap(mediaTargets)
+    .filter((target) => {
+      const url = allowedUrl(target.url);
+      if (!url || proxyFor(url, env) === false) return false;
+      const keys = [target.url, `${idPart(target.id)}${variantOf(target)}:${target.kind}`];
+      if (keys.some((key) => seen.has(key))) return false;
+      keys.forEach((key) => seen.add(key));
+      return true;
+    });
   if (!targets.length) return null;
 
   const home = options.home ?? homedir();
   const platform = options.platform ?? process.platform;
-  const cwd = typeof input.cwd === "string" && input.cwd ? input.cwd : process.cwd();
-  const isDir = await stat(cwd).then((s) => s.isDirectory(), () => false);
-  let dest = isDir ? destination(cwd, home, platform) : fallbackDestination(home);
+  // Compared as real paths, so a home folder reached through a link still counts as home.
+  const cwd = await realpath(typeof input.cwd === "string" && input.cwd ? input.cwd : process.cwd()).catch(() => null);
+  const isDir = cwd !== null && (await stat(cwd).then((s) => s.isDirectory(), () => false));
+  const realHome = await realpath(home).catch(() => home);
+  let dest = isDir ? destination(cwd, realHome, platform) : fallbackDestination(home);
   try {
     await prepare(dest);
   } catch {
@@ -539,8 +598,9 @@ export async function run(input, options = {}) {
     try {
       const result = await saveOne(target, dest, { ...options, env });
       if (result) results.push({ target, result });
-    } catch {
-      // the skill downloads it instead
+    } catch (e) {
+      if (e?.network) break; // the host can't be reached now: don't make the agent wait for every file
+      // otherwise the skill downloads this one instead
     }
   }
   if (!results.length) return null;
@@ -577,5 +637,16 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   const quit = () => process.exit(0);
   process.on("uncaughtException", quit);
   process.on("unhandledRejection", quit);
+  // Stopped by the host: delete what this run was writing, so the next run doesn't wait for a .part nobody finishes.
+  for (const signal of ["SIGTERM", "SIGINT", "SIGHUP"]) {
+    process.on(signal, () => {
+      for (const part of activeParts) {
+        try {
+          unlinkSync(part);
+        } catch {}
+      }
+      quit();
+    });
+  }
   main().then(quit, quit);
 }

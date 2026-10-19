@@ -87,16 +87,16 @@ After "proceed" (with `confirmation: "host"`, right after the price line): `crea
 
 ### 7. Deliver
 
-Files go into `cuddler-out/` in the project, or into `~/Downloads/Cuddler/` when there is no project folder (the working directory is the home folder or `/`).
+Files go into `cuddler-out/` in the project, or into `~/Downloads/Cuddler/` when there is no project folder (the working directory is the home folder or `/`) or when `cuddler-out` is a symbolic link: a cloned repository could point it anywhere.
 
 - **Already saved?** In Claude Code and Codex installs from GitHub, the plugin's hook saves a finished file as soon as a tool returns it, and the result then carries a note that starts `Cuddler plugin:` and names the file (`saved … to cuddler-out/…`, or `… is already saved as …`). Use that file and don't download it again.
-- **Otherwise, download it.** `get_download_link` → the `video` file (and the `poster` if useful), with a plain GET: `curl -fL --proto =https --proto-redir =https -o cuddler-out/<filename> "<url>"`; the links last about 10 minutes. When you make the folder, put a `.gitignore` holding `*` in it (`mkdir -p cuddler-out && printf '*\n' > cuddler-out/.gitignore`), so the files stay out of the repository.
-- If the user is going to post the clip, ask `get_download_link` with `watermark: true`: the file then carries the Cuddler.ai corner mark, as the app's downloads do.
+- **Otherwise, download it.** `get_download_link` → the `video` file (and the `poster` if useful), with a plain GET: `curl -fL --proto =https --proto-redir =https -o cuddler-out/<filename> "<url>"`; the links last about 10 minutes. Give the folder a `.gitignore` holding `*`, without replacing one that is there, so the files stay out of the repository: `[ ! -L cuddler-out ] && mkdir -p cuddler-out && (set -C; printf '*\n' > cuddler-out/.gitignore) 2>/dev/null`.
+- **The Cuddler.ai mark.** A video saved as `…-watermarked.mp4`, or a file with `watermarked: true`, carries the Cuddler.ai corner mark, like the Cuddler app's downloads. If the user is going to post the clip, ask `get_download_link` with `watermark: true` to be sure of it. If they want a file without the mark, ask with `watermark: false`; when their plan doesn't include that, the answer is `watermark_required`: tell them the file they have carries the mark.
 
 Reply in one line: the file, model, seconds, `creditsCharged`, and the clip's page on cuddler.ai (`pageUrl`, when the result has one; only the account's owner can open it). Show the file the way your host previews it:
 
 - **Claude desktop app, Code tab:** a Markdown link whose text and target are both the path relative to the project (`cuddler-out/<name>.mp4`); a click plays it in the app.
-- **Codex app:** `![<title>](<absolute path to the file>)` on a line of its own, then the path. The absolute path is the project folder plus the relative path (`~` spelled out).
+- **Codex app:** `![<title>](<absolute path to the file>)` on a line of its own, then the path. The absolute path is the project folder plus the relative path (`~` spelled out); the app needs it to show the file, so write it only here.
 - **A terminal** (Claude Code or Codex in a terminal) **or an editor:** the path only.
 - **A chat app**, where the user can't open a path on your machine (OpenClaw on Telegram, WhatsApp or Discord, for example): send the file into the chat the way your host attaches files. OpenClaw takes a line of its own, `MEDIA:` followed by the download link, and fetches the file itself, so send it while the link is fresh.
 

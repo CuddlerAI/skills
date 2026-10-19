@@ -5,7 +5,7 @@
 
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, utimesSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { PassThrough } from "node:stream";
@@ -189,6 +189,8 @@ test("tool results are read in every shape a host hands them over", () => {
   assert.deepEqual(resultObjects({ content: [{ type: "text", text }], structuredContent: body }), [body, body]);
   assert.deepEqual(resultObjects(body), [body]);
   assert.deepEqual(resultObjects({ Ok: { content: [{ type: "text", text }] } }), [body], "a host's own wrapper");
+  assert.deepEqual(resultObjects(JSON.stringify([{ type: "text", text }])), [body], "content blocks as a JSON string");
+  assert.deepEqual(resultObjects(JSON.stringify({ content: [{ type: "text", text }] })), [body], "the MCP result as a JSON string");
   assert.deepEqual(resultObjects({ isError: true, content: [{ type: "text", text }] }), []);
   assert.deepEqual(resultObjects(null), []);
 });
@@ -400,6 +402,65 @@ test("nothing happens for a rendering video, another tool, a refused host, or wi
   }
 });
 
+test("a file the answer carries twice (text and structuredContent) is saved and reported once", async () => {
+  const dirs = tempDirs();
+  try {
+    const video = readyVideo();
+    const net = networkFor(video);
+    const input = { cwd: dirs.project, tool_name: "mcp__cuddler__get_video", tool_response: { content: [{ type: "text", text: fence("get_video", { video }) }], structuredContent: { video } } };
+    const text = await run(input, { env: {}, home: dirs.home, get: net.get, free: roomy });
+    assert.equal(net.calls.length, 2);
+    assert.equal(text.match(/vid_test01-watermarked\.mp4/g).length, 1, text);
+    assert.doesNotMatch(text, /already saved/);
+  } finally {
+    dirs.done();
+  }
+});
+
+test("when storage can't be reached, the run stops at the first file instead of waiting on each", async () => {
+  const dirs = tempDirs();
+  try {
+    const calls = [];
+    const get = async (url) => {
+      calls.push(String(url));
+      throw Object.assign(new Error("connect timeout"), { network: true });
+    };
+    assert.equal(await run(hookInput(dirs.project, { video: readyVideo() }), { env: {}, home: dirs.home, get, free: roomy }), null);
+    assert.equal(calls.length, 1);
+  } finally {
+    dirs.done();
+  }
+});
+
+test("with a proxy set that the hook can't use, nothing is fetched and no folder is made", async () => {
+  const dirs = tempDirs();
+  try {
+    const video = readyVideo();
+    const net = networkFor(video);
+    assert.equal(await run(hookInput(dirs.project, { video }), { env: { ALL_PROXY: "socks5h://127.0.0.1:1080" }, home: dirs.home, get: net.get, free: roomy }), null);
+    assert.equal(net.calls.length, 0);
+    assert.ok(!existsSync(join(dirs.project, "cuddler-out")));
+  } finally {
+    dirs.done();
+  }
+});
+
+test("a project's cuddler-out/ that anyone may write to is not used; the file goes to ~/Downloads/Cuddler", async () => {
+  if (process.platform === "win32") return;
+  const dirs = tempDirs();
+  try {
+    const out = join(dirs.project, "cuddler-out");
+    mkdirSync(out);
+    chmodSync(out, 0o777);
+    const video = readyVideo();
+    const text = await run(hookInput(dirs.project, { video }), { env: {}, home: dirs.home, get: networkFor(video).get, free: roomy });
+    assert.match(text, /~\/Downloads\/Cuddler\//);
+    assert.deepEqual(readdirSync(out), []);
+  } finally {
+    dirs.done();
+  }
+});
+
 test("a failed download says nothing and leaves nothing, so the skill downloads the file itself", async () => {
   const dirs = tempDirs();
   try {
@@ -484,7 +545,7 @@ test("CUDDLER_OPEN_AFTER_SAVE=1 opens the saved video, not the poster, with the 
     const video = readyVideo();
     const opened = [];
     await run(hookInput(dirs.project, { video }), { env: { CUDDLER_OPEN_AFTER_SAVE: "1" }, home: dirs.home, get: networkFor(video).get, free: roomy, open: (file) => opened.push(file) });
-    assert.deepEqual(opened, [join(dirs.project, "cuddler-out", "20261019-1530-seedance-2.0-vid_test01-watermarked.mp4")]);
+    assert.deepEqual(opened, [join(realpathSync(dirs.project), "cuddler-out", "20261019-1530-seedance-2.0-vid_test01-watermarked.mp4")]);
     const quiet = [];
     await run(hookInput(dirs.project, { video }), { env: { CUDDLER_OPEN_AFTER_SAVE: "1" }, home: dirs.home, get: networkFor(video).get, free: roomy, open: (file) => quiet.push(file) });
     assert.deepEqual(quiet, [], "a file saved earlier isn't opened again");
@@ -510,7 +571,12 @@ test("proxies: HTTPS_PROXY is used for http:// proxies, NO_PROXY can skip it", (
   assert.equal(proxyFor(url, { HTTPS_PROXY: "http://127.0.0.1:7890" })?.host, "127.0.0.1:7890");
   assert.equal(proxyFor(url, { https_proxy: "127.0.0.1:7890" })?.host, "127.0.0.1:7890");
   assert.equal(proxyFor(url, { ALL_PROXY: "http://proxy.internal:3128" })?.host, "proxy.internal:3128");
-  assert.equal(proxyFor(url, { HTTPS_PROXY: "socks5://127.0.0.1:1080" }), null, "only CONNECT proxies; others go direct");
+  // A proxy the hook can't use means "don't fetch" (false), never "go direct" (null).
+  assert.equal(proxyFor(url, { HTTPS_PROXY: "socks5://127.0.0.1:1080" }), false);
+  assert.equal(proxyFor(url, { ALL_PROXY: "socks5h://127.0.0.1:1080" }), false);
+  assert.equal(proxyFor(url, { HTTPS_PROXY: "https://proxy.example:443" }), false);
+  assert.equal(proxyFor(url, { HTTPS_PROXY: "http://[bad" }), false);
+  assert.equal(proxyFor(url, { HTTPS_PROXY: "socks5://127.0.0.1:1080", NO_PROXY: ".cuddler.ai" }), null);
   for (const NO_PROXY of ["*", "asset.cuddler.ai", ".cuddler.ai", "cuddler.ai", "localhost, cuddler.ai:443", "*.cuddler.ai"]) {
     assert.equal(proxyFor(url, { HTTPS_PROXY: "http://127.0.0.1:7890", NO_PROXY }), null, NO_PROXY);
   }

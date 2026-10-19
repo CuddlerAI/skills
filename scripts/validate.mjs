@@ -97,10 +97,11 @@ export function hookConfigProblems(config) {
   const [entry] = entries;
   let matcher = null;
   try {
-    if (typeof entry.matcher !== "string" || /\(\?[a-z]/i.test(entry.matcher)) throw new Error();
+    // Codex reads the matcher with Rust's regex crate: no inline flags, lookarounds or backreferences; only (?:…) groups.
+    if (typeof entry.matcher !== "string" || /\(\?(?!:)|\\[1-9]|\\k</.test(entry.matcher)) throw new Error();
     matcher = new RegExp(entry.matcher);
   } catch {
-    problems.push("the matcher must be a regular expression that JavaScript and Codex both read: no inline flags such as (?i)");
+    problems.push("the matcher must be a regular expression that JavaScript and Codex both read: no inline flags such as (?i), no lookarounds or backreferences");
   }
   if (matcher) {
     const wanted = new Set([...HOOK_TOOLS.cuddler, ...HOOK_TOOLS.platform]);

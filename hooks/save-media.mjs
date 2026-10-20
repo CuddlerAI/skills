@@ -24,9 +24,9 @@
 // It exits 0 in every case, so a failure never blocks the agent.
 
 import { spawn } from "node:child_process";
-import { createWriteStream, unlinkSync } from "node:fs";
+import { unlinkSync } from "node:fs";
 import * as fsp from "node:fs/promises";
-import { lstat, mkdir, readdir, realpath, rename, stat, unlink, writeFile } from "node:fs/promises";
+import { lstat, mkdir, open, readdir, realpath, rename, stat, unlink, writeFile } from "node:fs/promises";
 import { request as httpRequest } from "node:http";
 import { request } from "node:https";
 import { homedir } from "node:os";
@@ -494,12 +494,18 @@ export async function fetchTo(url, part, kind, { get = httpsGet, signal, env, fr
         done();
       },
     });
-    const out = createWriteStream(part, { flags: "wx" });
-    out.on("open", () => {
-      created = true;
-      activeParts.add(part);
-    });
-    await pipeline(res, guard, out, { signal });
+    // Create the .part first, exclusively, so whether it is this run's is known before any byte arrives. (A write
+    // stream's own "open" event can come after a pipeline that fails on its first chunk; Node 18 then skips it.)
+    const handle = await open(part, "wx");
+    created = true;
+    activeParts.add(part);
+    const out = handle.createWriteStream(); // closes the handle when it finishes or is destroyed
+    try {
+      await pipeline(res, guard, out, { signal });
+    } finally {
+      // The file is closed before any rename or delete (Windows refuses both on an open file).
+      await new Promise((done) => (out.closed ? done() : out.once("close", done)));
+    }
     return { format, bytes };
   } catch (e) {
     res.destroy?.();

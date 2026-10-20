@@ -13,10 +13,11 @@ Thanks for helping. These skills run on other people's machines and spend other 
 ```bash
 node scripts/validate.mjs              # structure, hard rules, claims, manifests, safety lints
 node --test scripts/validate.test.mjs  # the validator's own tests (and the review script, if ffmpeg is installed)
+node --test scripts/save-media.test.mjs  # the save hook: hosts, caps, file checks, names, no second download
 claude plugin validate --strict .      # the plugin manifests, as Claude Code reads them
 ```
 
-Node.js 20 or newer; no other dependencies.
+Node.js 20 or newer; no other dependencies. The save hook itself (`hooks/save-media.mjs`) runs on Node.js 18 or newer, on users' machines, so it uses nothing newer.
 
 ## Writing for a public repository
 
@@ -32,6 +33,10 @@ By opening a pull request you license your contribution under the MIT License an
 - **Descriptions say when to use the skill, not what it does step by step.** They must contain "Use when" and "NOT for", in at most 1,024 characters.
 - **One `SKILL.md` stays under 300 lines.** Move detail into `references/`.
 - **Content red lines don't move**: adult characters only, no school settings, no real people, no other people's characters or brands.
+
+## The save hook
+
+`hooks/hooks.json` runs `hooks/save-media.mjs` after the Cuddler tools that can return a finished file, and the script saves that file into `cuddler-out/`. It is the only code that runs on a user's machine by itself, so changes to it get the same care as the Hard rules: the hosts it fetches from are fixed in the script, it never runs or follows anything from a tool result, and [SECURITY.md](SECURITY.md#the-save-hook) says what it does in plain words; keep that section true. Claude Code finds the hook at `hooks/hooks.json` on its own (naming it again in `.claude-plugin/plugin.json` is a load error there), and Codex through `extensions.com.openai.hooks` in its manifest; the validator checks both, and the matcher.
 
 ## Changing what a skill does
 
@@ -59,7 +64,7 @@ ChatGPT and Codex share one plugin directory, and its listing is built from this
 node scripts/pack-openai.mjs   # dist/cuddler-<version>-openai.zip
 ```
 
-The ZIP holds the Codex manifest, `.mcp.json`, `skills/`, `assets/`, `LICENSE` and `TRADEMARKS.md`, and the script refuses to build while `validate.mjs` reports an error. Its `.mcp.json` leaves out the source header, because the directory rejects a server with request headers; Cuddler tells directory connections apart by their OAuth client. The validator holds the Codex manifest to the directory's listing rules: no plan names, prices, trials or upgrades in the listing text or the release notes, exactly five positive and three negative review cases, and no `demo_recording_url` until the demo video exists (an empty value clears the one saved in the dashboard). Each GitHub Release carries it as `cuddler-<version>-openai.zip`, and the Cuddler team uploads it on the OpenAI Platform. Changes to skills, the listing text or the icons need a new upload; changes to the Cuddler MCP tools don't.
+The ZIP holds the Codex manifest, `.mcp.json`, `skills/`, `assets/`, `LICENSE` and `TRADEMARKS.md`, and the script refuses to build while `validate.mjs` reports an error. Its `.mcp.json` leaves out the source header, because the directory rejects a server with request headers; Cuddler tells directory connections apart by their OAuth client. The directory takes no lifecycle hooks either, so the ZIP leaves out `hooks/` and the manifest's `hooks` entry: directory installs get the skills' own downloads, GitHub installs get the save hook as well. The validator holds the Codex manifest to the directory's listing rules: no plan names, prices, trials or upgrades in the listing text or the release notes, exactly five positive and three negative review cases, and no `demo_recording_url` until the demo video exists (an empty value clears the one saved in the dashboard). Each GitHub Release carries it as `cuddler-<version>-openai.zip`, and the Cuddler team uploads it on the OpenAI Platform. Changes to skills, the listing text or the icons need a new upload; changes to the Cuddler MCP tools don't.
 
 ## ClawHub (OpenClaw)
 

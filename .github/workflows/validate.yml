@@ -35,6 +35,31 @@ jobs:
         run: node --test scripts/validate.test.mjs
       - name: Release script tests
         run: node --test scripts/release.test.mjs
+      - name: Save hook tests
+        run: node --test scripts/save-media.test.mjs
+
+  save-hook-node18:
+    name: hooks/save-media.mjs on Node.js 18
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 18.0.0
+      - name: The hook loads on the oldest Node.js it supports
+        run: |
+          node --input-type=module -e "const m = await import('./hooks/save-media.mjs'); if (typeof m.run !== 'function') process.exit(1);"
+          echo '{}' | node hooks/save-media.mjs
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 18
+          # Without this, "18" matches the 18.0.0 just installed, which has no `node --test`.
+          check-latest: true
+      - name: Save hook tests
+        run: node --test scripts/save-media.test.mjs
 
   review-script:
     name: cuddler-review/scripts/contact-sheet.sh on Linux

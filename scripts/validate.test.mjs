@@ -11,7 +11,7 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { inflateRawSync } from "node:zlib";
 import { render, syncReadme } from "./claims.mjs";
-import { crc32, directoryMcpConfig, packOpenai, packageFiles } from "./pack-openai.mjs";
+import { crc32, directoryCodexManifest, directoryMcpConfig, packOpenai, packageFiles } from "./pack-openai.mjs";
 import { openclawPackage, packOpenclaw } from "./pack-openclaw.mjs";
 import { wordingProblems } from "./public-wording.mjs";
 import { githubSlug, parseFrontmatter, validate } from "./validate.mjs";
@@ -199,6 +199,29 @@ test("the Codex manifest must fit the OpenAI plugin directory listing rules", ()
   );
 });
 
+test("the save-media hook: one PostToolUse matcher for Cuddler's media tools, found by Claude Code and Codex", () => {
+  const hooks = (fn) => withCopy((d) => editJson(d, "hooks/hooks.json", fn));
+  const entry = (patch) => (j) => ({ ...j, hooks: { PostToolUse: [{ ...j.hooks.PostToolUse[0], ...patch(j.hooks.PostToolUse[0]) }] } });
+  const command = (patch) => entry((e) => ({ hooks: [{ ...e.hooks[0], ...patch }] }));
+  expectError(withCopy((d) => rmSync(join(d, "hooks/hooks.json"))), /hooks\/hooks\.json: missing: the hook that saves finished files/);
+  expectError(withCopy((d) => rmSync(join(d, "hooks/save-media.mjs"))), /hooks\/save-media\.mjs: missing/);
+  expectError(hooks((j) => ({ hooks: { ...j.hooks, PreToolUse: j.hooks.PostToolUse } })), /PostToolUse only/);
+  expectError(hooks(entry(() => ({ matcher: "^mcp__.*cuddler.*__(get_video|get_image)$" }))), /the matcher misses mcp__plugin_cuddler_cuddler__get_download_link/);
+  expectError(hooks(entry(() => ({ matcher: "^mcp__.*cuddler.*__(get_video|get_download_link|create_image|get_image|download_video)$" }))), /the matcher misses mcp__claude_ai_Cuddler__get_video/);
+  expectError(hooks(entry(() => ({ matcher: "(?i)^mcp__.*cuddler.*__get_video$" }))), /no inline flags/);
+  expectError(hooks(entry(() => ({ matcher: "^mcp__(?!other).*__(get_video|get_image)$" }))), /no lookarounds or backreferences/);
+  expectError(hooks(entry(() => ({ matcher: "^(mcp)__\\1.*$" }))), /no lookarounds or backreferences/);
+  expectError(hooks(entry(() => ({ matcher: "^mcp__.*__.*$" }))), /catches mcp__plugin_cuddler_cuddler__create_video/);
+  expectError(hooks(command({ command: 'node "${CLAUDE_PLUGIN_ROOT}/hooks/save-media.mjs"' })), /must end with 2>\/dev\/null \|\| true/);
+  expectError(hooks(command({ command: "node ${CLAUDE_PLUGIN_ROOT}/hooks/save-media.mjs 2>/dev/null || true" })), /the command must start with node/);
+  expectError(hooks(command({ timeout: 3600 })), /timeout must be a whole number of seconds, 60–600/);
+  expectError(withCopy((d) => editJson(d, ".claude-plugin/plugin.json", (j) => ({ ...j, hooks: "./hooks/hooks.json" }))), /\.claude-plugin\/plugin\.json: hooks must stay unset/);
+  const codex = (fn) => withCopy((d) => editJson(d, ".codex-plugin/plugin.json", fn));
+  const openai = (patch) => (j) => ({ ...j, extensions: { "com.openai": { ...j.extensions["com.openai"], ...patch } } });
+  expectError(codex(openai({ hooks: undefined })), /extensions\.com\.openai\.hooks must be "\.\/hooks\/hooks\.json"/);
+  expectError(codex((j) => ({ ...j, hooks: "./hooks/hooks.json" })), /"hooks" can't be in a package for the OpenAI plugin directory; declare the plugin's hooks in extensions\.com\.openai\.hooks/);
+});
+
 test("the Codex marketplace must keep the plugin id and sign in on install", () => {
   const market = (fn) => withCopy((d) => editJson(d, ".agents/plugins/marketplace.json", fn));
   expectError(market((j) => ({ ...j, name: "cuddler-skills" })), /differs from \.claude-plugin\/marketplace\.json "cuddler"; Codex would install the plugin under another id/);
@@ -219,13 +242,22 @@ test("pack-openai builds the directory package: plugin files only, reproducible,
     for (const required of [".codex-plugin/plugin.json", ".mcp.json", "LICENSE", "assets/logo.png", ...SKILLS.map((s) => `skills/${s}/SKILL.md`)]) {
       assert.ok(names.includes(required), `${required} is missing from the package`);
     }
-    for (const name of names) assert.doesNotMatch(name, /^(?:\.claude-plugin|\.cursor-plugin|\.agents|\.github|evals|scripts)\/|^README\.md$/);
+    for (const name of names) assert.doesNotMatch(name, /^(?:\.claude-plugin|\.cursor-plugin|\.agents|\.github|evals|scripts|hooks)\/|^README\.md$/);
     for (const entry of entries) {
-      // The package's .mcp.json is written without request headers; every other file is the repository's.
-      const source = entry.name === ".mcp.json" ? directoryMcpConfig(ROOT) : readFileSync(join(ROOT, entry.name));
+      // The package's .mcp.json is written without request headers and its Codex manifest without the hooks entry;
+      // every other file is the repository's.
+      const source =
+        entry.name === ".mcp.json" ? directoryMcpConfig(ROOT) : entry.name === ".codex-plugin/plugin.json" ? directoryCodexManifest(ROOT) : readFileSync(join(ROOT, entry.name));
       assert.ok(entry.data.equals(source), `${entry.name} differs after unzipping`);
       assert.equal(entry.crc, crc32(source), `${entry.name} has a wrong CRC`);
     }
+    // The directory takes no lifecycle hooks: the GitHub install has the hook, the package has none of it.
+    const repoManifest = JSON.parse(readFileSync(join(ROOT, ".codex-plugin/plugin.json"), "utf8"));
+    assert.equal(repoManifest.extensions["com.openai"].hooks, "./hooks/hooks.json");
+    const packed = JSON.parse(entries.find((e) => e.name === ".codex-plugin/plugin.json").data);
+    assert.ok(!("hooks" in packed) && !("hooks" in packed.extensions["com.openai"]), "the packaged manifest keeps a hooks entry");
+    assert.deepEqual({ ...packed.extensions["com.openai"], hooks: "./hooks/hooks.json" }, repoManifest.extensions["com.openai"], "only the hooks entry differs");
+    assert.ok(!names.some((name) => name.startsWith("hooks/")), "hooks/ is in the package");
     const mcp = JSON.parse(entries.find((e) => e.name === ".mcp.json").data);
     assert.equal(mcp.mcpServers.cuddler.url, "https://mcp.cuddler.ai/mcp");
     for (const [name, server] of Object.entries(mcp.mcpServers)) {

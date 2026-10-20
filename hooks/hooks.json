@@ -1,0 +1,17 @@
+{
+  "description": "Saves each finished Cuddler video, image, voiceover and music take into cuddler-out/ in the project (or ~/Downloads/Cuddler/), from Cuddler's own storage only. CUDDLER_SAVE_MEDIA=0 turns it off.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "^mcp__.*[Cc][Uu][Dd][Dd][Ll][Ee][Rr].*__([Gg][Ee][Tt]_[Vv][Ii][Dd][Ee][Oo]|[Gg][Ee][Tt]_[Dd][Oo][Ww][Nn][Ll][Oo][Aa][Dd]_[Ll][Ii][Nn][Kk]|[Cc][Rr][Ee][Aa][Tt][Ee]_[Ii][Mm][Aa][Gg][Ee]|[Gg][Ee][Tt]_[Ii][Mm][Aa][Gg][Ee]|[Dd][Oo][Ww][Nn][Ll][Oo][Aa][Dd]_[Vv][Ii][Dd][Ee][Oo]|[Gg][Ee][Tt]_[Ss][Pp][Ee][Ee][Cc][Hh]|[Gg][Ee][Tt]_[Mm][Uu][Ss][Ii][Cc])$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/save-media.mjs\" 2>/dev/null || true",
+            "timeout": 300
+          }
+        ]
+      }
+    ]
+  }
+}

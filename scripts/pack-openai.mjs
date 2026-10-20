@@ -7,8 +7,10 @@
 // The plugin sits at the root of the archive with the Codex manifest only: .codex-plugin/plugin.json, .mcp.json,
 // skills/, assets/, LICENSE and TRADEMARKS.md. Other hosts' manifests, the evals, CI files and docs stay out. The package's
 // .mcp.json is the repository's without request headers: the directory rejects a server with headers, so the source header
-// the marketplace installs send stays out, and Cuddler tells directory connections apart by their OAuth client. The build
-// stops when validate.mjs reports an error, and the same files always give the same bytes.
+// the marketplace installs send stays out, and Cuddler tells directory connections apart by their OAuth client. The
+// directory takes no lifecycle hooks either, so the package leaves out hooks/ and the manifest's hooks entry: the
+// save-media hook comes only with installs from GitHub. The build stops when validate.mjs reports an error, and the same
+// files always give the same bytes.
 
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
@@ -115,6 +117,18 @@ export function zip(entries) {
   return Buffer.concat([...records, ...directory, end]);
 }
 
+/** The repository's Codex manifest without its hooks entry, as the directory takes it. */
+export function directoryCodexManifest(root) {
+  const manifest = JSON.parse(readFileSync(join(root, ".codex-plugin/plugin.json"), "utf8"));
+  const { hooks, ...rest } = manifest;
+  const openai = rest.extensions?.["com.openai"];
+  if (openai && "hooks" in openai) {
+    const { hooks: openaiHooks, ...keep } = openai;
+    rest.extensions = { ...rest.extensions, "com.openai": keep };
+  }
+  return Buffer.from(`${JSON.stringify(rest, null, 2)}\n`);
+}
+
 /** The repository's .mcp.json without request headers on any server, as the directory takes it. */
 export function directoryMcpConfig(root) {
   const config = JSON.parse(readFileSync(join(root, ".mcp.json"), "utf8"));
@@ -135,6 +149,8 @@ export function packOpenai(root, out) {
     throw new Error(`validate.mjs reports ${errors.length} error(s); fix them before packaging:\n${list}`);
   }
   const files = packageFiles(root);
+  const hookFile = files.find((rel) => rel.startsWith("hooks/") || /\/hooks\.json$/.test(rel));
+  if (hookFile) throw new Error(`${hookFile} is a lifecycle hook, which the directory doesn't take`);
   if (files.length > ARCHIVE_LIMITS.entries) throw new Error(`${files.length} files; the directory takes at most ${ARCHIVE_LIMITS.entries}`);
   for (const rel of files) {
     if (rel.split("/").length > ARCHIVE_LIMITS.depth) throw new Error(`${rel} is nested deeper than ${ARCHIVE_LIMITS.depth} levels`);
@@ -142,7 +158,7 @@ export function packOpenai(root, out) {
   const archive = zip(
     files.map((rel) => {
       const abs = join(root, rel);
-      const data = rel === ".mcp.json" ? directoryMcpConfig(root) : readFileSync(abs);
+      const data = rel === ".mcp.json" ? directoryMcpConfig(root) : rel === ".codex-plugin/plugin.json" ? directoryCodexManifest(root) : readFileSync(abs);
       return { name: rel, data, executable: (statSync(abs).mode & 0o111) !== 0 };
     }),
   );

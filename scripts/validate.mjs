@@ -47,6 +47,12 @@ export const MCP_TOOLS = Object.freeze([
   "get_download_link",
   "start_upload",
   "finish_upload",
+  "quote_speech",
+  "create_speech",
+  "get_speech",
+  "quote_music",
+  "create_music",
+  "get_music",
 ]);
 /** The MCP server key in .mcp.json, and the name the plugin's tools carry in eval runs. */
 export const MCP_SERVER = "cuddler";
@@ -72,6 +78,10 @@ export const FENCED_RESULTS = Object.freeze([
   "create_video",
   "get_video",
   "retry_video",
+  "create_speech",
+  "get_speech",
+  "create_music",
+  "get_music",
 ]);
 /** The plugin's one hook file, and the script it runs. */
 export const HOOKS_FILE = "hooks/hooks.json";
@@ -81,8 +91,8 @@ export const HOOK_SCRIPT = "hooks/save-media.mjs";
  * server that a user may add next to it. The hook's matcher must catch exactly these (and the same names on both).
  */
 export const HOOK_TOOLS = Object.freeze({
-  cuddler: Object.freeze(["get_video", "get_download_link", "create_image", "get_image"]),
-  platform: Object.freeze(["get_video", "download_video", "get_image", "create_image"]),
+  cuddler: Object.freeze(["get_video", "get_download_link", "create_image", "get_image", "get_speech", "get_music"]),
+  platform: Object.freeze(["get_video", "download_video", "get_image", "create_image", "get_speech", "get_music"]),
 });
 /** How hosts name a tool of a server: as a plugin's server in Claude Code, added by hand, and as a claude.ai connector. */
 const HOOK_TOOL_NAMES = (tool) => [`mcp__plugin_cuddler_cuddler__${tool}`, `mcp__cuddler__${tool}`, `mcp__claude_ai_Cuddler__${tool}`, `mcp__cuddler-platform__${tool}`];
@@ -131,6 +141,8 @@ const SPEND_ARGS = Object.freeze({
   create_video: ["maxCredits", "idempotencyKey"],
   create_image: ["maxCredits", "idempotencyKey"],
   retry_video: ["maxCredits"],
+  create_speech: ["maxCredits", "idempotencyKey"],
+  create_music: ["maxCredits", "idempotencyKey"],
 });
 /** Phrases the shared Hard rules block must keep; editing the rules on purpose means editing this list too. */
 export const RULE_PHRASES = [

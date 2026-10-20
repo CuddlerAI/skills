@@ -3,6 +3,7 @@
   "video": [
     {
       "id": "seedance-2.0",
+      "apiModelId": "seedance-2.0-mini",
       "kind": "video",
       "label": "Seedance 2.0",
       "provider": "seedance",
@@ -92,6 +93,7 @@
     },
     {
       "id": "seedance-2.5",
+      "apiModelId": "seedance-2.5",
       "kind": "video",
       "label": "Seedance 2.5",
       "provider": "seedance",
@@ -258,6 +260,7 @@
   "image": [
     {
       "id": "nano-banana",
+      "apiModelId": "nano-banana",
       "kind": "image",
       "provider": "gemini",
       "requiredPlan": "free",
@@ -278,7 +281,96 @@
       ],
       "maxReferenceImages": 9,
       "supportsSeed": true,
-      "contentScope": "sfw_only"
+      "contentScope": "sfw_only",
+      "defaultTier": "default",
+      "defaultTierAvailable": true,
+      "fromCredits": 14,
+      "tiers": [
+        {
+          "tier": "default",
+          "resolution": "1K",
+          "credits": 14,
+          "requiredPlan": "free",
+          "available": true
+        },
+        {
+          "tier": "default",
+          "resolution": "2K",
+          "credits": 14,
+          "requiredPlan": "free",
+          "available": true
+        }
+      ],
+      "referencesAddCredits": false,
+      "maxPromptChars": 20000
+    }
+  ],
+  "speech": [
+    {
+      "id": "elevenlabs-v4",
+      "apiModelId": "elevenlabs-v4",
+      "label": "Eleven v4",
+      "provider": "elevenlabs",
+      "available": true,
+      "isDefault": true,
+      "kind": "speech",
+      "maxCharacters": 2000,
+      "billedPer": "utf16_unit",
+      "creditsPer1000": 30,
+      "voices": [
+        {
+          "id": "rachel",
+          "name": "Rachel",
+          "languages": [
+            "en"
+          ]
+        },
+        {
+          "id": "adam",
+          "name": "Adam",
+          "languages": [
+            "en"
+          ]
+        },
+        {
+          "id": "bella",
+          "name": "Bella",
+          "languages": [
+            "en"
+          ]
+        }
+      ],
+      "defaultVoice": "rachel"
+    }
+  ],
+  "music": [
+    {
+      "id": "lyria-3",
+      "apiModelId": "lyria-3",
+      "label": "Lyria 3",
+      "provider": "google",
+      "available": true,
+      "isDefault": true,
+      "kind": "music",
+      "mode": "clip",
+      "maxDurationSec": 30,
+      "creditsPerTake": 30,
+      "maxTakes": 4,
+      "vocals": true
+    },
+    {
+      "id": "lyria-3-pro",
+      "apiModelId": "lyria-3-pro",
+      "label": "Lyria 3 Pro",
+      "provider": "google",
+      "available": true,
+      "isDefault": false,
+      "kind": "music",
+      "mode": "song",
+      "maxDurationSec": 180,
+      "creditsPerTake": 90,
+      "maxTakes": 4,
+      "vocals": true
     }
   ]
 }

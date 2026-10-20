@@ -15,7 +15,7 @@ Skills and a plugin for coding agents and for OpenClaw. Install them, connect yo
 | Skill | Ask your agent |
 |---|---|
 | [`cuddler-setup`](skills/cuddler-setup/SKILL.md) | "Connect my Cuddler account" — install, sign in, see your plan, credits and what your account can make |
-| [`cuddler-generate`](skills/cuddler-generate/SKILL.md) | "Make a 10-second vertical clip of a paper boat in the rain" — videos and images, priced before anything is spent |
+| [`cuddler-generate`](skills/cuddler-generate/SKILL.md) | "Make a 10-second vertical clip of a paper boat in the rain" — videos and images, and voiceovers and music once Cuddler offers them to connected apps, priced before anything is spent |
 | [`cuddler-character-clip`](skills/cuddler-character-clip/SKILL.md) | "Turn my character into a 15-second clip" — one of your own Cuddler characters talking to the viewer |
 | [`cuddler-review`](skills/cuddler-review/SKILL.md) | "Review ./clip.mp4 before I post it" — a local ffmpeg check with a pass, fix or reject verdict |
 | [`cuddler-watermark`](skills/cuddler-watermark/SKILL.md) | "Add the Cuddler watermark to ./my-cut.mp4" — the app's corner mark, stamped locally with ffmpeg |
@@ -29,7 +29,7 @@ Skills and a plugin for coding agents and for OpenClaw. Install them, connect yo
 ## Where finished files go
 
 <!-- claims:files -->
-In Claude Code, and in Codex once you trust the plugin's hook, a finished video or image is saved on its own into `cuddler-out/` in your project, or into `~/Downloads/Cuddler/` when there is no project folder. The hook fetches only from Cuddler's own storage, over https, and gives `cuddler-out/` a `.gitignore` so the files stay out of your repository. It needs Node.js 18 or later; `CUDDLER_SAVE_MEDIA=0` turns it off and `CUDDLER_OPEN_AFTER_SAVE=1` opens the saved video or image once it is saved. Elsewhere, the skills save the file themselves.
+In Claude Code, and in Codex once you trust the plugin's hook, a finished video, image, voiceover or music take is saved on its own into `cuddler-out/` in your project, or into `~/Downloads/Cuddler/` when there is no project folder. The hook fetches only from Cuddler's own storage, over https, and gives `cuddler-out/` a `.gitignore` so the files stay out of your repository. It needs Node.js 18 or later; `CUDDLER_SAVE_MEDIA=0` turns it off and `CUDDLER_OPEN_AFTER_SAVE=1` opens the saved video or image once it is saved. Elsewhere, the skills save the file themselves.
 <!-- /claims:files -->
 
 The skills then name the file the way your agent previews it: in the Claude desktop app's Code tab a click on the path plays it, in the Codex app the reply embeds the file next to its path, and in a terminal you get the path.

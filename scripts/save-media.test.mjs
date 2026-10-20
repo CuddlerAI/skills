@@ -48,9 +48,10 @@ const BYTES = {
   jpg: Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(60, 2)]),
   png: Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(56, 3)]),
   webp: Buffer.concat([Buffer.from("RIFF"), Buffer.from([0x38, 0, 0, 0]), Buffer.from("WEBPVP8 "), Buffer.alloc(48, 4)]),
+  mp3: Buffer.concat([Buffer.from("ID3"), Buffer.from([4, 0, 0, 0, 0, 0, 0]), Buffer.alloc(54, 5)]),
+  mp3Frame: Buffer.concat([Buffer.from([0xff, 0xfb, 0x90, 0x64]), Buffer.alloc(60, 6)]),
   html: Buffer.from("<!doctype html><html><body>not a video</body></html>"),
 };
-const TYPES = { mp4: "video/mp4", jpg: "image/jpeg", png: "image/png", webp: "image/webp", html: "text/html" };
 
 /** A stand-in for the network: answers each URL from `files` ({ url: { body, type, status, length } }) and counts calls. */
 function fakeGet(files) {
@@ -148,6 +149,11 @@ const TOOL_CASES = [
   ["mcp__Cuddler__GET_IMAGE", "get_image"],
   ["mcp__cuddler-platform__download_video", "download_video"],
   ["mcp__CUDDLER_API__get_video", "get_video"],
+  ["mcp__plugin_cuddler_cuddler__get_speech", "get_speech"],
+  ["mcp__Cuddler__GET_MUSIC", "get_music"],
+  ["mcp__cuddler-platform__get_speech", "get_speech"],
+  ["mcp__cuddler__create_speech", null],
+  ["mcp__cuddler__quote_music", null],
   ["mcp__cuddler__create_video", null],
   ["mcp__cuddler__quote_video", null],
   ["mcp__other__get_video", null],
@@ -210,6 +216,19 @@ test("only finished work gives files: a ready video, a download link, a delivere
   assert.deepEqual(mediaTargets({ object: "image", id: "img_p1", status: "succeeded", model: "gpt-image-2", output: { url: `${STORAGE}/cuddler-media-private/p.png` } }).map((t) => t.kind), ["image"]);
   assert.deepEqual(mediaTargets({ object: "video_download", id: "vid_p1", watermarked: true, url: `${STORAGE}/cuddler-media/w.mp4` }).map((t) => [t.kind, t.watermarked]), [["video", true]]);
   assert.deepEqual(mediaTargets({ object: "balance" }), []);
+  // Voiceovers and music: a finished request's takes; several takes are numbered.
+  const audioFile = (position) => ({ kind: "audio", url: `${STORAGE}/cuddler-media/studio-tools/t${position}.mp3`, filename: "x.mp3", contentType: "audio/mpeg", expiresAt: "x", durationSec: 30, bytes: 1, position });
+  const speech = { id: "job_s1", status: "ready", modelId: "elevenlabs-v4", createdAt: "2026-10-20T01:00:00Z", files: [audioFile(0)] };
+  assert.deepEqual(mediaTargets({ speech }).map((t) => [t.kind, t.audio, t.take, t.model]), [["audio", "voiceover", undefined, "elevenlabs-v4"]]);
+  assert.deepEqual(mediaTargets({ speech: { ...speech, status: "rendering", files: [] } }), []);
+  assert.deepEqual(mediaTargets({ speech: { ...speech, status: "failed" } }), []);
+  const music = { id: "job_m1", status: "partial", modelId: "lyria-3", count: 2, createdAt: "2026-10-20T01:00:00Z", files: [audioFile(1)] };
+  assert.deepEqual(mediaTargets({ music }).map((t) => [t.audio, t.take]), [["music", 2]], "take 2 of 2, the first failed");
+  assert.deepEqual(mediaTargets({ music: { ...music, status: "ready", count: 1, files: [audioFile(0)] } }).map((t) => t.take), [undefined]);
+  const platformSpeech = { object: "speech", id: "sp_1", status: "succeeded", model: "elevenlabs-v4", created_at: "2026-10-20T01:00:00Z", output: { url: `${STORAGE}/cuddler-media-private/platform/sp_1.mp3`, content_type: "audio/mpeg" } };
+  assert.deepEqual(mediaTargets(platformSpeech).map((t) => [t.kind, t.audio]), [["audio", "voiceover"]]);
+  assert.deepEqual(mediaTargets({ ...platformSpeech, object: "music", id: "mu_1" }).map((t) => t.audio), ["music"]);
+  assert.deepEqual(mediaTargets({ ...platformSpeech, status: "queued", output: null }), []);
 });
 
 // ── formats and caps ────────────────────────────────────────────────────────
@@ -219,6 +238,9 @@ test("the first bytes decide the format, and must fit the kind and the Content-T
   assert.equal(sniff(BYTES.jpg), "jpg");
   assert.equal(sniff(BYTES.png), "png");
   assert.equal(sniff(BYTES.webp), "webp");
+  assert.equal(sniff(BYTES.mp3), "mp3", "an ID3 tag");
+  assert.equal(sniff(BYTES.mp3Frame), "mp3", "an MPEG Layer III frame");
+  assert.equal(sniff(Buffer.from([0xff, 0xf1, 0x50, 0x80, 0, 0, 0, 0, 0, 0, 0, 0])), null, "AAC in ADTS is not MP3");
   assert.equal(sniff(BYTES.html), null);
   assert.equal(sniff(Buffer.from("RIFF0000WAVE")), null);
   assert.equal(sniff(Buffer.alloc(0)), null);
@@ -236,6 +258,11 @@ test("the first bytes decide the format, and must fit the kind and the Content-T
   assert.ok(!formatFits("image", "image/png", "jpg"), "a PNG label on JPEG bytes");
   assert.ok(!formatFits("video", "video/mp4", "jpg"));
   assert.ok(!formatFits("image", "image/jpeg", null));
+  assert.ok(formatFits("audio", "audio/mpeg", "mp3"));
+  assert.ok(!formatFits("audio", "audio/mpeg", "mp4"));
+  assert.ok(!typeFits("audio", "image/jpeg"));
+  assert.ok(typeFits("audio", "audio/mpeg"));
+  assert.equal(LIMITS.audioBytes, 50 * 1024 * 1024);
 });
 
 test("fetchTo streams a file that passes every check, and deletes it on any failure", async () => {
@@ -498,6 +525,37 @@ test("a project's cuddler-out/ that is a symbolic link is not written through; t
     assert.deepEqual(readdirSync(elsewhere), [], "nothing is written where the link points");
     assert.match(text, /~\/Downloads\/Cuddler\/20261019-1530-seedance-2\.0-vid_test01-watermarked\.mp4/);
     assert.equal(readdirSync(join(dirs.home, "Downloads", "Cuddler")).length, 2);
+  } finally {
+    dirs.done();
+  }
+});
+
+test("voiceovers and music takes are saved as MP3s, each take under its own name", async () => {
+  const dirs = tempDirs();
+  try {
+    const take = (position) => ({ kind: "audio", url: `${STORAGE}/cuddler-media/studio-tools/job_m1-${position}.mp3?X-Amz-Signature=a`, filename: "m.mp3", contentType: "audio/mpeg", expiresAt: "x", durationSec: 30, bytes: 64, position });
+    const music = { id: "job_m1", status: "ready", modelId: "lyria-3", count: 2, createdAt: "2026-10-20T01:02:00Z", files: [take(0), take(1)] };
+    const speech = { id: "job_s1", status: "ready", modelId: "elevenlabs-v4", createdAt: "2026-10-20T01:00:00Z", files: [{ ...take(0), url: `${STORAGE}/cuddler-media/studio-tools/job_s1.mp3` }] };
+    const net = fakeGet({
+      [take(0).url]: { body: BYTES.mp3, type: "audio/mpeg" },
+      [take(1).url]: { body: BYTES.mp3Frame, type: "audio/mpeg" },
+      [speech.files[0].url]: { body: BYTES.mp3, type: "audio/mpeg" },
+    });
+    const options = { env: {}, home: dirs.home, get: net.get, free: roomy };
+    const input = (tool, body) => ({ cwd: dirs.project, tool_name: `mcp__plugin_cuddler_cuddler__${tool}`, tool_response: [{ type: "text", text: fence(tool, body) }] });
+    assert.equal(
+      await run(input("get_speech", { speech }), options),
+      "Cuddler plugin: saved the voiceover to cuddler-out/20261020-0100-elevenlabs-v4-job_s1.mp3 (1 KB). Give the user this file instead of downloading again.",
+    );
+    const text = await run(input("get_music", { music }), options);
+    assert.match(text, /saved music take 1 to cuddler-out\/20261020-0102-lyria-3-job_m1-take1\.mp3/);
+    assert.match(text, /saved music take 2 to cuddler-out\/20261020-0102-lyria-3-job_m1-take2\.mp3/);
+    assert.match(await run(input("get_music", { music }), options), /music take 2 is already saved/);
+    assert.equal(net.calls.length, 3);
+    // An HTML page labelled as audio is refused.
+    const fake = { ...speech, id: "job_s2", files: [{ ...speech.files[0], url: `${STORAGE}/cuddler-media/studio-tools/job_s2.mp3` }] };
+    const bad = fakeGet({ [fake.files[0].url]: { body: BYTES.html, type: "audio/mpeg" } });
+    assert.equal(await run(input("get_speech", { speech: fake }), { ...options, get: bad.get }), null);
   } finally {
     dirs.done();
   }

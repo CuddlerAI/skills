@@ -20,7 +20,7 @@ The skills are then available as:
 
 You rarely need to type them: ask for what you want ("make a 10-second clip of …") and Claude picks the right skill.
 
-The plugin also brings a hook that saves each finished video or image into `cuddler-out/` in your project (or `~/Downloads/Cuddler/` outside one). It needs Node.js 18 or later and fetches only from Cuddler's own storage; `CUDDLER_SAVE_MEDIA=0` turns it off, and `CUDDLER_OPEN_AFTER_SAVE=1` opens the saved video or image once it is saved. In the desktop app's Code tab, click the path in the reply to play the clip.
+The plugin also brings a hook that saves each finished video, image, voiceover or music take into `cuddler-out/` in your project (or `~/Downloads/Cuddler/` outside one). It needs Node.js 18 or later and fetches only from Cuddler's own storage; `CUDDLER_SAVE_MEDIA=0` turns it off, and `CUDDLER_OPEN_AFTER_SAVE=1` opens the saved video or image once it is saved. In the desktop app's Code tab, click the path in the reply to play the clip.
 
 Update: in `/plugin`, open the Cuddler marketplace and choose **Enable auto-update**, and Claude Code keeps the marketplace and the plugin up to date. By hand: `/plugin marketplace update cuddler`. Remove: `/plugin uninstall cuddler@cuddler`.
 

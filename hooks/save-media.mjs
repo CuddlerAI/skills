@@ -1,24 +1,25 @@
 #!/usr/bin/env node
-// save-media.mjs — the plugin's PostToolUse hook: saves a finished Cuddler video or image to disk. No dependencies;
-// Node.js 18+.
+// save-media.mjs — the plugin's PostToolUse hook: saves a finished Cuddler video, image, voiceover or music take to disk.
+// No dependencies; Node.js 18+.
 //
 // Claude Code and Codex run it after a Cuddler tool answers (hooks/hooks.json lists which), with the hook input as JSON
 // on stdin. It does nothing until the answer holds a finished file: a ready video's `files` or a download link's
-// `files`, an image's `url`, or a succeeded Platform job's `output.url`. Then it fetches that file, from Cuddler's own
+// `files`, an image's `url`, a finished voiceover's or music request's `files`, or a succeeded Platform job's
+// `output.url`. Then it fetches that file, from Cuddler's own
 // storage only, into <project>/cuddler-out/ (or ~/Downloads/Cuddler/ when the session has no project folder) under a
 // name it makes itself, and tells the agent where the file is, as a path that names no home directory.
 //
 // What it will and won't do:
 // - It fetches only https links on asset.cuddler.ai and on Cuddler's own storage host and buckets (ALLOWED_HOSTS),
 //   follows no redirects, and runs nothing it finds in a result.
-// - A video is at most 500 MB and an image at most 50 MB; the Content-Type and the first bytes must be an MP4, JPEG, PNG
-//   or WebP of the expected kind, and the disk must have room. A file is written as <name>.part and renamed when it is
+// - A video is at most 500 MB, an image or an audio file at most 50 MB; the Content-Type and the first bytes must be an
+//   MP4, JPEG, PNG, WebP or MP3 of the expected kind, and the disk must have room. A file is written as <name>.part and renamed when it is
 //   complete; anything that fails is deleted.
 // - One file per id and variant: a file already saved is not fetched again.
 // - It prints no link and no prompt. When it can't save a file, it says nothing and the skill downloads the file itself.
 // - It goes through an http:// proxy that HTTPS_PROXY or ALL_PROXY names, as curl does. With any other proxy set, it
 //   fetches nothing, so the download never leaves the route the user chose.
-// - CUDDLER_SAVE_MEDIA=0 turns it off; CUDDLER_OPEN_AFTER_SAVE=1 opens the saved video or image in the system's default app.
+// - CUDDLER_SAVE_MEDIA=0 turns it off; CUDDLER_OPEN_AFTER_SAVE=1 opens the saved video, image or audio in the system's default app.
 //
 // It exits 0 in every case, so a failure never blocks the agent.
 
@@ -48,6 +49,7 @@ export const ALLOWED_HOSTS = Object.freeze({
 export const LIMITS = Object.freeze({
   videoBytes: 500 * 1024 * 1024,
   imageBytes: 50 * 1024 * 1024,
+  audioBytes: 50 * 1024 * 1024,
   /** Room left on the disk after the file, at least. */
   headroomBytes: 64 * 1024 * 1024,
   /** The hook input; a larger one is not a Cuddler answer. */
@@ -67,13 +69,14 @@ export const PROJECT_DIR = "cuddler-out";
 export const FALLBACK_DIR = ["Downloads", "Cuddler"];
 
 /** Tool names the hook acts on: an MCP server whose name says Cuddler, and one of these tools. Any case. */
-const TOOL_NAME = /^mcp__(.+)__(get_video|get_download_link|create_image|get_image|download_video)$/i;
+const TOOL_NAME = /^mcp__(.+)__(get_video|get_download_link|create_image|get_image|download_video|get_speech|get_music)$/i;
 
 const FORMATS = Object.freeze({
   mp4: Object.freeze({ kind: "video", types: ["video/mp4"] }),
   jpg: Object.freeze({ kind: "image", types: ["image/jpeg", "image/jpg"] }),
   png: Object.freeze({ kind: "image", types: ["image/png"] }),
   webp: Object.freeze({ kind: "image", types: ["image/webp"] }),
+  mp3: Object.freeze({ kind: "audio", types: ["audio/mpeg", "audio/mp3"] }),
 });
 /** Storage may label any file this way; the first bytes decide then. */
 const GENERIC_TYPES = new Set(["application/octet-stream", "binary/octet-stream"]);
@@ -107,7 +110,7 @@ export function parseText(text) {
 }
 
 const looksLikeAnswer = (value) =>
-  ["video", "clip", "image", "files"].some((key) => key in value) || typeof value.object === "string";
+  ["video", "clip", "image", "files", "speech", "music"].some((key) => key in value) || typeof value.object === "string";
 
 /**
  * Every answer object in a tool result, however the host hands it over: the MCP result ({ content, structuredContent }),
@@ -129,14 +132,16 @@ export function resultObjects(response, depth = 0) {
 }
 
 /**
- * The finished files one answer offers, as { kind: "video" | "poster" | "image", url, id, model, createdAt, watermarked }.
- * Nothing until the work is done: a video that is still rendering, a failed job and an error give an empty list.
+ * The finished files one answer offers, as { kind: "video" | "poster" | "image" | "audio", url, id, model, createdAt,
+ * watermarked, audio ("voiceover" | "music"), take }. Nothing until the work is done: a video that is still rendering,
+ * a failed job and an error give an empty list.
  */
 export function mediaTargets(answer) {
   if (!answer || typeof answer !== "object") return [];
   const targets = [];
   const add = (kind, url, from) => {
-    if (typeof url === "string" && url) targets.push({ kind, url, id: from.id, model: from.model, createdAt: from.createdAt, watermarked: from.watermarked === true });
+    if (typeof url !== "string" || !url) return;
+    targets.push({ kind, url, id: from.id, model: from.model, createdAt: from.createdAt, watermarked: from.watermarked === true, audio: from.audio, take: from.take });
   };
   const files = (list, from) => {
     if (!Array.isArray(list)) return;
@@ -153,6 +158,18 @@ export function mediaTargets(answer) {
   }
   // get_download_link
   if (Array.isArray(answer.files) && (answer.videoId || answer.clipId)) files(answer.files, { id: answer.videoId ?? answer.clipId });
+  // get_speech and get_music: a finished request's takes (`partial`: the ones that came back). A music request of more
+  // than one take numbers its files, so take 2 never stands in for take 1.
+  for (const [key, audio] of [["speech", "voiceover"], ["music", "music"]]) {
+    const job = answer[key];
+    if (!job || typeof job !== "object" || (job.status !== "ready" && job.status !== "partial") || !Array.isArray(job.files)) continue;
+    const several = (Number(job.count) || 1) > 1 || job.files.length > 1;
+    for (const file of job.files) {
+      if (file?.kind !== "audio") continue;
+      const take = several && Number.isInteger(file.position) ? file.position + 1 : undefined;
+      add("audio", file.url, { id: job.id, model: job.modelId, createdAt: job.createdAt, audio, take });
+    }
+  }
   // create_image and get_image: the image is done when it has its link.
   const image = answer.image;
   if (image && typeof image === "object" && (image.status === undefined || image.status === "ready" || image.status === "succeeded")) {
@@ -162,6 +179,10 @@ export function mediaTargets(answer) {
   // The Cuddler Platform MCP server.
   if ((answer.object === "video" || answer.object === "image") && answer.status === "succeeded") {
     add(answer.object, answer.output?.url, { id: answer.id, model: answer.model, createdAt: answer.created_at });
+  }
+  if ((answer.object === "speech" || answer.object === "music") && answer.status === "succeeded") {
+    const audio = answer.object === "speech" ? "voiceover" : "music";
+    add("audio", answer.output?.url, { id: answer.id, model: answer.model, createdAt: answer.created_at, audio });
   }
   if (answer.object === "video_download") add("video", answer.url, { id: answer.id, watermarked: answer.watermarked });
 
@@ -190,17 +211,20 @@ export function allowedUrl(raw) {
 
 // ── what the file is ────────────────────────────────────────────────────────
 
-/** The format the first bytes show (mp4, jpg, png, webp), or null. */
+/** The format the first bytes show (mp4, jpg, png, webp, mp3), or null. */
 export function sniff(head) {
   const bytes = Buffer.from(head ?? []);
   if (bytes.length >= 8 && bytes.toString("latin1", 4, 8) === "ftyp") return "mp4";
   if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "jpg";
   if (bytes.length >= 8 && bytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return "png";
   if (bytes.length >= 12 && bytes.toString("latin1", 0, 4) === "RIFF" && bytes.toString("latin1", 8, 12) === "WEBP") return "webp";
+  // MP3: an ID3 tag, or straight into an MPEG audio frame (sync bits set, a valid version, Layer III).
+  if (bytes.length >= 3 && bytes.toString("latin1", 0, 3) === "ID3") return "mp3";
+  if (bytes.length >= 2 && bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0 && ((bytes[1] >> 3) & 0x3) !== 1 && ((bytes[1] >> 1) & 0x3) === 1) return "mp3";
   return null;
 }
 
-const mediaKind = (kind) => (kind === "video" ? "video" : "image");
+const mediaKind = (kind) => (kind === "video" || kind === "audio" ? kind : "image");
 
 /** Whether a response's Content-Type fits the kind of file expected. An empty type doesn't. */
 export function typeFits(kind, contentType) {
@@ -217,7 +241,7 @@ export function formatFits(kind, contentType, format) {
   return GENERIC_TYPES.has(type) || spec.types.includes(type);
 }
 
-export const capFor = (kind) => (kind === "video" ? LIMITS.videoBytes : LIMITS.imageBytes);
+export const capFor = (kind) => (kind === "video" ? LIMITS.videoBytes : kind === "audio" ? LIMITS.audioBytes : LIMITS.imageBytes);
 
 // ── the file name ───────────────────────────────────────────────────────────
 
@@ -241,14 +265,15 @@ export function idPart(id) {
   return part || null;
 }
 
-/** What tells two files of one id apart: the poster, and a video with the Cuddler.ai mark. */
+/** What tells two files of one id apart: the poster, a video with the Cuddler.ai mark, a music request's takes. */
 export function variantOf(target) {
   if (target.kind === "poster") return "-poster";
   if (target.kind === "video" && target.watermarked) return "-watermarked";
+  if (target.kind === "audio" && Number.isInteger(target.take) && target.take > 0) return `-take${target.take}`;
   return "";
 }
 
-const EXTENSIONS = { video: ["mp4"], poster: ["jpg", "png", "webp"], image: ["jpg", "png", "webp"] };
+const EXTENSIONS = { video: ["mp4"], poster: ["jpg", "png", "webp"], image: ["jpg", "png", "webp"], audio: ["mp3"] };
 const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /** The name of a file already saved for this id and variant in `names`, or null. */
@@ -259,7 +284,7 @@ export function savedName(names, id, variant, kind) {
 
 /** The "<yyyymmdd-hhmm>-<model>" start of any file saved for this id, so a later variant sorts next to it. */
 export function savedPrefix(names, id) {
-  const pattern = new RegExp(`^(\\d{8}-\\d{4}-[a-z0-9.-]+)-${escape(id)}(?:-poster|-watermarked)?\\.(?:mp4|jpg|png|webp)$`);
+  const pattern = new RegExp(`^(\\d{8}-\\d{4}-[a-z0-9.-]+)-${escape(id)}(?:-poster|-watermarked|-take\\d+)?\\.(?:mp4|jpg|png|webp|mp3)$`);
   for (const name of names) {
     const match = pattern.exec(name);
     if (match) return match[1];
@@ -543,7 +568,12 @@ const size = (bytes) => (bytes >= 1024 * 1024 ? `${(bytes / (1024 * 1024)).toFix
 /** The note for the agent, naming each file by the path `show` gives. */
 export function note(results, show) {
   const lines = results.map(({ target, result }) => {
-    const what = target.kind === "poster" ? "the poster" : target.kind === "image" ? "the image" : target.watermarked ? "the video, with the Cuddler.ai mark," : "the video";
+    const what =
+      target.kind === "poster" ? "the poster"
+      : target.kind === "image" ? "the image"
+      : target.kind === "audio" ? (target.take ? `${target.audio ?? "audio"} take ${target.take}` : `the ${target.audio ?? "audio"}`)
+      : target.watermarked ? "the video, with the Cuddler.ai mark,"
+      : "the video";
     return result.status === "saved" ? `saved ${what} to ${show(result.name)} (${size(result.bytes)})` : `${what} is already saved as ${show(result.name)}`;
   });
   const them = results.length > 1 ? "these files" : "this file";
